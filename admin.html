@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Royal Flush — Admin Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #060810;
+  --bg2:     #0C1020;
+  --bg3:     #111828;
+  --border:  rgba(0,210,255,0.12);
+  --cyan:    #00D2FF;
+  --gold:    #FFB800;
+  --red:     #FF3B5C;
+  --green:   #00E5A0;
+  --purple:  #9B4DFF;
+  --tx:      #E0EAF8;
+  --txd:     rgba(224,234,248,0.45);
+  --font:    'Rajdhani', sans-serif;
+  --mono:    'Share Tech Mono', monospace;
+  --head:    'Orbitron', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px;min-height:100vh;overflow-x:hidden;}
+
+/* Scanline overlay */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,210,255,0.015) 2px,rgba(0,210,255,0.015) 4px);pointer-events:none;z-index:9999;}
+
+/* Login */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:24px;}
+.login-logo{font-family:var(--head);font-size:28px;color:var(--cyan);letter-spacing:4px;text-shadow:0 0 30px rgba(0,210,255,0.5);}
+.login-sub{font-family:var(--mono);font-size:11px;color:var(--txd);letter-spacing:3px;}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:32px;width:340px;display:flex;flex-direction:column;gap:16px;}
+.login-box input{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px 16px;color:var(--tx);font-family:var(--mono);font-size:13px;outline:none;width:100%;transition:border-color .2s;}
+.login-box input:focus{border-color:var(--cyan);}
+.login-box button{background:linear-gradient(135deg,rgba(0,210,255,0.15),rgba(0,210,255,0.05));border:1px solid var(--cyan);border-radius:3px;padding:12px;color:var(--cyan);font-family:var(--head);font-size:12px;letter-spacing:3px;cursor:pointer;transition:all .2s;}
+.login-box button:hover{background:rgba(0,210,255,0.2);box-shadow:0 0 20px rgba(0,210,255,0.3);}
+
+/* Layout */
+#app{display:none;flex-direction:column;min-height:100vh;}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.hlogo{font-family:var(--head);font-size:14px;color:var(--cyan);letter-spacing:3px;}
+.hstatus{display:flex;align-items:center;gap:20px;font-family:var(--mono);font-size:11px;color:var(--txd);}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
+.dot.live{background:var(--green);box-shadow:0 0 6px var(--green);}
+.dot.off{background:var(--red);}
+
+.layout{display:grid;grid-template-columns:200px 1fr;flex:1;}
+nav{background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;}
+.nav-item{padding:11px 20px;cursor:pointer;font-size:13px;letter-spacing:1px;color:var(--txd);transition:all .15s;display:flex;align-items:center;gap:10px;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--tx);background:rgba(0,210,255,0.04);}
+.nav-item.active{color:var(--cyan);border-left-color:var(--cyan);background:rgba(0,210,255,0.06);}
+.nav-icon{font-size:15px;width:20px;text-align:center;}
+.nav-section{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:rgba(224,234,248,0.2);padding:16px 20px 6px;text-transform:uppercase;}
+
+main{padding:24px;overflow-y:auto;background:var(--bg);}
+
+/* Panels */
+.panel{display:none;flex-direction:column;gap:20px;}
+.panel.active{display:flex;}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:20px;}
+.card-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd);margin-bottom:14px;text-transform:uppercase;}
+
+/* Stats grid */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:18px;position:relative;overflow:hidden;}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--cyan));}
+.stat-val{font-family:var(--head);font-size:28px;font-weight:900;color:var(--tx);line-height:1;}
+.stat-lbl{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd);margin-top:6px;}
+.stat-delta{font-family:var(--mono);font-size:10px;position:absolute;top:14px;right:14px;color:var(--green);}
+
+/* Tables */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--txd);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.data-table td{padding:10px 12px;border-bottom:1px solid rgba(0,210,255,0.05);font-size:13px;vertical-align:middle;}
+.data-table tr:hover td{background:rgba(0,210,255,0.03);}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:2px;font-family:var(--mono);font-size:10px;letter-spacing:1px;}
+.badge.running{background:rgba(0,229,160,0.15);color:var(--green);border:1px solid rgba(0,229,160,0.3);}
+.badge.waiting{background:rgba(255,184,0,0.12);color:var(--gold);border:1px solid rgba(255,184,0,0.25);}
+.badge.registering{background:rgba(0,210,255,0.12);color:var(--cyan);border:1px solid rgba(0,210,255,0.25);}
+.badge.paused{background:rgba(155,77,255,0.15);color:var(--purple);border:1px solid rgba(155,77,255,0.3);}
+.badge.finished{background:rgba(224,234,248,0.06);color:var(--txd);border:1px solid var(--border);}
+.badge.cancelled{background:rgba(255,59,92,0.12);color:var(--red);border:1px solid rgba(255,59,92,0.25);}
+
+/* Buttons */
+.btn{padding:7px 14px;border-radius:3px;cursor:pointer;font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:1px;border:1px solid transparent;transition:all .15s;}
+.btn-cyan{background:rgba(0,210,255,0.1);border-color:rgba(0,210,255,0.4);color:var(--cyan);}
+.btn-cyan:hover{background:rgba(0,210,255,0.2);box-shadow:0 0 12px rgba(0,210,255,0.2);}
+.btn-green{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.4);color:var(--green);}
+.btn-green:hover{background:rgba(0,229,160,0.2);}
+.btn-red{background:rgba(255,59,92,0.1);border-color:rgba(255,59,92,0.4);color:var(--red);}
+.btn-red:hover{background:rgba(255,59,92,0.2);}
+.btn-gold{background:rgba(255,184,0,0.1);border-color:rgba(255,184,0,0.4);color:var(--gold);}
+.btn-gold:hover{background:rgba(255,184,0,0.2);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+
+/* Forms */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row.cols3{grid-template-columns:1fr 1fr 1fr;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--txd);}
+.field input,.field select,.field textarea{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:9px 12px;color:var(--tx);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--cyan);}
+.field select option{background:var(--bg3);}
+
+/* Log */
+#log-feed{height:200px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:12px;font-family:var(--mono);font-size:11px;display:flex;flex-direction:column;gap:4px;}
+.log-entry{color:var(--txd);}
+.log-entry.info{color:var(--cyan);}
+.log-entry.warn{color:var(--gold);}
+.log-entry.success{color:var(--green);}
+.log-entry.error{color:var(--red);}
+
+/* Toast */
+#toast{position:fixed;top:20px;right:20px;z-index:9000;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.toast-item{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px 18px;font-family:var(--mono);font-size:12px;animation:toastIn .25s ease;box-shadow:0 8px 32px rgba(0,0,0,.6);}
+.toast-item.success{border-color:rgba(0,229,160,0.4);color:var(--green);}
+.toast-item.error{border-color:rgba(255,59,92,0.4);color:var(--red);}
+.toast-item.info{border-color:rgba(0,210,255,0.4);color:var(--cyan);}
+@keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+
+/* Broadcast bar */
+#broadcast-bar{background:linear-gradient(90deg,rgba(155,77,255,0.15),rgba(0,210,255,0.1));border:1px solid rgba(155,77,255,0.3);border-radius:4px;padding:14px;display:flex;gap:10px;align-items:center;}
+#broadcast-bar input{flex:1;background:transparent;border:none;color:var(--tx);font-family:var(--mono);font-size:13px;outline:none;}
+#broadcast-bar input::placeholder{color:var(--txd);}
+
+.tourn-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:18px;display:flex;flex-direction:column;gap:12px;}
+.tourn-card-header{display:flex;align-items:center;justify-content:space-between;}
+.tourn-name{font-family:var(--head);font-size:14px;letter-spacing:1px;}
+.tourn-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-family:var(--mono);font-size:11px;}
+.tourn-meta-item{display:flex;flex-direction:column;gap:3px;}
+.tourn-meta-label{color:var(--txd);font-size:9px;letter-spacing:1px;}
+.tourn-meta-val{color:var(--tx);}
+.tourn-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px;display:flex;align-items:center;justify-content:space-between;}
+.table-name{font-family:var(--head);font-size:12px;letter-spacing:1px;color:var(--cyan);}
+.table-seats{display:flex;gap:6px;margin-top:8px;}
+.seat-dot{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);}
+.seat-dot.occupied{background:rgba(0,210,255,0.15);border-color:rgba(0,210,255,0.4);color:var(--cyan);}
+.seat-dot.empty{background:var(--bg3);color:var(--txd);}
+
+.prize-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;}
+.prize-place{color:var(--txd);}
+.prize-amt{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-logo">◆ ROYAL FLUSH</div>
+  <div class="login-sub">OPERATOR CONSOLE v2.0</div>
+  <div class="login-box">
+    <input type="password" id="admin-key" placeholder="Admin secret key" autocomplete="off">
+    <button onclick="doLogin()">AUTHENTICATE →</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <header>
+    <div class="hlogo">◆ RF ADMIN</div>
+    <div class="hstatus">
+      <span><span class="dot live" id="conn-dot"></span><span id="conn-text">CONNECTING</span></span>
+      <span id="clock" style="font-family:var(--mono);font-size:11px"></span>
+    </div>
+  </header>
+  <div class="layout">
+    <nav>
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="nav('dashboard')"><span class="nav-icon">◈</span>Dashboard</div>
+      <div class="nav-section">Tables</div>
+      <div class="nav-item" onclick="nav('tables')"><span class="nav-icon">▣</span>Cash Tables</div>
+      <div class="nav-section">Tournaments</div>
+      <div class="nav-item" onclick="nav('tournaments')"><span class="nav-icon">◉</span>Manage MTTs</div>
+      <div class="nav-item" onclick="nav('create-tourn')"><span class="nav-icon">⊕</span>Create MTT</div>
+      <div class="nav-section">Platform</div>
+      <div class="nav-item" onclick="nav('broadcast')"><span class="nav-icon">◎</span>Broadcast</div>
+      <div class="nav-item" onclick="nav('log')"><span class="nav-icon">≡</span>Event Log</div>
+    </nav>
+    <main>
+      <!-- Dashboard -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stats">
+          <div class="stat" style="--accent:var(--cyan)">
+            <div class="stat-val" id="stat-players">0</div>
+            <div class="stat-lbl">PLAYERS ONLINE</div>
+          </div>
+          <div class="stat" style="--accent:var(--green)">
+            <div class="stat-val" id="stat-tables">3</div>
+            <div class="stat-lbl">ACTIVE TABLES</div>
+          </div>
+          <div class="stat" style="--accent:var(--gold)">
+            <div class="stat-val" id="stat-tourns">0</div>
+            <div class="stat-lbl">TOURNAMENTS</div>
+          </div>
+          <div class="stat" style="--accent:var(--purple)">
+            <div class="stat-val" id="stat-hands">0</div>
+            <div class="stat-lbl">HANDS TODAY</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Live Tables</div>
+          <div id="dashboard-tables"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active Tournaments</div>
+          <div id="dashboard-tourns" style="color:var(--txd);font-family:var(--mono);font-size:12px">No active tournaments</div>
+        </div>
+      </div>
+
+      <!-- Tables -->
+      <div class="panel" id="panel-tables">
+        <div class="card">
+          <div class="card-title">Cash Game Tables</div>
+          <div id="tables-list" style="display:flex;flex-direction:column;gap:12px;margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- Tournaments -->
+      <div class="panel" id="panel-tournaments">
+        <div class="card">
+          <div class="card-title">All Tournaments</div>
+          <div id="tourns-list" style="display:flex;flex-direction:column;gap:12px;margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- Create Tournament -->
+      <div class="panel" id="panel-create-tourn">
+        <div class="card">
+          <div class="card-title">Create New Tournament</div>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:560px">
+            <div class="field">
+              <label>Tournament Name</label>
+              <input type="text" id="t-name" placeholder="Grand Royal Championship">
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Buy-In ($)</label>
+                <input type="number" id="t-buyin" value="50" min="1">
+              </div>
+              <div class="field">
+                <label>Guarantee ($)</label>
+                <input type="number" id="t-guarantee" value="1000" min="0">
+              </div>
+            </div>
+            <div class="form-row cols3">
+              <div class="field">
+                <label>Starting Stack</label>
+                <input type="number" id="t-stack" value="5000" min="1000">
+              </div>
+              <div class="field">
+                <label>Blind Levels (mins)</label>
+                <input type="number" id="t-blindmins" value="15" min="1">
+              </div>
+              <div class="field">
+                <label>Max Players</label>
+                <input type="number" id="t-maxplayers" value="200" min="2">
+              </div>
+            </div>
+            <div style="margin-top:4px">
+              <div class="card-title" style="margin-bottom:10px">Blind Structure Preview</div>
+              <div id="blind-preview" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;font-family:var(--mono);font-size:10px"></div>
+            </div>
+            <div id="prize-preview" style="max-height:200px;overflow-y:auto"></div>
+            <button class="btn btn-green" onclick="createTournament()" style="align-self:flex-start;padding:10px 24px;font-size:13px">⊕ CREATE TOURNAMENT</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Broadcast -->
+      <div class="panel" id="panel-broadcast">
+        <div class="card">
+          <div class="card-title">Broadcast to All Players</div>
+          <div id="broadcast-bar">
+            <span style="color:var(--purple);font-family:var(--mono);font-size:12px">⬡ ADMIN MSG</span>
+            <input type="text" id="broadcast-msg" placeholder="Type message and press Enter or click Send..." onkeydown="if(event.key==='Enter')sendBroadcast()">
+            <button class="btn btn-cyan btn-sm" onclick="sendBroadcast()">SEND</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Kick Player by Socket ID</div>
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <div class="field" style="flex:1"><label>Socket ID</label><input type="text" id="kick-id" placeholder="socket.io id"></div>
+            <div class="field"><label>Reason</label><input type="text" id="kick-reason" placeholder="Optional reason"></div>
+            <button class="btn btn-red" onclick="kickPlayer()">KICK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="panel" id="panel-log">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="card-title" style="margin:0">Event Log</div>
+            <button class="btn btn-sm" onclick="document.getElementById('log-feed').innerHTML=''" style="border-color:var(--border);color:var(--txd)">CLEAR</button>
+          </div>
+          <div id="log-feed"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const BACKEND = 'http://localhost:3001';
+const STD_BLINDS = [
+  [25,50],[50,100],[75,150],[100,200],[150,300],[200,400],
+  [300,600],[400,800],[600,1200],[1000,2000],[1500,3000],
+  [2000,4000],[3000,6000],[5000,10000],[10000,20000],
+];
+
+let adminKey = '';
+let socket = null;
+let state = { tables:[], tournaments:[], totalPlayers:0, handsToday:0 };
+
+// ── Auth ─────────────────────────────────────────────────────────
+function doLogin() {
+  const key = document.getElementById('admin-key').value.trim();
+  if (!key) { toast('Enter admin key','error'); return; }
+  adminKey = key;
+  initSocket(key);
+}
+
+function initSocket(key) {
+  socket = io(BACKEND, { autoConnect: true });
+  socket.on('connect', () => {
+    socket.emit('joinAdmin', { secret: key });
+    setConnected(true);
+    log('Connected to backend', 'success');
+  });
+  socket.on('disconnect', () => { setConnected(false); log('Disconnected','error'); });
+  socket.on('error', (e) => { toast(e.message||'Error','error'); log(e.message,'error'); });
+
+  socket.on('adminSnapshot', (snap) => {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    state.tables = snap.tables;
+    state.tournaments = snap.tournaments;
+    refresh();
+    log('Admin snapshot received','info');
+  });
+
+  socket.on('tableState', (s) => {
+    const idx = state.tables.findIndex(t=>t.id===s.id);
+    if (idx>=0) state.tables[idx].state = s;
+    else state.tables.push({ id:s.id, state:s });
+    state.totalPlayers = state.tables.reduce((a,t)=>(a+(t.state?.seats?.length||0)),0);
+    document.getElementById('stat-players').textContent = state.totalPlayers;
+    if (document.getElementById('panel-tables').classList.contains('active')) renderTables();
+    if (document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
+    log(`Table ${s.id}: ${s.phase} pot=$${s.pot} seats=${s.seats?.length||0}`);
+  });
+
+  socket.on('tournState', (t) => {
+    const idx = state.tournaments.findIndex(x=>x.id===t.id);
+    if (idx>=0) state.tournaments[idx] = t;
+    else state.tournaments.push(t);
+    document.getElementById('stat-tourns').textContent = state.tournaments.filter(t=>t.status==='running').length;
+    if (document.getElementById('panel-tournaments').classList.contains('active')) renderTournaments();
+    if (document.getElementById('panel-dashboard').classList.contains('active')) renderDashboard();
+    log(`Tournament ${t.name}: ${t.status} (${t.remaining} remaining)`);
+  });
+
+  socket.on('tournCreated', (t) => {
+    state.tournaments.push(t);
+    toast('Tournament created: '+t.name,'success');
+    refresh();
+  });
+  socket.on('tournStarted', (t) => { toast('Tournament STARTED: '+t.name,'success'); });
+  socket.on('tournPaused',  (d) => { toast('Tournament paused','info'); });
+  socket.on('tournCancelled',(d)=> { toast('Tournament cancelled','warn'); });
+  socket.on('adminBroadcast',(d)=> { log('Broadcast sent: '+d.message,'info'); });
+  socket.on('kicked', (d) => { log('Player kicked: '+d.reason,'warn'); });
+}
+
+function setConnected(yes) {
+  document.getElementById('conn-dot').className = 'dot '+(yes?'live':'off');
+  document.getElementById('conn-text').textContent = yes ? 'LIVE' : 'OFFLINE';
+}
+
+// ── Navigation ────────────────────────────────────────────────────
+function nav(id) {
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  refresh();
+}
+
+function refresh() {
+  const active = document.querySelector('.panel.active')?.id;
+  if (active==='panel-dashboard') renderDashboard();
+  if (active==='panel-tables') renderTables();
+  if (active==='panel-tournaments') renderTournaments();
+  if (active==='panel-create-tourn') renderBlindPreview();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────
+function renderDashboard() {
+  const totalP = state.tables.reduce((a,t)=>(a+(t.state?.seats?.length||0)),0);
+  document.getElementById('stat-players').textContent = totalP;
+  document.getElementById('stat-tables').textContent = state.tables.length;
+  document.getElementById('stat-tourns').textContent = state.tournaments.filter(t=>t.status==='running').length;
+
+  // Tables
+  const tEl = document.getElementById('dashboard-tables');
+  tEl.innerHTML = state.tables.map(t=>{ const s=t.state||{}; return `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <span style="font-family:var(--head);font-size:12px;color:var(--cyan)">${t.id}</span>
+        <span class="badge ${s.phase||'waiting'}" style="margin-left:8px">${s.phase||'WAITING'}</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--txd)">
+        ${s.seats?.length||0} players · Pot $${s.pot||0}
+      </div>
+    </div>`; }).join('');
+
+  // Tournaments
+  const running = state.tournaments.filter(t=>t.status==='running'||t.status==='registering');
+  const tEl2 = document.getElementById('dashboard-tourns');
+  if (!running.length) { tEl2.textContent='No active tournaments'; return; }
+  tEl2.innerHTML = running.map(t=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <span style="font-family:var(--head);font-size:12px">${t.name}</span>
+        <span class="badge ${t.status}" style="margin-left:8px">${t.status.toUpperCase()}</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--txd)">
+        ${t.registered} reg · ${t.remaining||0} remaining · Prize $${t.prizePool}
+      </div>
+    </div>`).join('');
+}
+
+// ── Tables ────────────────────────────────────────────────────────
+function renderTables() {
+  document.getElementById('tables-list').innerHTML = state.tables.map(t=>{
+    const s = t.state||{};
+    const seats = s.seats||[];
+    return `<div class="table-card">
+      <div>
+        <div class="table-name">${t.id.replace(/-/g,' ').toUpperCase()}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--txd);margin-top:3px">$${s.pot||0} pot · ${s.phase||'WAITING'} · Blinds $${t.sb||'?'}/$${t.bb||'?'}</div>
+        <div class="table-seats" style="margin-top:10px">
+          ${Array(t.maxSeats||6).fill(0).map((_,i)=>{
+            const seat=seats[i];
+            return seat
+              ? `<div class="seat-dot occupied" title="${seat.name}">${seat.name.slice(0,2).toUpperCase()}</div>`
+              : `<div class="seat-dot empty">·</div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${seats.map(p=>`<button class="btn btn-red btn-sm" onclick="kickFromTable('${t.id}','${p.socketSeat}','${p.name}')">Kick ${p.name}</button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Tournaments ───────────────────────────────────────────────────
+function renderTournaments() {
+  const el = document.getElementById('tourns-list');
+  if (!state.tournaments.length) { el.innerHTML='<div style="color:var(--txd);font-family:var(--mono);font-size:12px">No tournaments created yet</div>'; return; }
+  el.innerHTML = state.tournaments.map(t=>`
+    <div class="tourn-card">
+      <div class="tourn-card-header">
+        <div class="tourn-name">${t.name}</div>
+        <span class="badge ${t.status}">${t.status.toUpperCase()}</span>
+      </div>
+      <div class="tourn-meta">
+        <div class="tourn-meta-item"><div class="tourn-meta-label">BUY-IN</div><div class="tourn-meta-val">$${t.buyIn}</div></div>
+        <div class="tourn-meta-item"><div class="tourn-meta-label">PRIZE POOL</div><div class="tourn-meta-val" style="color:var(--gold)">$${t.prizePool}</div></div>
+        <div class="tourn-meta-item"><div class="tourn-meta-label">REGISTERED</div><div class="tourn-meta-val">${t.registered} / ${t.maxPlayers}</div></div>
+        <div class="tourn-meta-item"><div class="tourn-meta-label">REMAINING</div><div class="tourn-meta-val">${t.remaining||t.registered}</div></div>
+        <div class="tourn-meta-item"><div class="tourn-meta-label">BLIND LEVEL</div><div class="tourn-meta-val">${t.sb}/${t.bb}</div></div>
+        <div class="tourn-meta-item"><div class="tourn-meta-label">BLIND TIME</div><div class="tourn-meta-val">${t.blindMins}m</div></div>
+        <div class="tourn-meta-item"><div class="tourn-meta-label">STARTING STACK</div><div class="tourn-meta-val">${(t.startingStack||5000).toLocaleString()}</div></div>
+        <div class="tourn-meta-item"><div class="tourn-meta-label">GUARANTEE</div><div class="tourn-meta-val">$${t.guarantee||0}</div></div>
+      </div>
+      ${t.prizes?.length ? `<div style="border-top:1px solid var(--border);padding-top:10px">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">PRIZE STRUCTURE</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          ${t.prizes.slice(0,8).map(p=>`<div class="prize-row"><span class="prize-place">${p.place}${['st','nd','rd'][p.place-1]||'th'}</span><span class="prize-amt">$${p.amount}</span></div>`).join('')}
+        </div>
+      </div>` : ''}
+      ${t.results?.length ? `<div style="border-top:1px solid var(--border);padding-top:10px">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">RESULTS</div>
+        ${t.results.slice(0,5).map(r=>`<div style="font-family:var(--mono);font-size:11px;padding:3px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--txd)">${r.place}.</span> <span>${r.name}</span> ${r.prize?`<span style="color:var(--gold);float:right">$${r.prize}</span>`:''}
+        </div>`).join('')}
+      </div>` : ''}
+      <div class="tourn-actions">
+        ${t.status==='registering' ? `<button class="btn btn-green" onclick="startTournament('${t.id}')">▶ START</button>` : ''}
+        ${t.status==='running'     ? `<button class="btn btn-gold"  onclick="pauseTournament('${t.id}')">⏸ PAUSE</button>` : ''}
+        ${t.status==='paused'      ? `<button class="btn btn-cyan"  onclick="resumeTournament('${t.id}')">▶ RESUME</button>` : ''}
+        ${t.status!=='finished'&&t.status!=='cancelled' ? `<button class="btn btn-red btn-sm" onclick="cancelTournament('${t.id}')">✕ CANCEL</button>` : ''}
+        <button class="btn btn-sm" onclick="deleteTournament('${t.id}')" style="border-color:var(--border);color:var(--txd)">DELETE</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Create Tournament ─────────────────────────────────────────────
+function renderBlindPreview() {
+  document.getElementById('blind-preview').innerHTML = STD_BLINDS.slice(0,10).map((b,i)=>`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:6px 8px;text-align:center">
+      <div style="color:var(--txd);font-size:9px">LVL ${i+1}</div>
+      <div style="color:var(--cyan)">${b[0]}/${b[1]}</div>
+    </div>`).join('');
+  renderPrizePreview();
+}
+
+function renderPrizePreview() {
+  const buyin = parseFloat(document.getElementById('t-buyin')?.value)||50;
+  const maxP  = parseInt(document.getElementById('t-maxplayers')?.value)||100;
+  const guar  = parseFloat(document.getElementById('t-guarantee')?.value)||0;
+  const pool  = Math.max(guar, Math.floor(maxP * buyin * 0.95));
+  const keys  = [2,3,5,9,18,27];
+  let pcts=[65,35];
+  for(const k of keys){ if(maxP>=k) pcts=[65,35]; }
+  if(maxP>=9)  pcts=[35,20,14,10,7,5,4,3,2];
+  if(maxP>=27) pcts=[25,15,10,8,6,4.5,3.5,3,2.5,2,1.5,1.5,1.3,1.2,1.1,1,0.9,0.9,0.8,0.8,0.7,0.7,0.7,0.6,0.6,0.6,0.5];
+  const prizes = pcts.map((pct,i)=>({ place:i+1, amount:Math.floor(pool*pct/100*100)/100 }));
+  document.getElementById('prize-preview').innerHTML = `
+    <div class="card-title" style="margin-bottom:8px">Prize Preview (Est. pool $${pool})</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-family:var(--mono);font-size:11px">
+      ${prizes.slice(0,12).map(p=>`<div class="prize-row"><span class="prize-place">${p.place}.</span><span class="prize-amt">$${p.amount}</span></div>`).join('')}
+    </div>`;
+}
+
+function createTournament() {
+  const name = document.getElementById('t-name').value.trim();
+  const buyIn = parseFloat(document.getElementById('t-buyin').value);
+  const guarantee = parseFloat(document.getElementById('t-guarantee').value)||0;
+  const startingStack = parseInt(document.getElementById('t-stack').value)||5000;
+  const blindMins = parseInt(document.getElementById('t-blindmins').value)||15;
+  const maxPlayers = parseInt(document.getElementById('t-maxplayers').value)||200;
+  if (!name || !buyIn) { toast('Fill in name and buy-in','error'); return; }
+  socket.emit('adminCreateTournament', { secret:adminKey, config:{ name, buyIn, guarantee, startingStack, blindMins, maxPlayers } });
+  toast('Creating tournament...','info');
+  nav('tournaments');
+}
+
+// ── Tournament controls ───────────────────────────────────────────
+function startTournament(id)  { socket.emit('adminStartTournament',  { secret:adminKey, tournId:id }); toast('Starting...','info'); }
+function pauseTournament(id)  { socket.emit('adminPauseTournament',  { secret:adminKey, tournId:id }); toast('Paused','info'); }
+function resumeTournament(id) {
+  fetch(`${BACKEND}/admin/tournaments/${id}/resume`, { method:'POST', headers:{'x-admin-key':adminKey} })
+    .then(r=>r.json()).then(()=>{ toast('Resumed','success'); fetchState(); });
+}
+function cancelTournament(id) {
+  if (!confirm('Cancel this tournament?')) return;
+  fetch(`${BACKEND}/admin/tournaments/${id}/cancel`, { method:'POST', headers:{'x-admin-key':adminKey} })
+    .then(()=>{ toast('Cancelled','info'); fetchState(); });
+}
+function deleteTournament(id) {
+  if (!confirm('Delete tournament?')) return;
+  fetch(`${BACKEND}/admin/tournaments/${id}`, { method:'DELETE', headers:{'x-admin-key':adminKey} })
+    .then(()=>{ state.tournaments=state.tournaments.filter(t=>t.id!==id); renderTournaments(); toast('Deleted','info'); });
+}
+
+// ── Player controls ───────────────────────────────────────────────
+function kickPlayer() {
+  const id = document.getElementById('kick-id').value.trim();
+  const reason = document.getElementById('kick-reason').value.trim() || 'Removed by admin';
+  if (!id) { toast('Enter socket ID','error'); return; }
+  socket.emit('adminKickPlayer', { secret:adminKey, socketId:id, reason });
+  toast('Kick sent','success');
+}
+function kickFromTable(tableId, seatId, name) {
+  if (!confirm(`Kick ${name} from table?`)) return;
+  // Get socket ID from state
+  const tbl = state.tables.find(t=>t.id===tableId);
+  const seat = tbl?.state?.seats?.find(s=>s.name===name);
+  toast(`Kicked ${name}`,'info');
+}
+
+// ── Broadcast ─────────────────────────────────────────────────────
+function sendBroadcast() {
+  const msg = document.getElementById('broadcast-msg').value.trim();
+  if (!msg) return;
+  socket.emit('adminBroadcast', { secret:adminKey, message:msg });
+  document.getElementById('broadcast-msg').value = '';
+  toast('Broadcast sent to all players','success');
+}
+
+// ── REST fallback ─────────────────────────────────────────────────
+async function fetchState() {
+  try {
+    const r = await fetch(`${BACKEND}/admin/dashboard`, { headers:{'x-admin-key':adminKey} });
+    const d = await r.json();
+    state.tables = d.tables.map(t=>({ ...t, state: t.state }));
+    state.tournaments = d.tournaments;
+    refresh();
+  } catch(e) { log('Fetch failed: '+e.message,'error'); }
+}
+
+// ── Log ───────────────────────────────────────────────────────────
+function log(msg, type='') {
+  const el = document.getElementById('log-feed');
+  const now = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'log-entry '+(type||'');
+  div.textContent = `[${now}] ${msg}`;
+  el.prepend(div);
+  if (el.children.length > 200) el.lastChild?.remove();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  const div = document.createElement('div');
+  div.className = 'toast-item '+type;
+  div.textContent = msg;
+  el.appendChild(div);
+  setTimeout(()=>div.remove(), 3000);
+}
+
+// ── Clock ─────────────────────────────────────────────────────────
+setInterval(()=>{
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toUTCString().split(' ').slice(4,5)[0]+' UTC';
+},1000);
+
+// ── Prize preview updates ─────────────────────────────────────────
+document.addEventListener('input', e=>{
+  if(['t-buyin','t-maxplayers','t-guarantee'].includes(e.target?.id)) renderPrizePreview();
+});
+
+// Enter key on login
+document.getElementById('admin-key')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
