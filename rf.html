@@ -5390,6 +5390,10 @@ function hideSeatTip(av){
     const avAb = document.getElementById('hdr-avatar-abbr');
     if(avEl) avEl.textContent = _storedUser;
     if(avAb) avAb.textContent = _storedUser.slice(0,2).toUpperCase();
+    // If already registered, go straight to lobby
+    if(localStorage.getItem('rf_registered')){
+      setTimeout(()=>showView('vl'), 150);
+    }
   }
 
   setTimeout(()=>{
@@ -6957,16 +6961,18 @@ function doSignup(){
     if(signupErr) signupErr.textContent='Password must be at least 6 characters.';
     return;
   }
-  // Age validation
-  if(!m||!d||!y||y<1900){
-    if(ageErr) ageErr.textContent='Please enter your date of birth.';
-    return;
-  }
-  const dob = new Date(y, m-1, d);
-  const age = (Date.now() - dob) / 31557600000;
-  if(age < 18){
-    if(ageErr) ageErr.textContent='You must be 18 or older to register.';
-    return;
+  // Age validation (DOB optional if already passed age gate)
+  if(m && d && y) {
+    if(y<1900||y>2010){
+      if(ageErr) ageErr.textContent='Please enter a valid date of birth.';
+      return;
+    }
+    const dob = new Date(y, m-1, d);
+    const age = (Date.now() - dob) / 31557600000;
+    if(age < 18){
+      if(ageErr) ageErr.textContent='You must be 18 or older to register.';
+      return;
+    }
   }
   if(ageErr) ageErr.textContent='';
   if(!terms){
@@ -6988,7 +6994,10 @@ function doSignup(){
   const ref = document.getElementById('su-ref')?.value.trim();
   if(ref && VALID_REF_CODES.includes(ref.toUpperCase())) _refBonusApplied=true;
 
-  showView('v-welcome');
+  // Give starting chips and go to lobby
+  addBal(10); // $10 starting Royal Chips
+  showView('vl');
+  setTimeout(()=>showRGConfirm('Welcome, '+user+'! You have received $10 Royal Chips to get started.'),400);
 }
 
 // ══ REFERRAL CODE CHECK ════════════════════════════════════════════
@@ -7725,7 +7734,7 @@ function bustLeave() {
 <!-- ══ SOCKET.IO — BACKEND CONNECTION ════════════════════════════════ -->
 <script>
 // ── Config ────────────────────────────────────────────────────────────
-const BACKEND_URL = 'http://localhost:3001';
+const BACKEND_URL = 'https://royal-flush-backend-production.up.railway.app';
 
 // ── State ─────────────────────────────────────────────────────────────
 const socket = io(BACKEND_URL, { autoConnect: false });
