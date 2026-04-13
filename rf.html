@@ -1078,8 +1078,8 @@ body.royal-mode nav{
 .auth-footer{margin-top:20px;font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.5px;text-align:center}
 .auth-checkbox-row{display:flex;align-items:flex-start;gap:10px}
 /* ── AUTH SLIDER ──────────────────────────────────────────── */
-.auth-slider-wrap{width:100%;max-width:420px;overflow:hidden}
-.auth-slider{display:flex;transition:transform .45s cubic-bezier(.77,0,.18,1);will-change:transform}
+.auth-slider-wrap{width:100%;max-width:420px;overflow:visible;position:relative}
+.auth-slider{display:flex;}
 .auth-panel{min-width:420px;max-width:420px;display:flex;flex-direction:column;align-items:center}
 .auth-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid rgba(255,255,255,.07);width:100%}
 .auth-tab{flex:1;text-align:center;padding:10px 0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txd);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .2s,border-color .2s}
@@ -1781,7 +1781,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="auth-slider" id="auth-slider">
 
         <!-- LOGIN PANEL -->
-        <div class="auth-panel" id="auth-panel-login">
+        <div class="auth-panel" id="auth-panel-login" style="display:flex">
           <div class="auth-card">
             <div class="auth-tabs">
               <div class="auth-tab active" id="atab-login" onclick="authSlide('login')">Log In</div>
@@ -1811,7 +1811,7 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <!-- SIGNUP PANEL -->
-        <div class="auth-panel" id="auth-panel-signup">
+        <div class="auth-panel" id="auth-panel-signup" style="display:none">
           <div class="auth-card">
             <div class="auth-tabs">
               <div class="auth-tab" id="atab-login2" onclick="authSlide('login')">Log In</div>
@@ -5383,18 +5383,8 @@ function hideSeatTip(av){
   renderHist();renderTxns();renderAvatarGrid();renderBigPots();renderSession();renderVIP();
   renderLPTables();
   // Init mode toggle slider position after DOM renders
-  // Restore username from localStorage on load
-  const _storedUser = localStorage.getItem('rf_username');
-  if(_storedUser){
-    const avEl = document.getElementById('hdr-username');
-    const avAb = document.getElementById('hdr-avatar-abbr');
-    if(avEl) avEl.textContent = _storedUser;
-    if(avAb) avAb.textContent = _storedUser.slice(0,2).toUpperCase();
-    // If already registered, go straight to lobby
-    if(localStorage.getItem('rf_registered')){
-      setTimeout(()=>showView('vl'), 150);
-    }
-  }
+  // Restore session on page load
+  _restoreSession();
 
   setTimeout(()=>{
     setMode('royal', true);
@@ -6846,10 +6836,11 @@ function goSignup() { showView('v-login'); setTimeout(()=>authSlide('signup'), 6
 let _authMode = 'login';
 function authSlide(mode) {
   _authMode = mode;
-  const slider = document.getElementById('auth-slider');
-  if (!slider) return;
-  slider.style.transform = mode === 'signup' ? 'translateX(-420px)' : 'translateX(0)';
-  // update tab states
+  const loginPanel  = document.getElementById('auth-panel-login');
+  const signupPanel = document.getElementById('auth-panel-signup');
+  if (loginPanel)  loginPanel.style.display  = mode === 'login'  ? 'flex' : 'none';
+  if (signupPanel) signupPanel.style.display = mode === 'signup' ? 'flex' : 'none';
+  // Update tab states
   ['atab-login','atab-login2'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('active', mode === 'login');
@@ -6898,42 +6889,54 @@ function goReferral(){ showView('v-referral'); }
 function goAffiliate(){ showView('v-affiliate'); }
 
 // ══ AUTH ════════════════════════════════════════════════════════════
-function doLogin(){
+async function doLogin(){
   const emailEl = document.getElementById('login-email') || document.getElementById('l-email');
   const passEl  = document.getElementById('login-pass');
   const email   = emailEl?.value.trim();
   const pass    = passEl?.value;
-
-  // Clear errors
-  const errEl = document.getElementById('login-error');
+  const errEl   = document.getElementById('login-error');
   if(errEl) errEl.textContent = '';
 
   if(!email || !pass){
     if(errEl) errEl.textContent = 'Please enter your email and password.';
     return;
   }
-  if(pass.length < 3){
-    if(errEl) errEl.textContent = 'Incorrect email or password.';
-    return;
+
+  const btn = document.querySelector('[onclick="doLogin()"]');
+  if(btn){ btn.textContent = 'Logging in...'; btn.disabled = true; }
+
+  try {
+    const res  = await fetch(BACKEND_URL + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const data = await res.json();
+    if(!data.ok){
+      if(errEl) errEl.textContent = data.error || 'Login failed.';
+      if(btn){ btn.textContent = 'Log In →'; btn.disabled = false; }
+      return;
+    }
+    // Save auth data
+    localStorage.setItem('rf_token',    data.token);
+    localStorage.setItem('rf_username', data.user.username);
+    localStorage.setItem('rf_email',    data.user.email);
+    localStorage.setItem('rf_user_id',  data.user.id);
+    localStorage.setItem('rf_registered', '1');
+    // Update chips from DB
+    _balRoyal = data.user.chips || 10;
+    _balGold  = data.user.goldChips || 250000;
+    updBal();
+    _updateHeader(data.user.username);
+    showView('vl');
+    setTimeout(()=>showRGConfirm('Welcome back, '+data.user.username+'!'), 300);
+  } catch(e) {
+    if(errEl) errEl.textContent = 'Server error — please try again.';
+    if(btn){ btn.textContent = 'Log In →'; btn.disabled = false; }
   }
-
-  // Derive display name from email (before @) or use stored name
-  const stored = localStorage.getItem('rf_username');
-  const displayName = stored || email.split('@')[0].replace(/[^a-zA-Z0-9_]/g,'').slice(0,16) || 'Player';
-  localStorage.setItem('rf_username', displayName);
-  localStorage.setItem('rf_email', email);
-
-  // Update header avatar
-  const avEl = document.getElementById('hdr-username');
-  if(avEl) avEl.textContent = displayName;
-  const avAb = document.getElementById('hdr-avatar-abbr');
-  if(avAb) avAb.textContent = displayName.slice(0,2).toUpperCase();
-
-  showView('vl');
-  setTimeout(()=>showRGConfirm('Welcome back, '+displayName+'! 👋'), 300);
 }
 
-function doSignup(){
+async function doSignup(){
   const user  = document.getElementById('su-user')?.value.trim();
   const email = document.getElementById('su-email')?.value.trim();
   const pass  = document.getElementById('su-pass')?.value;
@@ -6980,24 +6983,41 @@ function doSignup(){
     return;
   }
 
-  // Save user to localStorage
-  localStorage.setItem('rf_username', user);
-  localStorage.setItem('rf_email', email);
-  localStorage.setItem('rf_registered', '1');
-
-  // Update header
-  const avEl = document.getElementById('hdr-username');
-  if(avEl) avEl.textContent = user;
-  const avAb = document.getElementById('hdr-avatar-abbr');
-  if(avAb) avAb.textContent = user.slice(0,2).toUpperCase();
-
   const ref = document.getElementById('su-ref')?.value.trim();
   if(ref && VALID_REF_CODES.includes(ref.toUpperCase())) _refBonusApplied=true;
 
-  // Give starting chips and go to lobby
-  addBal(10); // $10 starting Royal Chips
-  showView('vl');
-  setTimeout(()=>showRGConfirm('Welcome, '+user+'! You have received $10 Royal Chips to get started.'),400);
+  const btn = document.querySelector('[onclick="doSignup()"]');
+  if(btn){ btn.textContent = 'Creating account...'; btn.disabled = true; }
+
+  try {
+    const res  = await fetch(BACKEND_URL + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, email, password: pass }),
+    });
+    const data = await res.json();
+    if(!data.ok){
+      if(signupErr) signupErr.textContent = data.error || 'Registration failed.';
+      if(btn){ btn.textContent = 'Create Account →'; btn.disabled = false; }
+      return;
+    }
+    // Save auth data
+    localStorage.setItem('rf_token',    data.token);
+    localStorage.setItem('rf_username', data.user.username);
+    localStorage.setItem('rf_email',    data.user.email);
+    localStorage.setItem('rf_user_id',  data.user.id);
+    localStorage.setItem('rf_registered', '1');
+    // Set chips from DB
+    _balRoyal = data.user.chips || 10;
+    _balGold  = data.user.goldChips || 250000;
+    updBal();
+    _updateHeader(data.user.username);
+    showView('vl');
+    setTimeout(()=>showRGConfirm('Welcome to Royal Flush, '+data.user.username+'! You have received $10 Royal Chips.'),400);
+  } catch(e) {
+    if(signupErr) signupErr.textContent = 'Server error — please try again.';
+    if(btn){ btn.textContent = 'Create Account →'; btn.disabled = false; }
+  }
 }
 
 // ══ REFERRAL CODE CHECK ════════════════════════════════════════════
@@ -7737,7 +7757,8 @@ function bustLeave() {
 const BACKEND_URL = 'https://royal-flush-backend-production.up.railway.app';
 
 // ── State ─────────────────────────────────────────────────────────────
-const socket = io(BACKEND_URL, { autoConnect: false });
+const socket = io(BACKEND_URL, {
+  auth: { token: localStorage.getItem('rf_token') || null }, autoConnect: false });
 var _connectedTableId = null;
 var _mySocketSeat     = null;   // which seat index belongs to this client
 var _backendActive    = false;  // true once we join a backend table — var so it's hoisted
@@ -7834,6 +7855,47 @@ function _getAndResetSignals() {
   return sig;
 }
 const _pageLoadTime = Date.now();
+
+// ── Auth helpers ─────────────────────────────────────────────────────
+function _updateHeader(username){
+  const avEl = document.getElementById('hdr-username');
+  const avAb = document.getElementById('hdr-avatar-abbr');
+  if(avEl) avEl.textContent = username;
+  if(avAb) avAb.textContent = username.slice(0,2).toUpperCase();
+}
+
+async function _restoreSession(){
+  const token = localStorage.getItem('rf_token');
+  if(!token) return;
+  try {
+    const res  = await fetch(BACKEND_URL + '/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+    if(data.ok && data.user){
+      _balRoyal = data.user.chips || 10;
+      _balGold  = data.user.goldChips || 250000;
+      updBal();
+      _updateHeader(data.user.username);
+      localStorage.setItem('rf_username', data.user.username);
+      localStorage.setItem('rf_registered', '1');
+      setTimeout(()=>showView('vl'), 150);
+    } else {
+      // Token expired — clear and show auth
+      localStorage.removeItem('rf_token');
+      localStorage.removeItem('rf_registered');
+    }
+  } catch(e) {
+    // Backend unreachable — fall back to local storage
+    const stored = localStorage.getItem('rf_username');
+    if(stored && localStorage.getItem('rf_registered')){
+      _updateHeader(stored);
+      setTimeout(()=>showView('vl'), 150);
+    }
+  }
+}
 
 // ── Hand strength badge ──────────────────────────────────────────────
 function _clearHandStrengthBadge() {
