@@ -183,6 +183,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <div class="nav-item" onclick="nav('create-tourn')"><span class="nav-icon">⊕</span>Create MTT</div>
       <div class="nav-section">Platform</div>
       <div class="nav-item" onclick="nav('broadcast')"><span class="nav-icon">◎</span>Broadcast</div>
+      <div class="nav-item" onclick="nav('anticheat')"><span class="nav-icon">⚑</span>Anti-Cheat</div>
       <div class="nav-item" onclick="nav('log')"><span class="nav-icon">≡</span>Event Log</div>
     </nav>
     <main>
@@ -296,6 +297,74 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
         </div>
       </div>
 
+      <!-- Anti-Cheat -->
+      <div class="panel" id="panel-anticheat">
+        <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+          <div class="stat" style="--accent:var(--red)">
+            <div class="stat-val" id="ac-critical">0</div>
+            <div class="stat-lbl">CRITICAL</div>
+          </div>
+          <div class="stat" style="--accent:var(--gold)">
+            <div class="stat-val" id="ac-high">0</div>
+            <div class="stat-lbl">HIGH ALERTS</div>
+          </div>
+          <div class="stat" style="--accent:var(--purple)">
+            <div class="stat-val" id="ac-flagged">0</div>
+            <div class="stat-lbl">FLAGGED PLAYERS</div>
+          </div>
+          <div class="stat" style="--accent:var(--cyan)">
+            <div class="stat-val" id="ac-total">0</div>
+            <div class="stat-lbl">PLAYERS TRACKED</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="card-title" style="margin:0">Live Alerts</div>
+            <div style="display:flex;gap:8px">
+              <select id="ac-sev-filter" onchange="renderACAlerts()" style="background:var(--bg3);border:1px solid var(--border);color:var(--tx);padding:5px 10px;border-radius:3px;font-size:11px">
+                <option value="1">All Severity</option>
+                <option value="2">Medium+</option>
+                <option value="3">High+</option>
+                <option value="4">Critical Only</option>
+              </select>
+              <button class="btn btn-sm btn-cyan" onclick="fetchACData()">↻ Refresh</button>
+            </div>
+          </div>
+          <div id="ac-alerts-list" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-title">Suspicion Leaderboard</div>
+            <div id="ac-leaderboard" style="font-family:var(--mono);font-size:12px"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Ban Controls</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="field"><label>Ban IP Address</label>
+                <div style="display:flex;gap:8px">
+                  <input type="text" id="ban-ip" placeholder="192.168.1.1">
+                  <button class="btn btn-red btn-sm" onclick="banEntry('ip')">BAN</button>
+                </div>
+              </div>
+              <div class="field"><label>Ban Username</label>
+                <div style="display:flex;gap:8px">
+                  <input type="text" id="ban-name" placeholder="PlayerName">
+                  <button class="btn btn-red btn-sm" onclick="banEntry('name')">BAN</button>
+                </div>
+              </div>
+              <div class="field"><label>Banned IPs</label>
+                <div id="banned-ips" style="font-family:var(--mono);font-size:11px;color:var(--red);min-height:20px">None</div>
+              </div>
+              <div class="field"><label>Banned Names</label>
+                <div id="banned-names" style="font-family:var(--mono);font-size:11px;color:var(--red);min-height:20px">None</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Log -->
       <div class="panel" id="panel-log">
         <div class="card">
@@ -314,7 +383,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-const BACKEND = 'http://localhost:3001';
+const BACKEND = 'https://royal-flush-backend-production.up.railway.app';
 const STD_BLINDS = [
   [25,50],[50,100],[75,150],[100,200],[150,300],[200,400],
   [300,600],[400,800],[600,1200],[1000,2000],[1500,3000],
@@ -639,6 +708,81 @@ document.addEventListener('input', e=>{
 
 // Enter key on login
 document.getElementById('admin-key')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// ── Anti-Cheat ────────────────────────────────────────────────────────
+let _acData = { recentAlerts:[],suspicionLeaderboard:[],bannedIPs:[],bannedNames:[],criticalAlerts:0,highAlerts:0,flaggedPlayers:0,totalPlayers:0 };
+
+function fetchACData() {
+  fetch(`${BACKEND}/admin/anticheat`,{headers:{'x-admin-key':adminKey}})
+    .then(r=>r.json()).then(d=>{_acData=d;renderACAlerts();renderACLeaderboard();renderACStats();})
+    .catch(e=>log('AC fetch failed: '+e.message,'error'));
+}
+function renderACStats() {
+  document.getElementById('ac-critical').textContent = _acData.criticalAlerts||0;
+  document.getElementById('ac-high').textContent     = _acData.highAlerts||0;
+  document.getElementById('ac-flagged').textContent  = _acData.flaggedPlayers||0;
+  document.getElementById('ac-total').textContent    = _acData.totalPlayers||0;
+  document.getElementById('banned-ips').textContent   = (_acData.bannedIPs||[]).join(', ')||'None';
+  document.getElementById('banned-names').textContent = (_acData.bannedNames||[]).join(', ')||'None';
+}
+function renderACAlerts() {
+  const minSev=parseInt(document.getElementById('ac-sev-filter')?.value)||1;
+  const alerts=(_acData.recentAlerts||[]).filter(a=>a.severity>=minSev);
+  const sevColors={1:'rgba(160,160,175,0.9)',2:'var(--gold)',3:'rgba(255,130,0,0.95)',4:'var(--red)'};
+  const sevLabels={1:'LOW',2:'MED',3:'HIGH',4:'CRIT'};
+  document.getElementById('ac-alerts-list').innerHTML = alerts.length
+    ? alerts.map(a=>`<div style="background:var(--bg3);border:1px solid ${a.severity>=3?'rgba(255,59,92,0.25)':'var(--border)'};border-radius:3px;padding:10px 14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <span style="background:${sevColors[a.severity]};color:#000;font-size:9px;font-family:var(--mono);font-weight:700;padding:1px 6px;border-radius:2px">${sevLabels[a.severity]}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--cyan)">${a.type}</span>
+          <span style="color:var(--txd);font-family:var(--mono);font-size:10px;margin-left:auto">${new Date(a.ts).toLocaleTimeString()}</span>
+        </div>
+        <div style="font-size:12px;color:var(--tx);margin-bottom:6px"><b>${a.playerName||'?'}</b> — ${a.detail}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" style="border-color:var(--border);color:var(--txd);font-size:10px" onclick="reviewAlert('${a.id}','dismissed')">Dismiss</button>
+          <button class="btn btn-sm btn-gold" style="font-size:10px" onclick="reviewAlert('${a.id}','warned')">Warn</button>
+          <button class="btn btn-sm btn-red" style="font-size:10px" onclick="reviewAndKick('${a.id}','${a.socketId}')">Kick</button>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--txd);font-family:var(--mono);font-size:12px;padding:8px 0">No alerts at this severity</div>';
+}
+function renderACLeaderboard() {
+  const lb=_acData.suspicionLeaderboard||[];
+  document.getElementById('ac-leaderboard').innerHTML = lb.length
+    ? lb.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);color:${p.score>100?'var(--red)':p.score>50?'var(--gold)':'var(--txd)'}">
+        <span>${i+1}. ${p.name||'?'}</span><span>Score:${p.score} · Alerts:${p.alerts}</span></div>`).join('')
+    : '<div style="color:var(--txd);padding:8px 0">No flagged players</div>';
+}
+function reviewAlert(alertId,action) {
+  fetch(`${BACKEND}/admin/anticheat/alerts/${alertId}/review`,{method:'POST',headers:{'x-admin-key':adminKey,'Content-Type':'application/json'},body:JSON.stringify({action})})
+    .then(()=>{toast(action==='dismissed'?'Alert dismissed':'Player warned','success');fetchACData();});
+}
+function reviewAndKick(alertId,socketId) {
+  reviewAlert(alertId,'kicked');
+  socket.emit('adminKickPlayer',{secret:adminKey,socketId,reason:'Removed by anti-cheat'});
+  toast('Player kicked','info');fetchACData();
+}
+function banEntry(type) {
+  const val=document.getElementById('ban-'+type)?.value.trim();
+  if(!val)return;
+  fetch(`${BACKEND}/admin/anticheat/ban`,{method:'POST',headers:{'x-admin-key':adminKey,'Content-Type':'application/json'},body:JSON.stringify({type,value:val})})
+    .then(()=>{toast(`Banned ${type}: ${val}`,'success');fetchACData();document.getElementById('ban-'+type).value='';});
+}
+
+socket.on('acAlert',(alert)=>{
+  _acData.recentAlerts=[alert,...(_acData.recentAlerts||[])].slice(0,50);
+  if(alert.severity===4) _acData.criticalAlerts=(_acData.criticalAlerts||0)+1;
+  if(alert.severity>=3)  _acData.highAlerts=(_acData.highAlerts||0)+1;
+  if(document.getElementById('panel-anticheat')?.classList.contains('active')){renderACAlerts();renderACStats();}
+  if(alert.severity>=3){
+    toast(`⚠ ${alert.severityName}: ${alert.type} — ${alert.playerName||'?'}`,alert.severity===4?'error':'warn');
+    log(`[AC] ${alert.severityName} ${alert.type}: ${alert.detail}`,'warn');
+  }
+});
+
+// Refresh AC data when panel opens
+const _origNav=window.nav;
+window.nav=function(id){_origNav?.call(this,id);if(id==='anticheat')fetchACData();};
 </script>
 </body>
 </html>
