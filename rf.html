@@ -1078,9 +1078,9 @@ body.royal-mode nav{
 .auth-footer{margin-top:20px;font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.5px;text-align:center}
 .auth-checkbox-row{display:flex;align-items:flex-start;gap:10px}
 /* ── AUTH SLIDER ──────────────────────────────────────────── */
-.auth-slider-wrap{width:100%;max-width:420px;overflow:visible;position:relative}
-.auth-slider{display:flex;}
-.auth-panel{min-width:420px;max-width:420px;display:flex;flex-direction:column;align-items:center}
+.auth-slider-wrap{width:100%;max-width:420px;}
+.auth-slider{display:block;width:100%;}
+.auth-panel{width:100%;max-width:420px;flex-direction:column;align-items:center}.auth-panel.hidden{display:none!important}
 .auth-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid rgba(255,255,255,.07);width:100%}
 .auth-tab{flex:1;text-align:center;padding:10px 0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txd);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .2s,border-color .2s}
 .auth-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
@@ -1259,6 +1259,13 @@ body.royal-mode nav{
 </div>
 
 <script>
+// ── Core state variables — declared first so nothing crashes on init ──
+var _mode = 'royal';
+var _authMode = 'login';
+var _bal = 10, _balGold = 250000, _balRoyal = 10;
+var LEADERS = [];
+var _recentPots = [];
+
 function confirmUsername() {
   const input = document.getElementById('username-input');
   const val = input.value.trim();
@@ -1776,7 +1783,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="auth-page">
     <div class="auth-brand" onclick="goHome()"><div class="logo">Royal<span>Flush</span></div></div>
 
-    <!-- slider track — holds both panels side by side -->
+    <!-- Auth panels — simple show/hide -->
     <div class="auth-slider-wrap">
       <div class="auth-slider" id="auth-slider">
 
@@ -1811,7 +1818,7 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <!-- SIGNUP PANEL -->
-        <div class="auth-panel" id="auth-panel-signup" style="display:none">
+        <div class="auth-panel hidden" id="auth-panel-signup" style="display:none">
           <div class="auth-card">
             <div class="auth-tabs">
               <div class="auth-tab" id="atab-login2" onclick="authSlide('login')">Log In</div>
@@ -2622,7 +2629,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 
 
-<div id="ov-agegate" style="position:fixed;inset:0;z-index:9999;background:rgba(6,10,15,.97);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;padding:20px">
+<div id="ov-agegate" style="position:fixed;inset:0;z-index:9999;background:rgba(6,10,15,.97);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px">
   <div style="max-width:400px;width:100%;text-align:center">
     <div class="logo" style="justify-content:center;margin-bottom:24px;font-size:28px">Royal<span>Flush</span></div>
     <div style="font-size:32px;margin-bottom:12px">🔞</div>
@@ -2640,7 +2647,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 
 
-<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:8000;background:rgba(12,16,23,.97);border-top:1px solid rgba(201,168,76,.15);padding:16px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;backdrop-filter:blur(12px)">
+<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:8000;background:rgba(12,16,23,.97);border-top:1px solid rgba(201,168,76,.15);padding:16px 28px;display:none;align-items:center;gap:16px;flex-wrap:wrap;backdrop-filter:blur(12px)">
   <div style="flex:1;min-width:260px">
     <div style="font-size:11px;color:var(--tx);font-weight:600;margin-bottom:4px">🍪 We use cookies</div>
     <div style="font-size:10px;color:var(--txd);line-height:1.6">We use essential cookies for site function and optional analytics/personalisation cookies. See our <span class="auth-link" onclick="goPrivacy()">Privacy Policy</span> for details.</div>
@@ -5376,12 +5383,17 @@ function hideSeatTip(av){
 
 // ══ INIT ═══════════════════════════════════════════════════════════
 (function init(){
-  renderTiers();renderLPTables();renderLeaderboard();renderSNGList();renderStreakDots();updateRCWidget();refreshLobbyFromBackend();
-  renderFriends();renderComm();renderHole();renderLog();
-  // Init raise slider fill
+  function safe(fn){ try{ fn(); }catch(e){ console.warn('[init]',e.message); } }
+  safe(renderTiers);safe(renderLPTables);safe(renderLeaderboard);safe(renderSNGList);
+  safe(()=>{ if(typeof renderStreakDots==='function') renderStreakDots(); });
+  safe(()=>{ if(typeof updateRCWidget==='function') updateRCWidget(); });
+  safe(refreshLobbyFromBackend);
+  safe(()=>{ if(typeof renderFriends==='function') renderFriends(); });
+  safe(()=>{ if(typeof renderComm==='function') renderComm(); });
+  safe(renderHole);safe(renderLog);
   setTimeout(()=>{ const s=document.getElementById('raise-slider'); if(s) updateRaiseSlider(s); },100);
-  renderHist();renderTxns();renderAvatarGrid();renderBigPots();renderSession();renderVIP();
-  renderLPTables();
+  safe(renderHist);safe(renderTxns);safe(renderAvatarGrid);safe(renderBigPots);safe(renderSession);safe(renderVIP);
+  safe(renderLPTables);
   // Init mode toggle slider position after DOM renders
   // Restore session on page load
   _restoreSession();
@@ -6833,22 +6845,25 @@ function goLogin()  { showView('v-login'); authSlide('login'); }
 function goSignup() { showView('v-login'); setTimeout(()=>authSlide('signup'), 60); }
 
 // ── AUTH SLIDER ────────────────────────────────────────────────────
-let _authMode = 'login';
 function authSlide(mode) {
   _authMode = mode;
   const loginPanel  = document.getElementById('auth-panel-login');
   const signupPanel = document.getElementById('auth-panel-signup');
-  if (loginPanel)  loginPanel.style.display  = mode === 'login'  ? 'flex' : 'none';
-  if (signupPanel) signupPanel.style.display = mode === 'signup' ? 'flex' : 'none';
-  // Update tab states
-  ['atab-login','atab-login2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('active', mode === 'login');
-  });
-  ['atab-signup','atab-signup2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('active', mode === 'signup');
-  });
+  // Use both class and inline style to guarantee visibility toggle
+  if (loginPanel) {
+    loginPanel.classList.toggle('hidden', mode !== 'login');
+    loginPanel.style.setProperty('display', mode === 'login' ? 'flex' : 'none', 'important');
+  }
+  if (signupPanel) {
+    signupPanel.classList.toggle('hidden', mode !== 'signup');
+    signupPanel.style.setProperty('display', mode === 'signup' ? 'flex' : 'none', 'important');
+  }
+  // Tabs
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  if (mode==='login')  { document.getElementById('atab-login')?.classList.add('active');  document.getElementById('atab-login2')?.classList.add('active'); }
+  if (mode==='signup') { document.getElementById('atab-signup')?.classList.add('active'); document.getElementById('atab-signup2')?.classList.add('active'); }
+  // Clear errors
+  ['login-error','signup-error','su-age-error'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent=''; });
 }
 
 // ── PASSWORD SHOW/HIDE ─────────────────────────────────────────────
@@ -7331,15 +7346,12 @@ function simulateMailInSubmit(){
 // ══ LANDING PAGE ═══════════════════════════════════════════════════
 function renderLPTables(){
   const TIERS=getTiers();
+  if(!TIERS||TIERS.length<2) return;
   const grid=document.getElementById('lp-tables-grid');
   if(!grid) return;
-  // Always re-render (live player counts may have updated)
-  // Pick 3 featured tables from TIERS
-  const featured=[
-    {tier:TIERS[0], table:TIERS[0].tables[0]},
-    {tier:TIERS[2], table:TIERS[2].tables[0]},
-    {tier:TIERS[3], table:TIERS[3].tables[0]},
-  ];
+  // Pick up to 3 featured tables from TIERS
+  const picks=[0, Math.min(2,TIERS.length-1), Math.min(3,TIERS.length-1)].filter((v,i,a)=>a.indexOf(v)===i);
+  const featured=picks.map(i=>({tier:TIERS[i], table:TIERS[i].tables?.[0]})).filter(x=>x.tier&&x.table);
   grid.innerHTML=featured.map(({tier,table})=>{
     const seats=tier.seats, filled=Math.round(table.fill*seats), open=seats-filled;
     return`<div class="lp-table-card" onclick="goLobby()">
