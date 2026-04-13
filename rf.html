@@ -3008,6 +3008,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <div class="rg-row"><label class="rg-label">Daily limit</label><input class="rg-input" id="rg-daily" type="number" placeholder="e.g. 100"></div>
           <div class="rg-row"><label class="rg-label">Weekly limit</label><input class="rg-input" id="rg-weekly" type="number" placeholder="e.g. 500"></div>
           <div class="rg-row"><label class="rg-label">Monthly limit</label><input class="rg-input" id="rg-monthly" type="number" placeholder="e.g. 1000"></div>
+          <div id="rg-usage"></div>
           <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="rgSave('limits')">Save Limits</button>
         </div>
       </div>
@@ -7538,7 +7539,7 @@ function lpScrollTo(id){
   const el=document.getElementById(id);
   if(el) el.scrollIntoView({behavior:'smooth'});
 }
-function goRG()    { showView('v-rg');      }
+function goRG()    { showView('v-rg'); setTimeout(loadRGSettings, 300); }
 function goTerms() { showView('v-terms');   buildTermsDoc();  }
 function goPrivacy(){ showView('v-privacy'); buildPrivacyDoc(); }
 function goKYC()   { showView('v-kyc');     kycStep(1); }
@@ -7640,14 +7641,77 @@ function rgSelectTime(el, mins){
   const disp=document.getElementById('rg-time-display');
   if(disp) disp.textContent=labels[mins]||mins+' minutes';
 }
-function rgSave(type){
-  const msgs={
-    limits: 'Deposit limits saved. Changes take effect immediately.',
-    session: 'Session reminder set. We\'ll alert you during play.',
-    cooloff: 'Cool-off period activated. You\'ve been logged out of active sessions.',
-    exclude: 'Self-exclusion activated. Your balance will be returned within 5 business days.'
-  };
-  showRGConfirm(msgs[type]||'Settings saved.');
+var _rgSelectedCooloffHours = 168; // 7 days default
+var _rgSelectedExcludeDays  = 180; // 6 months default
+var _rgSessionMins          = 60;
+
+async function rgSave(type){
+  const token = localStorage.getItem('rf_token');
+  if(!token){ showRGConfirm('Please log in to save settings.'); return; }
+
+  if(type==='limits'){
+    const daily   = document.getElementById('rg-daily')?.value;
+    const weekly  = document.getElementById('rg-weekly')?.value;
+    const monthly = document.getElementById('rg-monthly')?.value;
+    const body    = {};
+    if(daily)   body.depositDaily   = parseFloat(daily);
+    if(weekly)  body.depositWeekly  = parseFloat(weekly);
+    if(monthly) body.depositMonthly = parseFloat(monthly);
+    if(!Object.keys(body).length){ showRGConfirm('Enter at least one limit.'); return; }
+    try {
+      const res  = await fetch(BACKEND_URL+'/api/auth/rg/limits',{
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if(data.ok) showRGConfirm('Deposit limits saved. Reductions apply immediately; increases take 24h.');
+      else showRGConfirm(data.error||'Could not save limits.');
+    } catch(e){ showRGConfirm('Server error — please try again.'); }
+  }
+
+  else if(type==='session'){
+    try {
+      const res  = await fetch(BACKEND_URL+'/api/auth/rg/limits',{
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({ sessionMins: _rgSessionMins, realityCheckMins: _rgSessionMins })
+      });
+      const data = await res.json();
+      if(data.ok) showRGConfirm('Session reminder set to '+_rgSessionMins+' minutes.');
+      else showRGConfirm(data.error||'Could not save.');
+    } catch(e){ showRGConfirm('Server error.'); }
+  }
+
+  else if(type==='cooloff'){
+    if(!confirm('Activate a '+(_rgSelectedCooloffHours/24)+'-day cool-off? This cannot be reversed early.')) return;
+    try {
+      const res  = await fetch(BACKEND_URL+'/api/auth/rg/cooloff',{
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({ hours: _rgSelectedCooloffHours })
+      });
+      const data = await res.json();
+      if(data.ok){
+        showRGConfirm('Cool-off activated. You cannot play until '+new Date(data.until).toLocaleDateString()+'.');
+        localStorage.removeItem('rf_token');
+        setTimeout(()=>showView('v-login'), 2000);
+      } else showRGConfirm(data.error||'Could not activate cool-off.');
+    } catch(e){ showRGConfirm('Server error.'); }
+  }
+
+  else if(type==='exclude'){
+    if(!confirm('Activate self-exclusion? This will lock your account and cannot be reversed during the exclusion period.')) return;
+    try {
+      const res  = await fetch(BACKEND_URL+'/api/auth/rg/self-exclude',{
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({ days: _rgSelectedExcludeDays })
+      });
+      const data = await res.json();
+      if(data.ok){
+        showRGConfirm('Self-exclusion activated. Your account is now locked. Contact support to appeal after the exclusion period.');
+        localStorage.removeItem('rf_token');
+        setTimeout(()=>showView('v-login'), 3000);
+      } else showRGConfirm(data.error||'Could not activate exclusion.');
+    } catch(e){ showRGConfirm('Server error.'); }
+  }
 }
 function showRGConfirm(msg){
   const el=document.createElement('div');
@@ -9093,6 +9157,34 @@ window.goLobby = function() {
   _hideReturnBanner();
   if (_origGoLobby) _origGoLobby();
 };
+
+// ── Session limit reached from server ─────────────────────────────────
+socket.on('sessionLimitReached', ({message}) => {
+  // Force player back to lobby
+  showToast('⏰ '+message);
+  setTimeout(()=>{
+    if(_backendActive) backendLeaveTable();
+    showView('vl');
+    showRGConfirm(message+' Taking a break is healthy. Your chips have been returned.');
+  }, 2000);
+});
+
+// Reality check from server
+socket.on('realityCheck', ({elapsed, message}) => {
+  const el = document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  el.innerHTML=`<div style="background:#0B1219;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:32px;max-width:360px;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">⏰</div>
+    <div style="font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:2px;color:var(--gold);margin-bottom:8px">REALITY CHECK</div>
+    <div style="font-size:16px;color:var(--tx);margin-bottom:8px">${message}</div>
+    <div style="font-size:11px;color:var(--txd);margin-bottom:20px">Your balance: <b>$${(_balRoyal||0).toFixed(2)}</b></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="this.closest('div[style]').remove()" style="flex:1;padding:12px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:4px;cursor:pointer;font-size:10px;letter-spacing:1.5px">CONTINUE PLAYING</button>
+      <button onclick="this.closest('div[style]').remove();if(_backendActive)backendLeaveTable();showView('vl')" style="flex:1;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--txd);border-radius:4px;cursor:pointer;font-size:10px;letter-spacing:1.5px">TAKE A BREAK</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+});
 
 // ══ TOAST HELPER ══════════════════════════════════════════════════════
 function showToast(msg) {
