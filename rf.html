@@ -1807,7 +1807,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 <button class="auth-pw-toggle" type="button" onclick="togglePW('login-pass',this)" tabindex="-1">👁</button>
               </div>
             </div>
-            <div style="text-align:right;margin-bottom:20px"><span class="auth-link" style="font-size:9px">Forgot password?</span></div>
+            <div style="text-align:right;margin-bottom:20px"><span class="auth-link" style="font-size:9px" onclick="showForgotPassword()">Forgot password?</span></div>
             <div id="login-error" style="color:#E87070;font-size:12px;min-height:16px;margin-bottom:8px;text-align:center"></div>
             <button class="btn btn-gold" style="width:100%;padding:13px;margin-bottom:16px" onclick="doLogin()">Log In →</button>
             <div class="auth-divider"><span>or</span></div>
@@ -2519,27 +2519,46 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- Stats -->
 <div class="ov" id="ov-stats" onclick="closeOvOut(event,'ov-stats')">
-  <div class="modal">
+  <div class="modal" style="width:min(480px,96vw)">
     <button class="mcl" onclick="closeOv('ov-stats')">✕</button>
     <div class="mh">
-      <div style="width:58px;height:58px;border-radius:50%;border:2px solid var(--gold);background:#3A2A5A;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin:0 auto 10px;color:rgba(255,255,255,.85)">HR</div>
-      <div class="mt" id="profile-uname">Player</div><div class="msub">Member since today</div>
+      <div id="stats-avatar" style="width:58px;height:58px;border-radius:50%;border:2px solid var(--gold);background:#3A2A5A;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin:0 auto 10px;color:rgba(255,255,255,.85)">HR</div>
+      <div class="mt" id="profile-uname">Player</div>
+      <div class="msub" id="profile-joined">Loading...</div>
+      <div id="stats-verified-badge" style="display:none;margin-top:4px;font-size:9px;color:#5DC896;letter-spacing:1px">✅ EMAIL VERIFIED</div>
     </div>
     <div class="mdiv"></div>
-    <div class="mb">
-      <div class="stat-grid">
-        <div class="stat-box"><div class="stat-n" id="stat-hands-played">0</div><div class="stat-l">Hands Played</div></div>
-        <div class="stat-box"><div class="stat-n" style="color:var(--grn)">+$48.2k</div><div class="stat-l">Net Profit</div></div>
-        <div class="stat-box"><div class="stat-n">$12,400</div><div class="stat-l">Biggest Pot</div></div>
-        <div class="stat-box"><div class="stat-n">412</div><div class="stat-l">Hands Won</div></div>
+    <div class="mb" id="stats-loading" style="text-align:center;padding:20px;color:var(--txd);font-size:12px">Loading stats...</div>
+    <div class="mb" id="stats-body" style="display:none">
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div class="stat-box"><div class="stat-n" id="stat-hands">0</div><div class="stat-l">Hands Played</div></div>
+        <div class="stat-box"><div class="stat-n" id="stat-won">0</div><div class="stat-l">Hands Won</div></div>
+        <div class="stat-box"><div class="stat-n" id="stat-net" style="color:var(--grn)">$0.00</div><div class="stat-l">Net Profit</div></div>
       </div>
       <div class="stat-bar-wrap">
-        <div class="stat-bar-lbl"><span>Win Rate</span><span>33.0%</span></div>
-        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:33%"></div></div>
+        <div class="stat-bar-lbl"><span>Win Rate</span><span id="stat-winrate-pct">0%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="stat-winrate-bar" style="width:0%"></div></div>
       </div>
       <div class="stat-bar-wrap">
-        <div class="stat-bar-lbl"><span>VPIP</span><span>58.2%</span></div>
-        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:58%;background:linear-gradient(to right,#2A6B8B,#4AABCB)"></div></div>
+        <div class="stat-bar-lbl"><span>VPIP <span style="font-size:9px;color:var(--txd)">(voluntarily put $ in pot)</span></span><span id="stat-vpip-pct">0%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="stat-vpip-bar" style="width:0%;background:linear-gradient(to right,#2A6B8B,#4AABCB)"></div></div>
+      </div>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar-lbl"><span>PFR <span style="font-size:9px;color:var(--txd)">(preflop raise %)</span></span><span id="stat-pfr-pct">0%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="stat-pfr-bar" style="width:0%;background:linear-gradient(to right,#8B2A6B,#CB4AAB)"></div></div>
+      </div>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar-lbl"><span>Showdown Win Rate</span><span id="stat-sdwr-pct">0%</span></div>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="stat-sdwr-bar" style="width:0%;background:linear-gradient(to right,#2A8B6B,#4ACB8B)"></div></div>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.05)">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">CURRENT SESSION</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tx)">
+          <span>Balance</span><span id="stat-balance">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tx);margin-top:4px">
+          <span>Gold Chips</span><span id="stat-gold">0</span>
+        </div>
       </div>
     </div>
   </div>
@@ -5397,6 +5416,8 @@ function hideSeatTip(av){
   // Init mode toggle slider position after DOM renders
   // Restore session on page load
   _restoreSession();
+  // Handle ?verify= and ?reset= URL tokens
+  setTimeout(_handleURLTokens, 500);
 
   setTimeout(()=>{
     setMode('royal', true);
@@ -6943,6 +6964,7 @@ async function doLogin(){
     _balGold  = data.user.goldChips || 250000;
     updBal();
     _updateHeader(data.user.username);
+    _showVerifyBanner(data.user);
     showView('vl');
     setTimeout(()=>showRGConfirm('Welcome back, '+data.user.username+'!'), 300);
   } catch(e) {
@@ -7027,8 +7049,9 @@ async function doSignup(){
     _balGold  = data.user.goldChips || 250000;
     updBal();
     _updateHeader(data.user.username);
+    _showVerifyBanner(data.user);
     showView('vl');
-    setTimeout(()=>showRGConfirm('Welcome to Royal Flush, '+data.user.username+'! You have received $10 Royal Chips.'),400);
+    setTimeout(()=>showRGConfirm('Welcome to Royal Flush, '+data.user.username+'! You have received $10 Royal Chips. Check your email to verify your account.'),400);
   } catch(e) {
     if(signupErr) signupErr.textContent = 'Server error — please try again.';
     if(btn){ btn.textContent = 'Create Account →'; btn.disabled = false; }
@@ -7727,8 +7750,104 @@ function closeOvOut(e,id){if(e.target===document.getElementById(id))closeOv(id);
   </div>
 </div>
 
+<!-- Forgot Password Modal -->
+<div id="forgot-pw-modal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:8px;padding:36px 32px;width:100%;max-width:400px;margin:20px">
+    <div style="font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:3px;color:var(--txd);margin-bottom:16px">RESET PASSWORD</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--tx)">Forgot your password?</div>
+    <div style="font-size:12px;color:var(--txd);margin-bottom:24px;line-height:1.6">Enter your email address and we'll send you a link to reset your password.</div>
+    <div class="rg-row" style="margin-bottom:16px">
+      <label class="rg-label">Email Address</label>
+      <input class="rg-input" id="forgot-email" type="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box">
+    </div>
+    <div id="forgot-error" style="color:#E87070;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <div id="forgot-success" style="color:#5DC896;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1;padding:12px" onclick="document.getElementById('forgot-pw-modal').style.display='none'">Cancel</button>
+      <button class="btn btn-gold" style="flex:1;padding:12px" onclick="doForgotPassword()">Send Reset Link →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="reset-pw-modal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:8px;padding:36px 32px;width:100%;max-width:400px;margin:20px">
+    <div style="font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:3px;color:var(--txd);margin-bottom:16px">NEW PASSWORD</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--tx)">Reset your password</div>
+    <div class="rg-row" style="margin-bottom:12px">
+      <label class="rg-label">New Password</label>
+      <input class="rg-input" id="reset-pw-new" type="password" placeholder="Min. 6 characters" style="width:100%;box-sizing:border-box">
+    </div>
+    <div class="rg-row" style="margin-bottom:16px">
+      <label class="rg-label">Confirm Password</label>
+      <input class="rg-input" id="reset-pw-confirm" type="password" placeholder="Repeat password" style="width:100%;box-sizing:border-box">
+    </div>
+    <div id="reset-pw-error" style="color:#E87070;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <button class="btn btn-gold" style="width:100%;padding:13px" onclick="doResetPassword()">Set New Password →</button>
+  </div>
+</div>
+
+<!-- Email Verification Banner -->
+<div id="verify-banner" style="display:none;position:fixed;top:62px;left:0;right:0;z-index:400;background:rgba(201,168,76,0.12);border-bottom:1px solid rgba(201,168,76,0.25);padding:10px 24px;display:none;align-items:center;justify-content:space-between;gap:12px">
+  <div style="font-size:11px;color:var(--gold);font-family:Montserrat,sans-serif">
+    📧 Please verify your email address to unlock all features.
+  </div>
+  <div style="display:flex;gap:8px;flex-shrink:0">
+    <button class="btn btn-gold btn-sm" onclick="doResendVerification()">Resend Email</button>
+    <button onclick="document.getElementById('verify-banner').style.display='none'" style="background:none;border:none;color:var(--txd);cursor:pointer;font-size:16px">✕</button>
+  </div>
+</div>
+
 </body>
 </html>
+<!-- Forgot Password Modal -->
+<div id="forgot-pw-modal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:8px;padding:36px 32px;width:100%;max-width:400px;margin:20px">
+    <div style="font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:3px;color:var(--txd);margin-bottom:16px">RESET PASSWORD</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--tx)">Forgot your password?</div>
+    <div style="font-size:12px;color:var(--txd);margin-bottom:24px;line-height:1.6">Enter your email address and we'll send you a link to reset your password.</div>
+    <div class="rg-row" style="margin-bottom:16px">
+      <label class="rg-label">Email Address</label>
+      <input class="rg-input" id="forgot-email" type="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box">
+    </div>
+    <div id="forgot-error" style="color:#E87070;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <div id="forgot-success" style="color:#5DC896;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1;padding:12px" onclick="document.getElementById('forgot-pw-modal').style.display='none'">Cancel</button>
+      <button class="btn btn-gold" style="flex:1;padding:12px" onclick="doForgotPassword()">Send Reset Link →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="reset-pw-modal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:8px;padding:36px 32px;width:100%;max-width:400px;margin:20px">
+    <div style="font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:3px;color:var(--txd);margin-bottom:16px">NEW PASSWORD</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--tx)">Reset your password</div>
+    <div class="rg-row" style="margin-bottom:12px">
+      <label class="rg-label">New Password</label>
+      <input class="rg-input" id="reset-pw-new" type="password" placeholder="Min. 6 characters" style="width:100%;box-sizing:border-box">
+    </div>
+    <div class="rg-row" style="margin-bottom:16px">
+      <label class="rg-label">Confirm Password</label>
+      <input class="rg-input" id="reset-pw-confirm" type="password" placeholder="Repeat password" style="width:100%;box-sizing:border-box">
+    </div>
+    <div id="reset-pw-error" style="color:#E87070;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <button class="btn btn-gold" style="width:100%;padding:13px" onclick="doResetPassword()">Set New Password →</button>
+  </div>
+</div>
+
+<!-- Email Verification Banner -->
+<div id="verify-banner" style="display:none;position:fixed;top:62px;left:0;right:0;z-index:400;background:rgba(201,168,76,0.12);border-bottom:1px solid rgba(201,168,76,0.25);padding:10px 24px;display:none;align-items:center;justify-content:space-between;gap:12px">
+  <div style="font-size:11px;color:var(--gold);font-family:Montserrat,sans-serif">
+    📧 Please verify your email address to unlock all features.
+  </div>
+  <div style="display:flex;gap:8px;flex-shrink:0">
+    <button class="btn btn-gold btn-sm" onclick="doResendVerification()">Resend Email</button>
+    <button onclick="document.getElementById('verify-banner').style.display='none'" style="background:none;border:none;color:var(--txd);cursor:pointer;font-size:16px">✕</button>
+  </div>
+</div>
+
 </body>
 </html>
 <!-- ── BUST OUT MODAL ─────────────────────────────────────────────── -->
@@ -7869,12 +7988,181 @@ function _getAndResetSignals() {
 const _pageLoadTime = Date.now();
 
 // ── Auth helpers ─────────────────────────────────────────────────────
+var _resetToken = null; // stores reset token from URL
+
+// Handle ?verify= and ?reset= URL params on page load
+function _handleURLTokens(){
+  const params = new URLSearchParams(window.location.search);
+  const verifyToken = params.get('verify');
+  const resetToken  = params.get('reset');
+  if(verifyToken){
+    fetch(BACKEND_URL+'/api/auth/verify-email',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({token:verifyToken})
+    }).then(r=>r.json()).then(d=>{
+      if(d.ok){
+        showRGConfirm('✅ Email verified! Your account is fully activated.');
+        // Update stored user
+        const token=localStorage.getItem('rf_token');
+        if(token) _restoreSession();
+      } else {
+        showRGConfirm('❌ '+( d.error||'Verification failed. Please try again.'));
+      }
+    }).catch(()=>showRGConfirm('Could not verify email. Please try again.'));
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if(resetToken){
+    _resetToken = resetToken;
+    const modal = document.getElementById('reset-pw-modal');
+    if(modal){ modal.style.display='flex'; }
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+function showForgotPassword(){
+  const modal = document.getElementById('forgot-pw-modal');
+  if(modal){ modal.style.display='flex'; }
+  document.getElementById('forgot-email')?.focus();
+}
+
+async function doForgotPassword(){
+  const email   = document.getElementById('forgot-email')?.value.trim();
+  const errEl   = document.getElementById('forgot-error');
+  const succEl  = document.getElementById('forgot-success');
+  if(errEl)  errEl.textContent='';
+  if(succEl) succEl.textContent='';
+  if(!email){ if(errEl) errEl.textContent='Please enter your email address.'; return; }
+  const btn = document.querySelector('#forgot-pw-modal .btn-gold');
+  if(btn){ btn.textContent='Sending...'; btn.disabled=true; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/forgot-password',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email})
+    });
+    const data = await res.json();
+    if(succEl) succEl.textContent = data.message || 'Reset link sent! Check your email.';
+    if(btn){ btn.textContent='Sent ✓'; }
+  } catch(e){
+    if(errEl) errEl.textContent='Server error. Please try again.';
+    if(btn){ btn.textContent='Send Reset Link →'; btn.disabled=false; }
+  }
+}
+
+async function doResetPassword(){
+  const pw1    = document.getElementById('reset-pw-new')?.value;
+  const pw2    = document.getElementById('reset-pw-confirm')?.value;
+  const errEl  = document.getElementById('reset-pw-error');
+  if(errEl) errEl.textContent='';
+  if(!pw1||pw1.length<6){ if(errEl) errEl.textContent='Password must be at least 6 characters.'; return; }
+  if(pw1!==pw2){ if(errEl) errEl.textContent='Passwords do not match.'; return; }
+  if(!_resetToken){ if(errEl) errEl.textContent='Invalid reset link.'; return; }
+  const btn = document.querySelector('#reset-pw-modal .btn-gold');
+  if(btn){ btn.textContent='Resetting...'; btn.disabled=true; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/reset-password',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({token:_resetToken, password:pw1})
+    });
+    const data = await res.json();
+    if(data.ok){
+      document.getElementById('reset-pw-modal').style.display='none';
+      _resetToken=null;
+      showRGConfirm('✅ Password reset! You can now log in with your new password.');
+      authSlide('login');
+    } else {
+      if(errEl) errEl.textContent = data.error||'Reset failed.';
+      if(btn){ btn.textContent='Set New Password →'; btn.disabled=false; }
+    }
+  } catch(e){
+    if(errEl) errEl.textContent='Server error. Please try again.';
+    if(btn){ btn.textContent='Set New Password →'; btn.disabled=false; }
+  }
+}
+
+async function doResendVerification(){
+  const token = localStorage.getItem('rf_token');
+  if(!token){ showToast('Please log in first.'); return; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/resend-verification',{
+      method:'POST', headers:{'Authorization':'Bearer '+token}
+    });
+    const data = await res.json();
+    showToast(data.message||'Verification email sent!');
+  } catch(e){ showToast('Could not send email. Please try again.'); }
+}
+
+function _showVerifyBanner(user){
+  const banner = document.getElementById('verify-banner');
+  if(banner && user && !user.emailVerified){
+    banner.style.display='flex';
+  }
+}
+
 function _updateHeader(username){
   const avEl = document.getElementById('hdr-username');
   const avAb = document.getElementById('hdr-avatar-abbr');
   if(avEl) avEl.textContent = username;
   if(avAb) avAb.textContent = username.slice(0,2).toUpperCase();
 }
+
+async function renderStats(){
+  const token = localStorage.getItem('rf_token');
+  document.getElementById('stats-loading').style.display='block';
+  document.getElementById('stats-body').style.display='none';
+  // Update avatar/name
+  const username = localStorage.getItem('rf_username')||'Player';
+  const avEl = document.getElementById('stats-avatar');
+  if(avEl) avEl.textContent = username.slice(0,2).toUpperCase();
+  document.getElementById('profile-uname').textContent = username;
+  // Live balance
+  document.getElementById('stat-balance').textContent = '$'+(_balRoyal||0).toFixed(2);
+  document.getElementById('stat-gold').textContent = (_balGold||0).toLocaleString();
+  if(!token){ document.getElementById('stats-loading').textContent='Log in to see your stats.'; return; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/me',{headers:{'Authorization':'Bearer '+token}});
+    const data = await res.json();
+    if(!data.ok||!data.user){ document.getElementById('stats-loading').textContent='Could not load stats.'; return; }
+    const u=data.user, s=data.user.stats||{};
+    // Header
+    document.getElementById('profile-joined').textContent = 'Member since '+new Date(u.createdAt).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    const badge = document.getElementById('stats-verified-badge');
+    if(badge) badge.style.display = u.emailVerified ? 'block' : 'none';
+    // Stats
+    const hands = s.handsPlayed||0, won = s.handsWon||0;
+    const winRate = hands>0 ? Math.round(won/hands*100) : 0;
+    const net = (s.totalWon||0)-(s.totalLost||0);
+    document.getElementById('stat-hands').textContent = hands.toLocaleString();
+    document.getElementById('stat-won').textContent   = won.toLocaleString();
+    document.getElementById('stat-net').textContent   = (net>=0?'+':'')+net.toFixed(2);
+    document.getElementById('stat-net').style.color   = net>=0?'var(--grn)':'#E87070';
+    document.getElementById('stat-winrate-pct').textContent = winRate+'%';
+    document.getElementById('stat-winrate-bar').style.width = Math.min(winRate,100)+'%';
+    const vpip = s.vpip||0;
+    document.getElementById('stat-vpip-pct').textContent = vpip+'%';
+    document.getElementById('stat-vpip-bar').style.width = Math.min(vpip,100)+'%';
+    const pfr = s.pfr||0;
+    document.getElementById('stat-pfr-pct').textContent = pfr+'%';
+    document.getElementById('stat-pfr-bar').style.width = Math.min(pfr,100)+'%';
+    const sdwr = s.showdownWinRate||0;
+    document.getElementById('stat-sdwr-pct').textContent = sdwr+'%';
+    document.getElementById('stat-sdwr-bar').style.width = Math.min(sdwr,100)+'%';
+    // Balance
+    document.getElementById('stat-balance').textContent = '$'+(u.chips||_balRoyal||0).toFixed(2);
+    document.getElementById('stat-gold').textContent    = (u.goldChips||_balGold||0).toLocaleString();
+    document.getElementById('stats-loading').style.display='none';
+    document.getElementById('stats-body').style.display='block';
+  } catch(e){
+    document.getElementById('stats-loading').textContent='Could not load stats.';
+  }
+}
+
+// Hook openOv to load stats when stats panel opens
+const _origOpenOv = window.openOv;
+window.openOv = function(id){
+  if(_origOpenOv) _origOpenOv(id);
+  if(id==='ov-stats') renderStats();
+};
 
 async function _restoreSession(){
   const token = localStorage.getItem('rf_token');
