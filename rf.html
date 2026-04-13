@@ -3206,6 +3206,7 @@ function getSNGS(){ return _mode==='gold' ? SNGS_GOLD : SNGS_ROYAL; }
 
 let _sngMode = false;
 let _sngId   = null;
+let _activeSNGTableId = null;
 let _activeSNGTournId = null; // backend tournament ID we're registered in
 
 function renderSNGList(){
@@ -8090,6 +8091,86 @@ var _connectedTableId = null;
 var _mySocketSeat     = null;   // which seat index belongs to this client
 var _backendActive    = false;  // true once we join a backend table — var so it's hoisted
 
+// ── Multi-table state ──────────────────────────────────────────────────────
+var _tables = {};       // tableId → { state, myCards, active }
+var _activeTableId = null; // which table is currently displayed
+
+function _switchTable(tableId){
+  if(!_tables[tableId]) return;
+  _activeTableId = tableId;
+  _connectedTableId = tableId;
+  _mySocketSeat = _tables[tableId].mySocketSeat;
+  // Re-sync UI with this table's state
+  if(_tables[tableId].state) syncTableState(_tables[tableId].state);
+  if(_tables[tableId].myCards) {
+    HOLE.length=0;
+    _tables[tableId].myCards.forEach(c=>HOLE.push(c));
+    renderYHole();
+  }
+  // Update tab indicator
+  document.querySelectorAll('.mt-tab').forEach(t=>t.classList.remove('active'));
+  const tab = document.querySelector(`.mt-tab[data-tid="${tableId}"]`);
+  if(tab) tab.classList.add('active');
+}
+
+function _addTableTab(tableId, name){
+  let bar = document.getElementById('mt-tab-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id='mt-tab-bar';
+    bar.style.cssText='position:fixed;top:62px;left:0;right:0;z-index:350;background:rgba(8,8,10,0.95);border-bottom:1px solid rgba(201,168,76,0.15);display:flex;gap:0;height:32px;overflow-x:auto';
+    document.body.appendChild(bar);
+  }
+  if(document.querySelector(`.mt-tab[data-tid="${tableId}"]`)) return;
+  const tab = document.createElement('div');
+  tab.className='mt-tab';
+  tab.dataset.tid=tableId;
+  tab.style.cssText='padding:0 16px;height:32px;display:flex;align-items:center;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.5);cursor:pointer;border-right:1px solid rgba(255,255,255,0.06);white-space:nowrap;transition:all 0.2s';
+  tab.textContent=name||tableId;
+  tab.onclick=()=>_switchTable(tableId);
+  tab.onmouseenter=()=>{ if(!tab.classList.contains('active')) tab.style.color='rgba(255,255,255,0.8)'; };
+  tab.onmouseleave=()=>{ if(!tab.classList.contains('active')) tab.style.color='rgba(255,255,255,0.5)'; };
+  bar.appendChild(tab);
+}
+
+function _removeTableTab(tableId){
+  document.querySelector(`.mt-tab[data-tid="${tableId}"]`)?.remove();
+  const bar=document.getElementById('mt-tab-bar');
+  if(bar && !bar.children.length) bar.remove();
+}
+
+function openSecondTable(){
+  if(!_backendActive){ showToast('Join a table first.'); return; }
+  // Show lobby in a mini picker — player chooses second table
+  const overlay=document.createElement('div');
+  overlay.id='mt-picker';
+  overlay.style.cssText='position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  const TIERS=getTiers();
+  const tableOptions=TIERS.flatMap(t=>t.tables.map(tb=>({
+    tableId:t.backendId||t.id,name:tb.name,stakes:chip(t.sb)+'/'+chip(t.bb),min:t.min
+  }))).filter(t=>t.tableId!==_connectedTableId);
+  overlay.innerHTML=`<div style="background:#0E1520;border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:24px;max-width:360px;width:100%">
+    <div style="font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:16px">ADD TABLE</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${tableOptions.map(t=>`<div onclick="joinSecondTable('${t.tableId}','${t.name}',${t.min});document.getElementById('mt-picker').remove()"
+        style="padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600;color:var(--tx)">${t.name}</span>
+        <span style="font-size:10px;color:var(--txd)">${t.stakes}</span>
+      </div>`).join('')}
+    </div>
+    <button onclick="document.getElementById('mt-picker').remove()" style="margin-top:16px;width:100%;padding:10px;background:none;border:1px solid rgba(255,255,255,0.1);color:var(--txd);border-radius:4px;cursor:pointer;font-size:10px;letter-spacing:1px">Cancel</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+function joinSecondTable(tableId, name, buyIn){
+  const playerName=localStorage.getItem('rf_username')||'Player';
+  _tables[tableId]={state:null,myCards:[],mySocketSeat:null,active:true,name};
+  _addTableTab(_connectedTableId, _tables[_connectedTableId]?.name||'Table 1');
+  _addTableTab(tableId, name);
+  socket.emit('joinTable',{tableId,playerName,buyIn:buyIn||10});
+}
+
 // ── Connect ───────────────────────────────────────────────────────────
 function backendConnect() {
   if (!socket.connected) {
@@ -8489,12 +8570,21 @@ function _getBrowserFingerprint() {
 function backendAction(action, amount) {
   if (!_connectedTableId || !_backendActive) return;
   const signals = _getAndResetSignals();
-  socket.emit('playerAction', {
-    tableId: _connectedTableId,
-    action,
-    amount: amount || 0,
-    signals, // anti-cheat interaction data
-  });
+  if (_sngMode && _activeSNGTournId) {
+    // SNG mode: use sngAction which also checks eliminations
+    socket.emit('sngAction', {
+      sngId:  _activeSNGTournId,
+      action,
+      amount: amount || 0,
+    });
+  } else {
+    socket.emit('playerAction', {
+      tableId: _connectedTableId,
+      action,
+      amount: amount || 0,
+      signals,
+    });
+  }
   console.log(`[Socket] action: ${action}`, amount || '');
 }
 
@@ -8649,7 +8739,6 @@ socket.on('sngLobbyUpdate', (state) => {
 
 socket.on('sngStarting', ({ tournId, state }) => {
   _activeSNGTournId = tournId;
-  // Close registration modal and show countdown
   const modal = document.getElementById('sng-reg-modal');
   if (modal) {
     const inner = modal.querySelector('div');
@@ -8657,29 +8746,37 @@ socket.on('sngStarting', ({ tournId, state }) => {
       inner.innerHTML = `
         <div style="font-size:48px;margin-bottom:8px">🏆</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);margin-bottom:6px">Table Full!</div>
-        <div style="font-size:13px;color:var(--txd);margin-bottom:20px">${state.name}</div>
-        <div style="font-family:'Orbitron',sans-serif;font-size:64px;font-weight:900;color:var(--green)" id="sng-cd-num">5</div>
+        <div style="font-size:13px;color:var(--txd);margin-bottom:20px">${state?.name||'SNG'}</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:64px;font-weight:900;color:var(--grn)" id="sng-cd-num">5</div>
         <div style="font-size:12px;color:var(--txd);margin-top:8px;letter-spacing:2px">STARTING IN</div>`;
-      let n = 5;
-      const tick = setInterval(() => {
+      let n=5;
+      const tick=setInterval(()=>{
         n--;
-        const el = document.getElementById('sng-cd-num');
-        if (el) el.textContent = n;
-        if (n <= 0) {
-          clearInterval(tick);
-          modal.remove();
-          // Join the SNG as a table
-          _sngMode = true;
-          _sngId = _activeSNGTournId;
-          showToast('SNG started! Connecting to table...');
-          // The backend will manage hands via tournamentEngine
-          // For now, join the tournament room and wait for hand events
-          socket.emit('sngTableJoin', { tournId: _activeSNGTournId, playerName: getMyName() });
-          showView('vg');
-        }
-      }, 1000);
+        const el=document.getElementById('sng-cd-num');
+        if(el) el.textContent=n;
+        if(n<=0){ clearInterval(tick); if(modal.parentNode) modal.remove(); }
+      },1000);
     }
   }
+});
+
+// Server confirms SNG table is ready — join it
+socket.on('sngTableReady', ({ tournId, tableId, state }) => {
+  _activeSNGTournId = tournId;
+  _activeSNGTableId = tableId;
+  _sngMode = true;
+  _connectedTableId = tableId;
+  _backendActive = true;
+  showToast('SNG started! Good luck 🍀');
+  showView('vg');
+  // Show tournament blind info
+  if(state?.blinds) addNotif('game','🏆','gold','SNG started — Blinds '+state.blinds.sb+'/'+state.blinds.bb);
+});
+
+socket.on('sngBlindUp', ({ sngId, level, sb, bb }) => {
+  showToast('⬆ Blinds up: '+sb+'/'+bb);
+  addNotif('game','⬆','gold','Blind level '+(level+1)+' — '+sb+'/'+bb);
+  BB_AMT=bb; SB_AMT=sb;
 });
 
 socket.on('sngEliminated', ({ place, prize, remainingPlayers }) => {
@@ -8711,7 +8808,12 @@ socket.on('sngResult', ({ results, myResult }) => {
 });
 
 // Your hole cards from server
-socket.on('dealCards', ({ cards }) => {
+socket.on('dealCards', ({ cards, tableId: dealTableId }) => {
+  // Store cards for the correct table
+  const tid = dealTableId || _connectedTableId;
+  if(tid && _tables[tid]) _tables[tid].myCards = cards;
+  // Only show if this is active table
+  if(tid && tid !== (_activeTableId||_connectedTableId)) return;
   console.log('[Socket] dealCards:', cards);
   if (!cards || cards.length < 2) return;
   // Clear board and deal new hole cards
