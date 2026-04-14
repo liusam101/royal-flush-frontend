@@ -6622,14 +6622,7 @@ async function refreshLobbyFromBackend() {
   }
 }
 
-function openBuyin(tierId, tableName, waitlistInfo){
-  // If table is full, show waitlist option
-  if(waitlistInfo?.full){
-    const pos = waitlistInfo.position;
-    showRGConfirm(`Table full — you've been added to the waiting list (position ${pos}). We'll seat you automatically when a spot opens.`);
-    addNotif('game','⏳','blue',`Added to waiting list for <b>${tableName}</b> — position ${pos}`);
-    return;
-  }
+function openBuyin(tierId, tableName){
   const TIERS=getTiers();
   const tier = TIERS.find(t=>t.id===tierId) || TIERS[0];
   if(!tier){ console.error('[openBuyin] tier not found:', tierId); return; }
@@ -8617,14 +8610,9 @@ function backendLeaveTable() {
 // ══ INCOMING EVENTS ═══════════════════════════════════════════════════
 
 // Seat confirmed
-socket.on('waitlisted', ({ tableId, position, name }) => {
-  showToast(`⏳ Table full — you're #${position} on the waiting list`);
-  addNotif('game','⏳','blue',`Waiting list position <b>#${position}</b> for ${name||tableId}`);
-});
-
-socket.on('waitlistSeated', ({ tableId, seat }) => {
-  showToast(`✅ Seat available! You've been seated at table`);
-  addNotif('game','♠','gold','Your waiting list spot is ready — taking your seat!');
+// When a new overflow table is created, refresh the lobby
+socket.on('tableListUpdated', () => {
+  if(typeof refreshLobbyFromBackend==='function') refreshLobbyFromBackend();
 });
 
 socket.on('joinedTable', ({ tableId, seat }) => {
