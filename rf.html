@@ -2559,6 +2559,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <button onclick="demoAct('fold')" style="width:clamp(56px,6vw,72px);height:clamp(40px,4.5vw,56px);border-radius:4px;background:linear-gradient(135deg,#8B1A1A,#C0392B);border:1px solid rgba(255,100,100,.2);box-shadow:0 4px 16px rgba(0,0,0,.6);cursor:pointer;color:#fff;font-size:clamp(8px,0.9vw,10px);font-weight:700;letter-spacing:1.5px;font-family:'Montserrat',sans-serif;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">FOLD</button>
     </div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <button id="timebank-btn" onclick="useTimeBank()" title="Use time bank for extra 30 seconds" style="padding:5px 8px;background:rgba(60,120,200,0.12);border:1px solid rgba(60,120,200,0.25);color:rgba(100,160,255,0.8);border-radius:3px;font-size:8px;letter-spacing:1px;cursor:pointer;font-family:Montserrat,sans-serif;white-space:nowrap">⏱ BANK (60s)</button>
       <button id="btn-call" onclick="demoAct('call')" style="width:clamp(68px,7.5vw,88px);height:clamp(40px,4.5vw,56px);border-radius:4px;background:linear-gradient(135deg,#0A6B5C,#12A88A);border:1px solid rgba(60,210,180,.2);box-shadow:0 4px 16px rgba(0,0,0,.6);cursor:pointer;color:#fff;font-size:clamp(8px,0.9vw,10px);font-weight:700;letter-spacing:1.5px;font-family:'Montserrat',sans-serif;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">CHECK</button>
     </div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -6621,7 +6622,14 @@ async function refreshLobbyFromBackend() {
   }
 }
 
-function openBuyin(tierId, tableName){
+function openBuyin(tierId, tableName, waitlistInfo){
+  // If table is full, show waitlist option
+  if(waitlistInfo?.full){
+    const pos = waitlistInfo.position;
+    showRGConfirm(`Table full — you've been added to the waiting list (position ${pos}). We'll seat you automatically when a spot opens.`);
+    addNotif('game','⏳','blue',`Added to waiting list for <b>${tableName}</b> — position ${pos}`);
+    return;
+  }
   const TIERS=getTiers();
   const tier = TIERS.find(t=>t.id===tierId) || TIERS[0];
   if(!tier){ console.error('[openBuyin] tier not found:', tierId); return; }
@@ -8483,10 +8491,16 @@ function _clearHandStrengthBadge() {
 function _updateHandStrengthBadge() {
   const board = ALL_COMM.filter(c => c.r && c.s);
   const hole  = HOLE.filter(c => c.r && c.s);
-  if (hole.length < 2 || board.length < 3) { _clearHandStrengthBadge(); return; }
+  if (hole.length < 2) { _clearHandStrengthBadge(); return; }
+  if (board.length < 3) {
+    // Preflop — just show hole card strength label
+    _clearHandStrengthBadge(); return;
+  }
   const seven = [...hole, ...board];
   const res = evalBest5(seven);
   window._currentHandName = res.name;
+  // If backend active, equity will be fetched via socket and _updateEquityBadge called
+  // For demo mode, show hand name only
   // Find or create badge
   const yhole = document.getElementById('yhole');
   if (!yhole) return;
@@ -8603,6 +8617,16 @@ function backendLeaveTable() {
 // ══ INCOMING EVENTS ═══════════════════════════════════════════════════
 
 // Seat confirmed
+socket.on('waitlisted', ({ tableId, position, name }) => {
+  showToast(`⏳ Table full — you're #${position} on the waiting list`);
+  addNotif('game','⏳','blue',`Waiting list position <b>#${position}</b> for ${name||tableId}`);
+});
+
+socket.on('waitlistSeated', ({ tableId, seat }) => {
+  showToast(`✅ Seat available! You've been seated at table`);
+  addNotif('game','♠','gold','Your waiting list spot is ready — taking your seat!');
+});
+
 socket.on('joinedTable', ({ tableId, seat }) => {
   _mySocketSeat     = seat;
   _backendActive    = true;
@@ -8636,6 +8660,15 @@ socket.on('handResult', (result) => {
       const meSeat = result.showCards?.find(s=>s.name===myName);
       if(meSeat) addNotif('game','🃏','green','Showdown — <b>'+result.winner+'</b> wins with '+result.hand);
     }
+  }
+  // Rabbit hunt: show button if board < 5 and it was a fold (not showdown)
+  if(result?.reason==='others folded'){
+    const boardLen=(ALL_COMM||[]).filter(c=>c.r&&c.s).length;
+    if(boardLen<5) _showRabbitButton();
+  }
+  // Rake notification
+  if(result?.rake && result.rake>0 && result.winner===myName){
+    addLog('Rake: $'+result.rake.toFixed(2),'');
   }
   console.log('[Socket] handResult:', result);
   const amt = typeof result.amount === 'number' ? result.amount.toFixed(2) : result.amount;
@@ -9139,6 +9172,10 @@ function syncTableState(state) {
     renderComm();
     // Update hand strength badge when board changes
     setTimeout(_updateHandStrengthBadge, 400); // after card animation
+    // Request equity from server post-flop
+    if (_backendActive && (state.board||[]).length >= 3) {
+      setTimeout(_requestEquity, 500);
+    }
   }
 
   // ── Phase tracking ─────────────────────────────────────────────────
@@ -9287,6 +9324,223 @@ socket.on('realityCheck', ({elapsed, message}) => {
   </div>`;
   document.body.appendChild(el);
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── TIME BANK ─────────────────────────────────────────────────────────────
+var _timeBankRemaining = 60;
+
+socket.on('timeBankStatus', ({ remaining }) => {
+  _timeBankRemaining = remaining;
+  const el = document.getElementById('timebank-btn');
+  if (el) {
+    el.textContent = `⏱ BANK (${remaining}s)`;
+    el.style.opacity = remaining > 0 ? '1' : '0.3';
+    el.disabled = remaining <= 0;
+  }
+});
+
+socket.on('timeBankUsed', ({ player, secondsAdded, bankRemaining }) => {
+  showToast(`⏱ ${player} uses time bank (+${secondsAdded}s)`);
+  addNotif('game','⏱','blue',`<b>${player}</b> uses their time bank`);
+});
+
+function useTimeBank() {
+  if (!_backendActive || !_connectedTableId) return;
+  if (_timeBankRemaining <= 0) { showToast('No time bank remaining'); return; }
+  socket.emit('requestTimeBank', { tableId: _connectedTableId });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── RUN IT TWICE ──────────────────────────────────────────────────────────
+var _ritActive = false;
+
+socket.on('ritOffer', ({ pot, board, players, timeoutSecs }) => {
+  _ritActive = true;
+  const overlay = document.createElement('div');
+  overlay.id = 'rit-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  const boardStr = board.map(c => `<span style="color:${c.red?'#E87070':'#fff'}">${c.r}${c.s}</span>`).join(' ');
+  overlay.innerHTML = `
+    <div style="background:#0E1520;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:28px;max-width:340px;width:100%;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🎲</div>
+      <div style="font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:6px">RUN IT TWICE?</div>
+      <div style="font-size:13px;color:var(--txd);margin-bottom:6px">Pot: <b style="color:var(--gold)">$${pot?.toFixed(2)||'0'}</b></div>
+      <div style="font-size:14px;margin-bottom:16px">${boardStr}</div>
+      <div style="font-size:11px;color:var(--txd);margin-bottom:20px">Both players must agree. Each board plays for half the pot.</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="_ritRespond(true)" style="flex:1;padding:12px;background:linear-gradient(135deg,#0A6B5C,#12A88A);border:none;border-radius:4px;color:#fff;font-weight:700;font-size:10px;letter-spacing:1.5px;cursor:pointer">YES</button>
+        <button onclick="_ritRespond(false)" style="flex:1;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--txd);font-size:10px;letter-spacing:1.5px;cursor:pointer">NO</button>
+      </div>
+      <div style="font-size:9px;color:var(--txd);margin-top:10px">Auto-declines in ${timeoutSecs}s</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => { document.getElementById('rit-overlay')?.remove(); }, (timeoutSecs||15)*1000);
+});
+
+function _ritRespond(accept) {
+  document.getElementById('rit-overlay')?.remove();
+  socket.emit('ritResponse', { tableId: _connectedTableId, accept });
+  if (!accept) showToast('Run it twice declined');
+}
+
+socket.on('ritWaiting', ({ player }) => {
+  showToast(`⏳ Waiting for other player...`);
+});
+
+socket.on('ritDeclined', () => {
+  _ritActive = false;
+  document.getElementById('rit-overlay')?.remove();
+  showToast('Running board once');
+});
+
+socket.on('ritResult', ({ board1, board2, result1, result2, totalByPlayer }) => {
+  _ritActive = false;
+  const fmtBoard = b => b.map(c=>`<span style="color:${c.red?'#E87070':'#fff'}">${c.r}${c.s}</span>`).join(' ');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
+  overlay.innerHTML = `
+    <div style="background:#0E1520;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:28px;max-width:380px;width:100%;text-align:center">
+      <div style="font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:16px">RAN IT TWICE</div>
+      <div style="margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:4px">
+        <div style="font-size:9px;color:var(--txd);margin-bottom:4px">BOARD 1</div>
+        <div style="font-size:15px;margin-bottom:4px">${fmtBoard(board1||[])}</div>
+        <div style="font-size:11px;color:var(--grn)">${result1?.winner} wins $${result1?.amount?.toFixed(2)} — ${result1?.hand}</div>
+      </div>
+      <div style="margin-bottom:16px;padding:10px;background:rgba(255,255,255,0.03);border-radius:4px">
+        <div style="font-size:9px;color:var(--txd);margin-bottom:4px">BOARD 2</div>
+        <div style="font-size:15px;margin-bottom:4px">${fmtBoard(board2||[])}</div>
+        <div style="font-size:11px;color:var(--grn)">${result2?.winner} wins $${result2?.amount?.toFixed(2)} — ${result2?.hand}</div>
+      </div>
+      <button onclick="this.closest('div[style]').remove()" style="width:100%;padding:11px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:4px;cursor:pointer;font-size:10px;letter-spacing:1.5px">CONTINUE</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const myName = localStorage.getItem('rf_username')||'';
+  const myWin = totalByPlayer?.[myName]||0;
+  if(myWin>0) addNotif('game','🎲','gold',`Run it twice — you won <b>$${myWin.toFixed(2)}</b>`);
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── MUCK / SHOW CARDS ─────────────────────────────────────────────────────
+
+socket.on('offerMuckOrShow', ({ tableId, cards }) => {
+  const overlay = document.createElement('div');
+  overlay.id = 'muck-overlay';
+  overlay.style.cssText = 'position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:500;background:#0E1520;border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:16px 20px;text-align:center;min-width:260px';
+  const cardStr = (cards||[]).map(c=>`<span style="color:${c.red?'#E87070':'#fff'};font-size:16px">${c.r}${c.s}</span>`).join(' ');
+  overlay.innerHTML = `
+    <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">SHOW YOUR CARDS?</div>
+    <div style="margin-bottom:12px">${cardStr}</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="_muckRespond(true)" style="flex:1;padding:9px;background:linear-gradient(135deg,#B8942E,#FFB800);border:none;border-radius:3px;color:#000;font-weight:700;font-size:9px;letter-spacing:1.5px;cursor:pointer">SHOW</button>
+      <button onclick="_muckRespond(false)" style="flex:1;padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:var(--txd);font-size:9px;letter-spacing:1.5px;cursor:pointer">MUCK</button>
+    </div>
+    <div style="font-size:8px;color:var(--txd);margin-top:6px">Auto-mucks in 8s</div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('muck-overlay')?.remove(), 8500);
+});
+
+function _muckRespond(show) {
+  document.getElementById('muck-overlay')?.remove();
+  socket.emit('muckOrShow', { tableId: _connectedTableId, show });
+}
+
+socket.on('cardsShown', ({ player, cards, message }) => {
+  addLog(message || `${player} shows cards`, 'show');
+  showToast(`👀 ${player} shows: ${(cards||[]).map(c=>c.r+c.s).join(' ')}`);
+  addNotif('game','👀','green',message||`${player} shows cards`);
+});
+
+socket.on('cardsMucked', ({ player }) => {
+  addLog(`${player} mucks their hand`, '');
+  showToast(`${player} mucks`);
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── RABBIT HUNTING ────────────────────────────────────────────────────────
+var _rabbitAvailable = false;
+
+function doRabbitHunt() {
+  if (!_rabbitAvailable || !_connectedTableId) { showToast('No rabbit available'); return; }
+  socket.emit('rabbitHunt', { tableId: _connectedTableId });
+  _rabbitAvailable = false;
+  const btn = document.getElementById('rabbit-btn');
+  if (btn) btn.style.display = 'none';
+}
+
+socket.on('rabbitResult', ({ ok, rabbitCards, fullBoard }) => {
+  if (!ok) { showToast('No rabbit available'); return; }
+  const fmtCard = c => `<span style="color:${c.red?'#E87070':'#fff'};font-size:18px;font-weight:700">${c.r}${c.s}</span>`;
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:500;background:#0E1520;border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:16px 24px;text-align:center;min-width:220px';
+  toast.innerHTML = `
+    <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">🐇 RABBIT HUNT</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:8px">
+      ${(rabbitCards||[]).map(c=>`<div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:4px;padding:8px 10px">${fmtCard(c)}</div>`).join('')}
+    </div>
+    <div style="font-size:9px;color:var(--txd)">What would have come</div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
+  addLog(`🐇 Rabbit: ${(rabbitCards||[]).map(c=>c.r+c.s).join(' ')}`, '');
+});
+
+// Show rabbit button after fold (if hand ended before river)
+function _showRabbitButton() {
+  _rabbitAvailable = true;
+  let btn = document.getElementById('rabbit-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'rabbit-btn';
+    btn.onclick = doRabbitHunt;
+    btn.style.cssText = 'position:fixed;bottom:100px;right:20px;z-index:400;background:rgba(8,8,14,0.9);border:1px solid rgba(201,168,76,0.3);color:var(--gold);padding:8px 14px;border-radius:4px;font-size:9px;letter-spacing:1.5px;cursor:pointer;font-family:Montserrat,sans-serif';
+    btn.textContent = '🐇 RABBIT HUNT';
+    document.body.appendChild(btn);
+  }
+  btn.style.display = 'block';
+  setTimeout(() => { if(btn) btn.style.display='none'; _rabbitAvailable=false; }, 15000);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── EQUITY / HAND STRENGTH INDICATOR ──────────────────────────────────────
+
+socket.on('equityResult', ({ equity, handName }) => {
+  _updateEquityBadge(equity, handName);
+});
+
+function _requestEquity() {
+  if (!_backendActive || HOLE.length < 2) return;
+  const board = ALL_COMM.filter(c=>c.r&&c.s);
+  if (board.length < 3) return; // only post-flop
+  socket.emit('calcEquity', {
+    holeCards: HOLE.filter(c=>c.r&&c.s),
+    board,
+    numOpponents: Math.max(1, (SEATS.filter(s=>!s.you&&!s.folded).length)),
+  });
+}
+
+function _updateEquityBadge(equity, handName) {
+  let badge = document.getElementById('hand-strength-badge');
+  const yhole = document.getElementById('yhole');
+  if (!yhole) return;
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'hand-strength-badge';
+    badge.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%) translateY(2px);'
+      + 'background:rgba(8,8,14,0.88);border:1px solid rgba(201,168,76,0.4);'
+      + 'border-radius:3px;padding:2px 10px;font-family:Montserrat,sans-serif;font-size:9px;'
+      + 'font-weight:800;letter-spacing:2px;color:rgba(201,168,76,0.9);text-transform:uppercase;'
+      + 'pointer-events:none;z-index:30;white-space:nowrap;transition:opacity .4s;'
+      + 'bottom:-20px;opacity:0;';
+    yhole.style.position = 'relative';
+    yhole.appendChild(badge);
+  }
+  const pct = equity || 0;
+  const col = pct >= 70 ? '#5DC896' : pct >= 50 ? '#FFB800' : pct >= 30 ? '#E8A44A' : '#E87070';
+  badge.innerHTML = `${handName||''}<span style="margin-left:6px;color:${col}">${pct}%</span>`;
+  badge.style.opacity = '1';
+  badge.style.borderColor = col.replace(')',',0.35)').replace('rgb','rgba').replace('#','');
+  // Use CSS color directly
+  badge.style.borderColor = col + '55';
+}
 
 // ══ TOAST HELPER ══════════════════════════════════════════════════════
 function showToast(msg) {
