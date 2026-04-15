@@ -2619,17 +2619,26 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- Avatar -->
 <div class="ov" id="ov-avatar" onclick="closeOvOut(event,'ov-avatar')">
-  <div class="modal" style="width:min(360px,94vw)">
+  <div class="modal" style="width:min(400px,94vw)">
     <button class="mcl" onclick="closeOv('ov-avatar')">✕</button>
-    <div class="mh"><div class="ms">🎨</div><div class="mt">Your Avatar</div><div class="msub">Choose your colour</div></div>
+    <div class="mh"><div class="ms">🎨</div><div class="mt">Your Avatar</div><div class="msub">Upload a photo or choose a colour</div></div>
     <div class="mdiv"></div>
     <div class="mb">
-      <div style="display:flex;justify-content:center;margin-bottom:18px">
-        <div id="av-preview" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--gold);background:#3A2A5A;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:rgba(255,255,255,.85);box-shadow:0 0 24px rgba(201,168,76,.25)">HR</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:20px">
+        <div id="av-preview" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--gold);background:#3A2A5A;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:rgba(255,255,255,.85);box-shadow:0 0 24px rgba(201,168,76,.25);overflow:hidden;position:relative">
+          <span id="av-initials">HR</span>
+          <img id="av-img" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%" src="">
+        </div>
+        <label style="cursor:pointer;padding:8px 18px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:3px;font-size:9px;letter-spacing:2px;color:var(--gold);font-family:Montserrat,sans-serif">
+          📷 UPLOAD PHOTO
+          <input type="file" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
+        </label>
+        <div style="font-size:9px;color:var(--txd)">JPG, PNG — max 40KB</div>
       </div>
+      <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">OR CHOOSE COLOUR</div>
       <div class="avatar-grid" id="avatar-grid"></div>
     </div>
-    <div class="mf"><button class="btn btn-gold" style="width:100%;padding:13px" onclick="closeOv('ov-avatar')">Save →</button></div>
+    <div class="mf"><button class="btn btn-gold" style="width:100%;padding:13px" onclick="saveAvatar()">Save Avatar →</button></div>
   </div>
 </div>
 
@@ -2661,11 +2670,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- Hand History -->
 <div class="ov" id="ov-hist" onclick="closeOvOut(event,'ov-hist')">
-  <div class="modal">
+  <div class="modal" style="width:min(500px,96vw)">
     <button class="mcl" onclick="closeOv('ov-hist')">✕</button>
-    <div class="mh"><div class="ms">📋</div><div class="mt">Hand History</div><div class="msub">Your recent hands</div></div>
+    <div class="mh"><div class="ms">📋</div><div class="mt">Session History</div><div class="msub">Every session you've played</div></div>
     <div class="mdiv"></div>
-    <div class="mb" id="hist-body"></div>
+    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0">
+      <div id="htab-sessions" class="notif-tab active" onclick="switchHistTab('sessions')" style="flex:1">Sessions</div>
+      <div id="htab-hands" class="notif-tab" onclick="switchHistTab('hands')" style="flex:1">Hands</div>
+    </div>
+    <div class="mb" id="hist-body" style="max-height:60vh;overflow-y:auto;padding:0"></div>
   </div>
 </div>
 
@@ -2976,6 +2989,8 @@ window.addEventListener('DOMContentLoaded', () => {
   <button class="db-btn" onclick="toggleDD()">Dropdown ▾</button>
   <button class="db-btn" onclick="switchTab('sng')">Sit &amp; Go Tab</button>
   <button class="db-btn" onclick="openOv('ov-stats')">My Stats</button>
+        <button class="db-btn" onclick="openOv('ov-achievements')">Achievements</button>
+        <button class="db-btn" onclick="openOv('ov-friends')">Friends</button>
   <button class="db-btn" onclick="openOv('ov-avatar')">Avatar Picker</button>
   <div class="db-div"></div>
   <button class="db-btn" onclick="openCashier()">Cashier</button>
@@ -7099,6 +7114,8 @@ async function doLogin(){
     _showVerifyBanner(data.user);
     showView('vl');
     _addWelcomeNotif(data.user.username);
+    localStorage.setItem('rf_user_id', data.user.id);
+    _loadFriendsSidebar();
     setTimeout(()=>showRGConfirm('Welcome back, '+data.user.username+'!'), 300);
   } catch(e) {
     if(errEl) errEl.textContent = 'Server error — please try again.';
@@ -7185,6 +7202,8 @@ async function doSignup(){
     _showVerifyBanner(data.user);
     _addWelcomeNotif(data.user.username);
     addNotif('social','📧','blue','Check your email to verify your account and unlock all features.');
+    localStorage.setItem('rf_user_id', data.user.id);
+    _loadFriendsSidebar();
     showView('vl');
     setTimeout(()=>showRGConfirm('Welcome to Royal Flush, '+data.user.username+'! You have received $10 Royal Chips. Check your email to verify your account.'),400);
   } catch(e) {
@@ -7948,6 +7967,34 @@ function closeOvOut(e,id){if(e.target===document.getElementById(id))closeOv(id);
   </div>
 </div>
 
+<!-- Achievements Overlay -->
+<div class="ov" id="ov-achievements" onclick="closeOvOut(event,'ov-achievements')">
+  <div class="modal" style="width:min(520px,96vw)">
+    <button class="mcl" onclick="closeOv('ov-achievements')">✕</button>
+    <div class="mh"><div class="ms">🏅</div><div class="mt">Achievements</div><div class="msub" id="ach-sub">Loading...</div></div>
+    <div class="mdiv"></div>
+    <div class="mb" id="ach-body" style="max-height:65vh;overflow-y:auto;padding:0"></div>
+  </div>
+</div>
+
+<!-- Friends Overlay -->
+<div class="ov" id="ov-friends" onclick="closeOvOut(event,'ov-friends')">
+  <div class="modal" style="width:min(440px,96vw)">
+    <button class="mcl" onclick="closeOv('ov-friends')">✕</button>
+    <div class="mh"><div class="ms">👥</div><div class="mt">Friends</div><div class="msub">Your poker crew</div></div>
+    <div class="mdiv"></div>
+    <div class="mb" style="padding-bottom:0">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input id="friend-search" class="rg-input" type="text" placeholder="Search by username..." style="flex:1" onkeydown="if(event.key==='Enter')addFriend()">
+        <button class="btn btn-gold btn-sm" onclick="addFriend()">+ Add</button>
+      </div>
+      <div id="friend-add-msg" style="font-size:11px;min-height:16px;margin-bottom:8px;color:var(--txd)"></div>
+    </div>
+    <div class="mdiv"></div>
+    <div class="mb" id="friends-list-body" style="max-height:55vh;overflow-y:auto;padding:0"></div>
+  </div>
+</div>
+
 <!-- Forgot Password Modal -->
 <div id="forgot-pw-modal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
   <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:8px;padding:36px 32px;width:100%;max-width:400px;margin:20px">
@@ -7998,6 +8045,34 @@ function closeOvOut(e,id){if(e.target===document.getElementById(id))closeOv(id);
 
 </body>
 </html>
+<!-- Achievements Overlay -->
+<div class="ov" id="ov-achievements" onclick="closeOvOut(event,'ov-achievements')">
+  <div class="modal" style="width:min(520px,96vw)">
+    <button class="mcl" onclick="closeOv('ov-achievements')">✕</button>
+    <div class="mh"><div class="ms">🏅</div><div class="mt">Achievements</div><div class="msub" id="ach-sub">Loading...</div></div>
+    <div class="mdiv"></div>
+    <div class="mb" id="ach-body" style="max-height:65vh;overflow-y:auto;padding:0"></div>
+  </div>
+</div>
+
+<!-- Friends Overlay -->
+<div class="ov" id="ov-friends" onclick="closeOvOut(event,'ov-friends')">
+  <div class="modal" style="width:min(440px,96vw)">
+    <button class="mcl" onclick="closeOv('ov-friends')">✕</button>
+    <div class="mh"><div class="ms">👥</div><div class="mt">Friends</div><div class="msub">Your poker crew</div></div>
+    <div class="mdiv"></div>
+    <div class="mb" style="padding-bottom:0">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input id="friend-search" class="rg-input" type="text" placeholder="Search by username..." style="flex:1" onkeydown="if(event.key==='Enter')addFriend()">
+        <button class="btn btn-gold btn-sm" onclick="addFriend()">+ Add</button>
+      </div>
+      <div id="friend-add-msg" style="font-size:11px;min-height:16px;margin-bottom:8px;color:var(--txd)"></div>
+    </div>
+    <div class="mdiv"></div>
+    <div class="mb" id="friends-list-body" style="max-height:55vh;overflow-y:auto;padding:0"></div>
+  </div>
+</div>
+
 <!-- Forgot Password Modal -->
 <div id="forgot-pw-modal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
   <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:8px;padding:36px 32px;width:100%;max-width:400px;margin:20px">
@@ -8436,11 +8511,313 @@ async function renderStats(){
 }
 
 // Hook openOv to load stats when stats panel opens
+// Hook openOv to load data when panels open
 const _origOpenOv = window.openOv;
 window.openOv = function(id){
   if(_origOpenOv) _origOpenOv(id);
-  if(id==='ov-stats') renderStats();
+  if(id==='ov-stats')        renderStats();
+  if(id==='ov-hist')         { _histTab='sessions'; renderHistPanel(); }
+  if(id==='ov-achievements') renderAchievements();
+  if(id==='ov-friends')      renderFriendsPanel();
+  if(id==='ov-avatar')       loadAvatarPanel();
 };
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── SESSION HISTORY ────────────────────────────────────────────────────────
+var HIST = [];
+var _histTab = 'sessions';
+var _currentSessionId = null;
+var _sessionStartChips = 0;
+var _sessionHandsStart = 0;
+
+function switchHistTab(tab){
+  _histTab = tab;
+  ['sessions','hands'].forEach(t=>{
+    document.getElementById('htab-'+t)?.classList.toggle('active', t===tab);
+  });
+  renderHistPanel();
+}
+
+async function renderHistPanel(){
+  const body = document.getElementById('hist-body');
+  if(!body) return;
+  body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txd);font-size:11px">Loading...</div>';
+
+  if(_histTab==='hands'){
+    // Local hand history
+    if(!HIST.length){
+      body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)"><div style="font-size:32px;margin-bottom:8px">🃏</div>No hands recorded this session</div>';
+      return;
+    }
+    body.innerHTML = HIST.map(h=>{
+      const profit = h.profit || 0;
+      const col = profit>0?'var(--grn)':profit<0?'#E87070':'var(--txd)';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div style="font-size:18px">${profit>0?'🏆':profit<0?'💸':'🤝'}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--tx);font-weight:600">${h.hand||'Fold win'}</div>
+          <div style="font-size:9px;color:var(--txd)">${h.table||''} · ${h.time||''}</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:${col}">${profit>0?'+':''}\$${Math.abs(profit).toFixed(2)}</div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // Sessions from backend
+  const token = localStorage.getItem('rf_token');
+  if(!token){ body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)">Log in to see session history</div>'; return; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/sessions',{headers:{'Authorization':'Bearer '+token}});
+    const data = await res.json();
+    if(!data.ok||!data.sessions?.length){
+      body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)"><div style="font-size:32px;margin-bottom:8px">📋</div>No sessions yet — play some hands!</div>';
+      return;
+    }
+    const fmtDur = ms => {
+      const m=Math.floor(ms/60000), h=Math.floor(m/60);
+      return h>0?`${h}h ${m%60}m`:`${m}m`;
+    };
+    const fmtDate = ts => new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    body.innerHTML = data.sessions.map(s=>{
+      const net = s.netResult||0;
+      const col = net>0?'var(--grn)':net<0?'#E87070':'var(--txd)';
+      const dur = s.endTime ? fmtDur(s.endTime-s.startTime) : 'Active';
+      return `<div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div style="font-weight:600;font-size:12px;color:var(--tx)">${s.table||'Table'}</div>
+          <div style="font-size:14px;font-weight:700;color:${col}">${net>=0?'+':''}\$${Math.abs(net).toFixed(2)}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txd)">
+          <span>${fmtDate(s.startTime)} · ${dur}</span>
+          <span>${s.handsPlayed||0} hands · Buy-in \$${(s.buyIn||0).toFixed(2)}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)">Could not load sessions</div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── ACHIEVEMENTS ───────────────────────────────────────────────────────────
+const RARITY_COL = {
+  common:    'rgba(160,160,175,0.6)',
+  uncommon:  'rgba(100,200,120,0.8)',
+  rare:      'rgba(80,140,240,0.9)',
+  epic:      'rgba(170,80,240,0.9)',
+  legendary: 'rgba(255,180,50,1)',
+};
+const RARITY_LABEL = { common:'Common', uncommon:'Uncommon', rare:'Rare', epic:'Epic', legendary:'Legendary' };
+
+async function renderAchievements(){
+  const body = document.getElementById('ach-body');
+  if(!body) return;
+  body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txd);font-size:11px">Loading...</div>';
+  const token = localStorage.getItem('rf_token');
+  if(!token){ body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)">Log in to see achievements</div>'; return; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/achievements',{headers:{'Authorization':'Bearer '+token}});
+    const data = await res.json();
+    if(!data.ok) throw new Error();
+    const earned   = data.achievements.filter(a=>a.earned).length;
+    const total    = data.achievements.length;
+    document.getElementById('ach-sub').textContent = `${earned}/${total} unlocked`;
+    // Group by rarity
+    const groups = ['legendary','epic','rare','uncommon','common'];
+    body.innerHTML = groups.map(rarity=>{
+      const items = data.achievements.filter(a=>a.rarity===rarity);
+      return `<div style="padding:12px 18px 4px;font-size:9px;letter-spacing:2px;color:${RARITY_COL[rarity]};font-family:Montserrat,sans-serif">${RARITY_LABEL[rarity].toUpperCase()}</div>
+        ${items.map(a=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.03);opacity:${a.earned?1:0.35}">
+          <div style="font-size:24px;width:36px;text-align:center">${a.icon}</div>
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:600;color:${a.earned?'var(--tx)':'var(--txd)'}">${a.name}</div>
+            <div style="font-size:9px;color:var(--txd)">${a.desc}</div>
+          </div>
+          <div style="font-size:9px;color:${a.earned?RARITY_COL[rarity]:'rgba(255,255,255,0.2)'}">
+            ${a.earned?'✓ '+new Date(a.unlockedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'Locked'}
+          </div>
+        </div>`).join('')}`;
+    }).join('');
+  } catch(e){
+    body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)">Could not load achievements</div>';
+  }
+}
+
+// Achievement unlock toast
+socket.on('achievementsUnlocked', (achievements) => {
+  if(!achievements?.length) return;
+  achievements.forEach((a,i) => {
+    setTimeout(()=>{
+      const toast = document.createElement('div');
+      toast.style.cssText = `position:fixed;bottom:${140+i*70}px;left:50%;transform:translateX(-50%);z-index:700;background:linear-gradient(135deg,rgba(14,21,32,0.97),rgba(20,28,42,0.97));border:1px solid ${RARITY_COL[a.rarity]||'rgba(201,168,76,0.4)'};border-radius:6px;padding:12px 20px;display:flex;align-items:center;gap:12px;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.6)`;
+      toast.innerHTML = `<div style="font-size:28px">${a.icon}</div><div><div style="font-size:10px;letter-spacing:2px;color:${RARITY_COL[a.rarity]||'var(--gold)'};font-family:Montserrat,sans-serif">ACHIEVEMENT UNLOCKED</div><div style="font-size:13px;font-weight:700;color:var(--tx)">${a.name}</div><div style="font-size:9px;color:var(--txd)">${a.desc}</div></div>`;
+      document.body.appendChild(toast);
+      setTimeout(()=>toast.remove(), 6000);
+      addNotif('social',a.icon,'gold',`Achievement unlocked: <b>${a.name}</b>`);
+    }, i*800);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── FRIENDS ────────────────────────────────────────────────────────────────
+var _onlinePlayers = new Set(); // socket IDs of online players (updated via lobby)
+
+async function renderFriendsPanel(){
+  const body = document.getElementById('friends-list-body');
+  if(!body) return;
+  body.innerHTML='<div style="padding:16px;text-align:center;color:var(--txd);font-size:11px">Loading...</div>';
+  const token = localStorage.getItem('rf_token');
+  if(!token){ body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)">Log in to manage friends</div>'; return; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/friends',{headers:{'Authorization':'Bearer '+token}});
+    const data = await res.json();
+    if(!data.ok) throw new Error();
+    if(!data.friends?.length){
+      body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)"><div style="font-size:32px;margin-bottom:8px">👥</div>No friends yet.<br>Search by username above to add friends.</div>';
+      return;
+    }
+    body.innerHTML = data.friends.map(f=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div style="width:36px;height:36px;border-radius:50%;background:#3A2A5A;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:rgba(255,255,255,0.8);border:2px solid rgba(201,168,76,0.2)">${f.username.slice(0,2).toUpperCase()}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:var(--tx)">${f.username}</div>
+          <div style="font-size:9px;color:var(--txd)">${f.stats?.handsPlayed||0} hands · $${((f.stats?.totalWon||0)-(f.stats?.totalLost||0)).toFixed(2)} net</div>
+        </div>
+        <button onclick="removeFriendById('${f.id}','${f.username}')" style="background:none;border:1px solid rgba(255,100,100,0.2);color:rgba(255,100,100,0.6);padding:4px 10px;border-radius:3px;cursor:pointer;font-size:9px;letter-spacing:1px">Remove</button>
+      </div>`).join('');
+  } catch(e){
+    body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)">Could not load friends</div>';
+  }
+}
+
+async function addFriend(){
+  const input = document.getElementById('friend-search');
+  const msg   = document.getElementById('friend-add-msg');
+  const username = input?.value?.trim();
+  if(!username){ if(msg) msg.textContent='Enter a username'; return; }
+  const token = localStorage.getItem('rf_token');
+  if(!token){ if(msg) msg.textContent='Log in first'; return; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/friends/add',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({username})
+    });
+    const data = await res.json();
+    if(data.ok){
+      if(msg){ msg.textContent=`✓ Added ${data.friend.username}!`; msg.style.color='var(--grn)'; }
+      if(input) input.value='';
+      setTimeout(()=>renderFriendsPanel(), 500);
+      addNotif('social','🤝','blue',`You and <b>${data.friend.username}</b> are now friends`);
+    } else {
+      if(msg){ msg.textContent=data.error||'Could not add friend'; msg.style.color='#E87070'; }
+    }
+  } catch(e){ if(msg){ msg.textContent='Server error'; msg.style.color='#E87070'; } }
+}
+
+async function removeFriendById(friendId, username){
+  if(!confirm(`Remove ${username} from friends?`)) return;
+  const token = localStorage.getItem('rf_token');
+  if(!token) return;
+  await fetch(BACKEND_URL+'/api/auth/friends/remove',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({friendId})
+  });
+  renderFriendsPanel();
+}
+
+// Update side-panel friends list from the friends API
+async function renderFriends(){
+  const el = document.getElementById('side-friends');
+  if(!el) return;
+  const token = localStorage.getItem('rf_token');
+  if(!token||!FRIENDS.length){ el.innerHTML='<div style="padding:8px;font-size:10px;color:var(--txd);text-align:center">No friends yet</div>'; return; }
+  el.innerHTML = FRIENDS.map(f=>`
+    <div class="ldr-row" style="cursor:pointer">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--grn);flex-shrink:0"></div>
+      <div class="ldr-av" style="background:#3A2A5A">${f.username.slice(0,2).toUpperCase()}</div>
+      <div style="flex:1"><div class="ldr-nm">${f.username}</div></div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── AVATAR ─────────────────────────────────────────────────────────────────
+var _avatarUploadData = null; // base64 of uploaded image
+var _avatarColor = null;      // chosen color
+
+async function loadAvatarPanel(){
+  const token = localStorage.getItem('rf_token');
+  if(!token) return;
+  // Load current avatar
+  try {
+    const uid = localStorage.getItem('rf_user_id');
+    if(uid){
+      const res = await fetch(BACKEND_URL+'/api/auth/avatar/'+uid);
+      const data = await res.json();
+      if(data.ok && data.avatar){
+        _showAvatarPreview(data.avatar);
+        _avatarUploadData = data.avatar;
+      }
+    }
+  } catch(_){}
+}
+
+function handleAvatarUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 50000){ showToast('Image too large — max 40KB'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _avatarUploadData = e.target.result;
+    _avatarColor = null;
+    _showAvatarPreview(_avatarUploadData);
+  };
+  reader.readAsDataURL(file);
+}
+
+function _showAvatarPreview(dataUrl){
+  const img = document.getElementById('av-img');
+  const init = document.getElementById('av-initials');
+  if(img){ img.src=dataUrl; img.style.display='block'; }
+  if(init) init.style.display='none';
+  // Update header avatar too
+  const hdrAv = document.getElementById('hdr-avatar');
+  if(hdrAv){ hdrAv.style.backgroundImage=`url(${dataUrl})`; hdrAv.style.backgroundSize='cover'; }
+}
+
+async function saveAvatar(){
+  const token = localStorage.getItem('rf_token');
+  if(!token){ showToast('Log in first'); return; }
+  if(!_avatarUploadData && !_avatarColor){ closeOv('ov-avatar'); return; }
+  if(_avatarUploadData){
+    try {
+      const res = await fetch(BACKEND_URL+'/api/auth/avatar',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body:JSON.stringify({image:_avatarUploadData})
+      });
+      const data = await res.json();
+      if(data.ok) showToast('Avatar saved!');
+      else showToast(data.error||'Could not save avatar');
+    } catch(e){ showToast('Server error'); }
+  }
+  closeOv('ov-avatar');
+}
+
+// Load friends into sidebar on login
+async function _loadFriendsSidebar(){
+  const token = localStorage.getItem('rf_token');
+  if(!token) return;
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/friends',{headers:{'Authorization':'Bearer '+token}});
+    const data = await res.json();
+    if(data.ok && data.friends){
+      FRIENDS.length=0;
+      data.friends.forEach(f=>FRIENDS.push(f));
+      renderFriends();
+    }
+  } catch(_){}
+}
 
 async function _restoreSession(){
   const token = localStorage.getItem('rf_token');
@@ -8525,9 +8902,20 @@ function _updateHandStrengthBadge() {
 
 // ── Join ──────────────────────────────────────────────────────────────
 function backendJoinTable(tableId, playerName, buyIn) {
-  addNotif('game','♠','gold','Joined <b>'+tableId.replace(/-/g,' ').replace(/\w/g,l=>l.toUpperCase())+'</b> table');
+  const tName = tableId.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+  addNotif('game','\u2660','gold','Joined <b>'+tName+'</b> table');
   backendConnect();
   _connectedTableId = tableId;
+  // Start session tracking
+  _sessionStartChips = _balRoyal;
+  _sessionHandsStart = HIST.length;
+  const _sToken = localStorage.getItem('rf_token');
+  if(_sToken){
+    fetch(BACKEND_URL+'/api/auth/sessions/start',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sToken},
+      body:JSON.stringify({table:tName,stake:tableId,buyIn:parseFloat(buyIn)||0})
+    }).then(r=>r.json()).then(d=>{ if(d.ok) _currentSessionId=d.sessionId; }).catch(()=>{});
+  }
   // Generate browser fingerprint for anti-cheat
   const fp = _getBrowserFingerprint();
   // Send fingerprint in socket auth
@@ -8598,6 +8986,19 @@ function backendAction(action, amount) {
 // ── Leave ─────────────────────────────────────────────────────────────
 function backendLeaveTable() {
   if (!_connectedTableId) return;
+  // End session tracking
+  if(_currentSessionId){
+    const _lToken = localStorage.getItem('rf_token');
+    const netResult = _balRoyal - _sessionStartChips;
+    const handsThisSession = HIST.length - _sessionHandsStart;
+    if(_lToken){
+      fetch(BACKEND_URL+'/api/auth/sessions/end',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_lToken},
+        body:JSON.stringify({sessionId:_currentSessionId,netResult,handsPlayed:handsThisSession,cashOut:_balRoyal})
+      }).catch(()=>{});
+    }
+    _currentSessionId=null;
+  }
   socket.emit('leaveTable', { tableId: _connectedTableId });
   _connectedTableId = null;
   _mySocketSeat     = null;
