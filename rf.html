@@ -2419,25 +2419,21 @@ window.addEventListener('DOMContentLoaded', () => {
         <div class="bonus-banner" id="rc-claim-widget">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
             <div class="bonus-title">🎁 Daily Bonus</div>
-            <div style="font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--grn)">No Purchase Necessary</div>
+            <div style="font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--grn)">Free Every Day</div>
           </div>
-          <div class="bonus-sub" id="bonus-sub-text">Loading bonus...</div>
-          <div class="streak-dots" id="streak-dots"></div>
+          <div class="bonus-sub" id="bonus-sub-text">Claim 1,250 Gold Chips + 1 Royal Chip free</div>
+          <div class="streak-dots" id="streak-dots" style="margin:8px 0"></div>
 
           <!-- Divider -->
           <div style="height:1px;background:rgba(255,255,255,.06);margin:10px 0"></div>
 
-          <!-- RC claim row -->
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="font-size:9px;color:var(--txd)">♦ Free RC: <span id="rc-monthly-used" style="color:var(--tx)">0</span>/5 this month</div>
-            <div style="font-size:9px;color:var(--txd)" id="rc-claim-desc">$1.00 redeemable</div>
-          </div>
-          <div style="height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:10px">
-            <div id="rc-monthly-bar" style="height:100%;background:linear-gradient(to right,var(--gold-dim),var(--gold));border-radius:2px;width:0%;transition:width .4s"></div>
+          <!-- RC availability note -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:9px;color:var(--txd)">♦ 1 Royal Chip included</div>
+            <div style="font-size:9px;color:var(--txd)" id="rc-claim-desc">if balance &lt; $1.00</div>
           </div>
           <div style="display:flex;gap:8px" id="daily-btn-row">
-            <button class="btn btn-gold" id="claim-chips-btn" style="flex:1;padding:10px;font-size:10px;letter-spacing:1.5px" onclick="claimBonus()">🎁 Claim Chips</button>
-            <button id="rc-claim-sidebar-btn" class="btn btn-ghost" style="flex:1;padding:10px;font-size:10px" onclick="claimFreeRoyal();updateRCWidget()">♦ Claim 1 RC</button>
+            <button class="btn btn-gold" id="claim-chips-btn" style="flex:1;padding:10px;font-size:10px;letter-spacing:1.5px" onclick="claimBonus()">🎁 Claim Daily Bonus</button>
           </div>
         </div>
       </div>
@@ -3269,7 +3265,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const RC_MONTHLY_CAP=5;
-const RC_BALANCE_CAP=5;
+const RC_BALANCE_CAP=1;  // RC claim locked when balance >= $1
 
 // ── Style string constants (DRY) ────────────────────────────────
 const CSS_STAT_BOX='background:var(--bg2);border:1px solid rgba(201,168,76,.08);border-radius:4px;padding:10px 12px';
@@ -3502,11 +3498,7 @@ function ddAct(a){
 }
 
 // ── DAILY BONUS STATE ──────────────────────────────────────────────────────
-var _bonusClaimed   = false;
-var _bonusStreak    = 0;
-var _bonusNextDay   = 1;
-var _bonusReward    = 500;
-var _bonusRewards   = [500,750,1000,1250,1500,2000,5000];
+var _bonusClaimed = false;
 
 async function _loadBonusStatus(){
   const token = localStorage.getItem('rf_token');
@@ -3516,10 +3508,6 @@ async function _loadBonusStatus(){
     const data = await res.json();
     if(!data.ok) return;
     _bonusClaimed = data.claimed;
-    _bonusStreak  = data.streak;
-    _bonusNextDay = data.nextDay;
-    _bonusReward  = data.reward;
-    _bonusRewards = data.rewards || _bonusRewards;
     _renderBonusPanel();
   } catch(_){}
 }
@@ -3529,33 +3517,25 @@ function _renderBonusPanel(){
   const btn = document.getElementById('claim-chips-btn');
   const dots = document.getElementById('streak-dots');
   if(sub){
-    const day = _bonusClaimed ? _bonusStreak : _bonusNextDay;
     sub.textContent = _bonusClaimed
-      ? `Day ${Math.min(_bonusStreak,7)} complete — come back tomorrow!`
-      : `Day ${_bonusNextDay} — claim ${_bonusReward.toLocaleString()} Gold Chips`;
+      ? 'Come back tomorrow for 1,250 chips + 1 RC!'
+      : 'Claim 1,250 Gold Chips + 1 Royal Chip free';
   }
   if(btn){
-    btn.textContent = _bonusClaimed ? '✓ Claimed' : '🎁 Claim '+(_bonusReward||500).toLocaleString()+' Chips';
+    btn.textContent = _bonusClaimed ? '✓ Claimed Today' : '🎁 Claim Daily Bonus';
     btn.disabled = _bonusClaimed;
     btn.style.opacity = _bonusClaimed ? '0.5' : '1';
   }
+  // Replace streak dots with simple status indicator
   if(dots){
-    dots.innerHTML = _bonusRewards.map((r,i)=>{
-      const day = i+1;
-      const done = day < (_bonusClaimed ? _bonusNextDay+1 : _bonusNextDay);
-      const active = day === (_bonusClaimed ? _bonusNextDay : _bonusNextDay) && !_bonusClaimed;
-      const isClaimed = day === _bonusNextDay && _bonusClaimed;
-      const col = done||isClaimed ? 'var(--gold)' : active ? 'rgba(201,168,76,.5)' : 'rgba(255,255,255,.12)';
-      return `<div style="flex:1;text-align:center">
-        <div style="width:28px;height:28px;border-radius:50%;background:${col};margin:0 auto 2px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${done||isClaimed?'#080E1A':'rgba(255,255,255,.6)'};border:1px solid ${active?'var(--gold)':'transparent'};${active?'box-shadow:0 0 8px rgba(201,168,76,.4)':''}">${done||isClaimed?'✓':day}</div>
-        <div style="font-size:7px;color:var(--txd);letter-spacing:.5px">${r>=5000?'🎁':r>=1500?'★':''}</div>
-      </div>`;
-    }).join('');
+    dots.innerHTML = _bonusClaimed
+      ? '<div style="font-size:10px;color:var(--grn);letter-spacing:.5px">✓ Claimed — see you tomorrow!</div>'
+      : '<div style="font-size:10px;color:var(--gold);letter-spacing:.5px">🎁 1,250 Gold + ♦1 RC available</div>';
   }
 }
 
 async function claimBonus(){
-  if(_bonusClaimed){ showWB('Already Claimed!','Come back tomorrow for your next reward.',0); return; }
+  if(_bonusClaimed){ showWB('Already Claimed!','Come back tomorrow for more free chips.',0); return; }
   const token = localStorage.getItem('rf_token');
   if(!token){ showWB('Sign In Required','Log in to claim your daily bonus!',0); return; }
   try {
@@ -3565,24 +3545,25 @@ async function claimBonus(){
     const data = await res.json();
     if(data.ok){
       _bonusClaimed = true;
-      _bonusStreak  = data.streak;
-      _bonusReward  = data.reward;
-      _bonusNextDay = data.nextDay;
-      _balGold += data.reward; updBal();
+      _balGold += 1250; updBal();
       document.getElementById('dd-badge').style.display='none';
       playSound('win');
-      const dayNum = Math.min(_bonusStreak,7);
-      showWB('🎁 Day '+dayNum+' Bonus!', data.reward.toLocaleString()+' Gold Chips added — streak: '+_bonusStreak+' days!', data.reward);
+      // Also give 1 RC if balance < $1
+      let rcMsg = '';
+      if(_balRoyal < RC_BALANCE_CAP){
+        claimFreeRoyal();
+        rcMsg = ' + 1 Royal Chip';
+      }
+      showWB('🎁 Daily Bonus!','1,250 Gold Chips'+rcMsg+' added — see you tomorrow!', 1250);
       _renderBonusPanel();
-      addNotif('social','🎁','gold','<b>Day '+dayNum+' Bonus:</b> '+data.reward.toLocaleString()+' Gold Chips claimed!');
+      addNotif('social','🎁','gold','<b>Daily Bonus:</b> 1,250 Gold Chips'+rcMsg+' claimed!');
     } else {
       showWB('Already Claimed','Come back tomorrow!',0);
       _bonusClaimed=true; _renderBonusPanel();
     }
   } catch(e){
-    // Fallback offline claim
-    _bonusClaimed=true; _balGold+=500; updBal();
-    showWB('🎁 Bonus Claimed!','500 Gold Chips added — log in daily to build your streak!',500);
+    _bonusClaimed=true; _balGold+=1250; updBal();
+    showWB('🎁 Daily Bonus!','1,250 Gold Chips added!',1250);
     _renderBonusPanel();
   }
 }
@@ -7610,17 +7591,14 @@ function claimFreeRoyal(){
     const h=Math.floor((COOLDOWN-elapsed)/3600000), m=Math.floor(((COOLDOWN-elapsed)%3600000)/60000);
     showRGConfirm('Already claimed today. Next claim in '+h+'h '+m+'m.'); return;
   }
-  if(getRCMonthlyUsed()>=RC_MONTHLY_CAP){
-    showRGConfirm('Monthly cap reached ('+RC_MONTHLY_CAP+' RC/month). Resets the 1st. Use mail-in for more free chips.'); return;
-  }
   if(_balRoyal>=RC_BALANCE_CAP){
     showRGConfirm('Balance is $'+_balRoyal.toFixed(2)+' RC. Free claims are only available when your balance is below $'+RC_BALANCE_CAP+'. Play some hands first!'); return;
   }
   localStorage.setItem('rf_last_royal_claim',now.toString());
-  _lastRoyalClaim=now; addRCMonthlyUsed(ROYAL_DAILY);
+  _lastRoyalClaim=now;
   closeOv('ov-cashier'); _balRoyal+=ROYAL_DAILY; updBal();
   TXNS.unshift({icon:'♦',label:'Daily Royal Claim',table:'',amt:+ROYAL_DAILY,ts:'Just now'});
-  showWB('♦ Royal Chips Claimed!',ROYAL_DAILY+' RC added · '+(RC_MONTHLY_CAP-getRCMonthlyUsed())+' claims left this month',ROYAL_DAILY); setTimeout(updateRCWidget,100);
+  showWB('♦ Royal Chip Claimed!','1 RC added · Come back tomorrow for another free chip!',ROYAL_DAILY); setTimeout(updateRCWidget,100);
 }
 
 function getDailyClaimStatus(){
@@ -7652,8 +7630,8 @@ function updateRCWidget(){
   if(monthlyUsed) monthlyUsed.textContent = used;
   if(bar) bar.style.width = Math.min(100, used/RC_MONTHLY_CAP*100)+'%';
 
-  // Hide RC button and expand chips button when balance >= $5 OR monthly cap hit
-  const shouldHide = _balRoyal >= RC_BALANCE_CAP || used >= RC_MONTHLY_CAP;
+  // Hide RC button when balance >= $1 (abuse prevention)
+  const shouldHide = _balRoyal >= RC_BALANCE_CAP;
   btn.style.display = shouldHide ? 'none' : '';
   const chipsBtn = document.getElementById('claim-chips-btn');
   if(chipsBtn) chipsBtn.style.flex = shouldHide ? '1 1 100%' : '1';
@@ -7675,7 +7653,7 @@ function updateRCWidget(){
       if(used >= RC_MONTHLY_CAP)
         desc.textContent = '5/5 RC claimed this month · Resets the 1st';
       else
-        desc.textContent = 'Available when balance drops below $'+RC_BALANCE_CAP;
+        desc.textContent = 'Play down to $0 RC to unlock free daily chip';
     }
   }
 }
