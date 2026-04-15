@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0E1520">
 <title>Royal Flush — Interactive Preview</title>
 <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -899,71 +903,158 @@ body.royal-mode nav{
 
 /* MOBILE GAME TABLE */
 @media(max-width:640px){
-  /* Nav */
-  nav{padding:0 12px}
-  .nav-logo{font-size:14px}
-  .hdr-chips{gap:6px;font-size:10px}
-  .hdr-chip{padding:4px 8px;gap:4px}
+  /* ── NAV ── */
+  nav{padding:0 10px}
+  .nav-logo{font-size:13px}
+  .hdr-chips{gap:4px;font-size:9px}
+  .hdr-chip{padding:3px 7px;gap:3px}
+  nav .hdr-avatar{width:28px;height:28px;font-size:9px}
+  #hdr-username{display:none}
+  .notif-bell{width:30px;height:30px;font-size:13px}
 
-  /* Game table */
-  .garena{padding:44px 8px 8px}
-  .table-wrap{width:99vw;height:55vw;min-height:200px}
-  .cbar{padding:4px 8px 8px;gap:6px}
-  .cbar-bot{gap:4px}
-  .rw{min-width:100px}
-  .abtns{gap:4px}
-  .ab{padding:7px 8px;font-size:8px;letter-spacing:1px}
+  /* ── GAME TABLE ── */
+  #vg{overflow-y:auto}
+  .garena{padding:48px 4px 4px;gap:4px}
+  .table-wrap{width:100vw;height:52vw;min-height:180px;max-height:56vw}
+  .gtop{padding:4px 8px;font-size:9px}
+  .sname{max-width:38px;font-size:6px}
+  .sstack{font-size:9px}
+  .pot-display{font-size:10px}
+
+  /* Action bar */
+  .cbar{padding:4px 6px 6px;gap:4px;flex-wrap:wrap}
+  .cbar-bot{gap:3px;flex-wrap:wrap}
+  .rw{min-width:90px;flex:1}
+  .pills{gap:2px;flex-wrap:wrap}
+  .pill{font-size:6px;padding:2px 4px}
+  #action-buttons{gap:4px;flex-wrap:wrap;justify-content:center}
+  #action-buttons button{
+    width:clamp(58px,17vw,90px)!important;
+    height:clamp(40px,11vw,56px)!important;
+    font-size:9px!important;
+    padding:4px!important;
+    letter-spacing:.5px!important
+  }
+  #raise-panel{padding:6px 8px;gap:4px}
+  .preact-opt{font-size:7px;padding:5px 6px}
+  .abtns{gap:3px}
+  .ab{padding:8px 6px;font-size:7px;letter-spacing:.5px}
   .chat-wrap{display:none}
-  .pills{gap:3px}
-  .pill{font-size:7px;padding:2px 5px}
-  .gtop{padding:6px 10px}
-  .sname{max-width:44px;font-size:7px}
-  .sstack{font-size:10px}
-  #action-buttons{gap:6px}
-  #action-buttons button{width:clamp(52px,14vw,80px)!important;height:clamp(38px,10vw,52px)!important;font-size:8px!important}
-  #raise-panel{padding:8px 10px;gap:6px}
-  .preact-opt{font-size:8px}
 
-  /* Lobby */
+  /* Hand strength badge */
+  #hand-strength-badge{font-size:8px;padding:2px 6px}
+
+  /* Table controls row */
+  .table-tabs{gap:4px;flex-wrap:wrap}
+  .ttab{font-size:8px;padding:5px 8px}
+
+  /* ── LOBBY ── */
+  .lobby-layout{grid-template-columns:1fr!important}
+  #side-panel{display:none}
+  .lside{display:none}
   .tgrid{grid-template-columns:1fr!important}
   .tc{margin-bottom:0}
-  nav .hdr-avatar{width:30px;height:30px;font-size:10px}
-  #hdr-username{display:none}
+  .lobby-tabs{gap:3px;flex-wrap:wrap}
+  .ltab{font-size:8px;padding:5px 8px}
 
-  /* Auth */
-  .auth-card{padding:24px 20px}
+  /* Lobby cards */
+  .tc-header{padding:12px 14px 10px}
+  .tc-name{font-size:13px}
+  .tc-stakes{font-size:9px}
+  .tc-footer{padding:10px 14px}
+
+  /* ── AUTH ── */
+  .auth-card{padding:20px 16px;margin:0 8px}
   .auth-slider-wrap{max-width:100%}
+  .auth-title{font-size:20px}
 
-  /* Notification panel */
-  .notif-panel{width:100vw}
+  /* ── MODALS / OVERLAYS ── */
+  .modal{
+    padding:16px 14px!important;
+    width:calc(100vw - 12px)!important;
+    max-width:100%!important;
+    max-height:92vh;
+    overflow-y:auto
+  }
+  .modal .mh{padding-bottom:8px}
+  .modal .ms{font-size:22px}
+  .modal .mt{font-size:16px}
+  .modal .msub{font-size:9px}
+  .modal .mb{padding:0}
+  .notif-panel{width:100vw;right:0;left:0}
 
-  /* Stats modal */
-  .modal{padding:20px 16px;width:calc(100vw - 20px)!important;max-width:100%!important}
+  /* Buyin */
+  .buyin-modal{padding:16px 14px}
 
-  /* Lobby tabs */
-  .lobby-tabs{gap:4px}
-  .ltab{font-size:8px;padding:6px 10px}
+  /* ── RG PANEL ── */
+  .rg-section{padding:12px 14px}
+  .rg-input{font-size:12px}
 
-  /* Buyin modal */
-  .buyin-modal{padding:20px 16px}
+  /* ── LEADERBOARD ── */
+  .ldr-row{padding:8px 6px;gap:8px}
+  .ldr-av{width:28px;height:28px;font-size:9px}
+  .ldr-nm{font-size:11px}
 
-  /* Side panel */
-  #side-panel{display:none}
-  .lobby-layout{grid-template-columns:1fr!important}
+  /* ── DASHBOARD BUTTONS ── */
+  .db-btn{font-size:8px;padding:8px 10px}
+
+  /* ── CASHIER ── */
+  .cashier-steps{gap:4px}
+  .cashier-step{font-size:8px;padding:4px 8px}
+
+  /* ── SNG / TOURNAMENT ── */
+  .sng-player-row{padding:8px 12px;gap:8px}
+  .mtt-badge{font-size:7px;padding:2px 6px}
+
+  /* ── BONUS PANEL ── */
+  .bonus-banner{padding:12px}
+  .bonus-title{font-size:11px}
+  .bonus-sub{font-size:9px}
+  .streak-dots{gap:3px}
+
+  /* ── NOTIFICATIONS ── */
+  .notif-item{padding:10px 14px}
+  .notif-icon{width:28px;height:28px;font-size:14px}
+
+  /* ── TOAST ── */
+  .toast-wrap{bottom:80px;left:8px;right:8px}
+
+  /* ── SESSION / HAND HISTORY ── */
+  #hist-body > div{padding:10px 12px}
+
+  /* ── FRIENDS / ACHIEVEMENTS ── */
+  #friends-list-body > div{padding:8px 12px}
+  #ach-body > div{padding:8px 12px}
+
+  /* ── TAB BAR (multi-table) ── */
+  #table-tab-bar{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table-tab{font-size:8px;padding:5px 10px;white-space:nowrap}
+
+  /* ── SAFE AREA INSET (notch phones) ── */
+  nav{padding-top:max(0px, env(safe-area-inset-top))}
+  .cbar{padding-bottom:max(6px, env(safe-area-inset-bottom))}
 }
 
-/* Tablet */
+/* ── TABLET ── */
 @media(max-width:900px) and (min-width:641px){
   .tgrid{grid-template-columns:repeat(2,1fr)!important}
-  #side-panel{width:220px}
+  #side-panel{width:200px}
+  .modal{width:min(480px,94vw)!important}
+  #action-buttons button{
+    width:clamp(64px,10vw,96px)!important;
+    font-size:9px!important
+  }
 }
 
-/* Touch devices — larger tap targets */
+/* ── TOUCH DEVICES — bigger tap targets ── */
 @media(hover:none){
-  .ab{padding:12px 10px}
+  .ab{min-height:44px}
   .auth-tab{padding:12px 0}
-  .ldr-row{padding:10px 9px}
+  .ldr-row{padding:11px 9px}
   .notif-item{padding:14px 18px}
+  .btn{min-height:44px}
+  .rg-input{min-height:44px;font-size:16px}  /* prevents iOS zoom */
+  input,select,textarea{font-size:16px!important}  /* prevents iOS zoom on focus */
 }
 
 /* NOTIFICATIONS */
@@ -2330,7 +2421,7 @@ window.addEventListener('DOMContentLoaded', () => {
             <div class="bonus-title">🎁 Daily Bonus</div>
             <div style="font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--grn)">No Purchase Necessary</div>
           </div>
-          <div class="bonus-sub">Day 4 streak — keep it going!</div>
+          <div class="bonus-sub" id="bonus-sub-text">Loading bonus...</div>
           <div class="streak-dots" id="streak-dots"></div>
 
           <!-- Divider -->
@@ -3410,13 +3501,90 @@ function ddAct(a){
   }[a]||function(){})();
 }
 
-function claimBonus(){
-  if(_bonusClaimed){showWB('Already Claimed','Come back tomorrow for Day 5!',0);return;}
-  _bonusClaimed=true;
-  _balGold+=1250; updBal();
-  document.getElementById('dd-badge').style.display='none';
-  playSound('win');
-  showWB('🎁 Daily Bonus!','1,250 Gold Chips added — keep the streak going!',1250);
+// ── DAILY BONUS STATE ──────────────────────────────────────────────────────
+var _bonusClaimed   = false;
+var _bonusStreak    = 0;
+var _bonusNextDay   = 1;
+var _bonusReward    = 500;
+var _bonusRewards   = [500,750,1000,1250,1500,2000,5000];
+
+async function _loadBonusStatus(){
+  const token = localStorage.getItem('rf_token');
+  if(!token) return;
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/daily-bonus/status',{headers:{'Authorization':'Bearer '+token}});
+    const data = await res.json();
+    if(!data.ok) return;
+    _bonusClaimed = data.claimed;
+    _bonusStreak  = data.streak;
+    _bonusNextDay = data.nextDay;
+    _bonusReward  = data.reward;
+    _bonusRewards = data.rewards || _bonusRewards;
+    _renderBonusPanel();
+  } catch(_){}
+}
+
+function _renderBonusPanel(){
+  const sub = document.getElementById('bonus-sub-text');
+  const btn = document.getElementById('claim-chips-btn');
+  const dots = document.getElementById('streak-dots');
+  if(sub){
+    const day = _bonusClaimed ? _bonusStreak : _bonusNextDay;
+    sub.textContent = _bonusClaimed
+      ? `Day ${Math.min(_bonusStreak,7)} complete — come back tomorrow!`
+      : `Day ${_bonusNextDay} — claim ${_bonusReward.toLocaleString()} Gold Chips`;
+  }
+  if(btn){
+    btn.textContent = _bonusClaimed ? '✓ Claimed' : '🎁 Claim '+(_bonusReward||500).toLocaleString()+' Chips';
+    btn.disabled = _bonusClaimed;
+    btn.style.opacity = _bonusClaimed ? '0.5' : '1';
+  }
+  if(dots){
+    dots.innerHTML = _bonusRewards.map((r,i)=>{
+      const day = i+1;
+      const done = day < (_bonusClaimed ? _bonusNextDay+1 : _bonusNextDay);
+      const active = day === (_bonusClaimed ? _bonusNextDay : _bonusNextDay) && !_bonusClaimed;
+      const isClaimed = day === _bonusNextDay && _bonusClaimed;
+      const col = done||isClaimed ? 'var(--gold)' : active ? 'rgba(201,168,76,.5)' : 'rgba(255,255,255,.12)';
+      return `<div style="flex:1;text-align:center">
+        <div style="width:28px;height:28px;border-radius:50%;background:${col};margin:0 auto 2px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${done||isClaimed?'#080E1A':'rgba(255,255,255,.6)'};border:1px solid ${active?'var(--gold)':'transparent'};${active?'box-shadow:0 0 8px rgba(201,168,76,.4)':''}">${done||isClaimed?'✓':day}</div>
+        <div style="font-size:7px;color:var(--txd);letter-spacing:.5px">${r>=5000?'🎁':r>=1500?'★':''}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+async function claimBonus(){
+  if(_bonusClaimed){ showWB('Already Claimed!','Come back tomorrow for your next reward.',0); return; }
+  const token = localStorage.getItem('rf_token');
+  if(!token){ showWB('Sign In Required','Log in to claim your daily bonus!',0); return; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/daily-bonus/claim',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}
+    });
+    const data = await res.json();
+    if(data.ok){
+      _bonusClaimed = true;
+      _bonusStreak  = data.streak;
+      _bonusReward  = data.reward;
+      _bonusNextDay = data.nextDay;
+      _balGold += data.reward; updBal();
+      document.getElementById('dd-badge').style.display='none';
+      playSound('win');
+      const dayNum = Math.min(_bonusStreak,7);
+      showWB('🎁 Day '+dayNum+' Bonus!', data.reward.toLocaleString()+' Gold Chips added — streak: '+_bonusStreak+' days!', data.reward);
+      _renderBonusPanel();
+      addNotif('social','🎁','gold','<b>Day '+dayNum+' Bonus:</b> '+data.reward.toLocaleString()+' Gold Chips claimed!');
+    } else {
+      showWB('Already Claimed','Come back tomorrow!',0);
+      _bonusClaimed=true; _renderBonusPanel();
+    }
+  } catch(e){
+    // Fallback offline claim
+    _bonusClaimed=true; _balGold+=500; updBal();
+    showWB('🎁 Bonus Claimed!','500 Gold Chips added — log in daily to build your streak!',500);
+    _renderBonusPanel();
+  }
 }
 
 // ══ PRE-ACTION QUEUE ═══════════════════════════════════════════════
@@ -7116,6 +7284,7 @@ async function doLogin(){
     _addWelcomeNotif(data.user.username);
     localStorage.setItem('rf_user_id', data.user.id);
     _loadFriendsSidebar();
+    _loadBonusStatus();
     setTimeout(()=>showRGConfirm('Welcome back, '+data.user.username+'!'), 300);
   } catch(e) {
     if(errEl) errEl.textContent = 'Server error — please try again.';
@@ -7204,6 +7373,7 @@ async function doSignup(){
     addNotif('social','📧','blue','Check your email to verify your account and unlock all features.');
     localStorage.setItem('rf_user_id', data.user.id);
     _loadFriendsSidebar();
+    _loadBonusStatus();
     showView('vl');
     setTimeout(()=>showRGConfirm('Welcome to Royal Flush, '+data.user.username+'! You have received $10 Royal Chips. Check your email to verify your account.'),400);
   } catch(e) {
