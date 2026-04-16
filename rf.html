@@ -1546,7 +1546,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="logo">Royal<span>Flush</span></div>
     <div class="lp-nav-links">
       <span class="lp-nav-link" onclick="lpScrollTo('lp-features')">How It Works</span>
-      <span class="lp-nav-link" onclick="lpScrollTo('lp-tables')">Tables</span>
+      <span class="lp-nav-link" onclick="lpScrollTo('lp-features')">How It Works</span>
       <span class="lp-nav-link" onclick="goTerms()">Legal</span>
     </div>
     <div class="lp-nav-actions">
@@ -1603,16 +1603,6 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 
   <!-- FEATURED TABLES -->
-  <section class="lp-section" id="lp-tables">
-    <div class="lp-section-inner">
-      <div class="lp-section-label">Live Right Now</div>
-      <h2 class="lp-h2">Find Your Game</h2>
-      <div class="lp-tables-grid" id="lp-tables-grid"></div>
-      <div style="text-align:center;margin-top:28px">
-        <button class="btn btn-ghost" style="padding:12px 32px" onclick="goLobby()">View All Tables →</button>
-      </div>
-    </div>
-  </section>
 
   <!-- HOW IT WORKS -->
   <section class="lp-section lp-section-alt" id="lp-features">
@@ -2501,11 +2491,11 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <!-- GAME -->
-<div id="vg" class="view">
+<div id="vg" class="view" style="display:none">
   <div class="gtop">
     <div style="display:flex;align-items:center;gap:14px">
       <button class="bk" onclick="goLobbyFromTable()">← Lobby</button>
-      <div><div class="gtitle">Midnight Velvet</div><div class="gstakes" id="g-stakes">${chip(SB_AMT)}/${chip(BB_AMT)} No Limit Hold'em</div></div>
+      <div><div class="gtitle">Midnight Velvet</div><div class="gstakes" id="g-stakes">$0.25/$0.50 No Limit Hold'em</div></div>
     </div>
     <div class="pills">
       <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:4px 12px;font-size:9px;color:var(--txd);letter-spacing:1px">
@@ -5622,7 +5612,7 @@ function hideSeatTip(av){
 // ══ INIT ═══════════════════════════════════════════════════════════
 (function init(){
   function safe(fn){ try{ fn(); }catch(e){ console.warn('[init]',e.message); } }
-  safe(renderTiers);safe(renderLPTables);safe(renderLeaderboard);safe(renderSNGList);
+  safe(renderLeaderboard);safe(renderSNGList);
   safe(()=>{ if(typeof renderStreakDots==='function') renderStreakDots(); });
   safe(()=>{ if(typeof updateRCWidget==='function') updateRCWidget(); });
   safe(refreshLobbyFromBackend);
