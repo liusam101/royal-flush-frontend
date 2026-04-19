@@ -6813,12 +6813,18 @@ function openBuyin(tierId, tableName){
       <div style="font-size:8px;color:var(--txd);margin-top:2px">${p.label}</div>
     </button>`).join('');
 
-  // Slider
+  // Slider — default to min buy-in or current balance, whichever is lower
+  const isGoldMode = _mode === 'gold';
+  const playerBal  = isGoldMode ? _balGold : _balRoyal;
   const slider = document.getElementById('buyin-slider');
-  const defaultVal = Math.min(bb*100, max);
+  const defaultVal = Math.min(Math.max(min, Math.min(bb*100, playerBal)), max);
   slider.min = min; slider.max = max; slider.value = defaultVal;
   updateBuyinSlider(slider);
   document.getElementById('buyin-error').textContent = '';
+  // Show error immediately if player can't afford minimum
+  if(playerBal < min){
+    document.getElementById('buyin-error').textContent = 'Insufficient balance. You need at least $'+min+' to join this table.';
+  }
 
   openOv('ov-buyin');
 }
@@ -6849,8 +6855,6 @@ function updateBuyinSlider(el){
   if(balEl) balEl.textContent = (isGold ? '' : '$') + bal.toLocaleString() + (isGold?' 🟡':'');
   if(remEl) remEl.innerHTML = `Remaining after buy-in: <b style="color:${remaining<0?'#E87070':'var(--tx)'}">${isGold?'':'$'}${Math.max(0,remaining).toLocaleString()}${isGold?' 🟡':''}</b>`;
   if(errEl) errEl.textContent = remaining < 0 ? 'Insufficient balance for this buy-in.' : '';
-  const seatBtn = document.querySelector('#ov-buyin .btn-gold');
-  if(seatBtn) seatBtn.disabled = remaining < 0;
 }
 
 function confirmBuyin(){
@@ -6859,8 +6863,7 @@ function confirmBuyin(){
   const val = parseFloat(document.getElementById('buyin-slider').value);
   const isGold = _mode==='gold';
   const bal = isGold ? _balGold : _balRoyal;
-  const remaining = bal - val;
-  if(remaining < 0){
+  if(val > bal + 0.001){  // small epsilon for float precision
     document.getElementById('buyin-error').textContent = 'Insufficient balance. Please deposit more chips.';
     return;
   }
