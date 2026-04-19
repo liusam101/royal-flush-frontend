@@ -6849,6 +6849,8 @@ function updateBuyinSlider(el){
   if(balEl) balEl.textContent = (isGold ? '' : '$') + bal.toLocaleString() + (isGold?' 🟡':'');
   if(remEl) remEl.innerHTML = `Remaining after buy-in: <b style="color:${remaining<0?'#E87070':'var(--tx)'}">${isGold?'':'$'}${Math.max(0,remaining).toLocaleString()}${isGold?' 🟡':''}</b>`;
   if(errEl) errEl.textContent = remaining < 0 ? 'Insufficient balance for this buy-in.' : '';
+  const seatBtn = document.querySelector('#ov-buyin .btn-gold');
+  if(seatBtn) seatBtn.disabled = remaining < 0;
 }
 
 function confirmBuyin(){
@@ -6857,7 +6859,8 @@ function confirmBuyin(){
   const val = parseFloat(document.getElementById('buyin-slider').value);
   const isGold = _mode==='gold';
   const bal = isGold ? _balGold : _balRoyal;
-  if(val > bal){
+  const remaining = bal - val;
+  if(remaining < 0){
     document.getElementById('buyin-error').textContent = 'Insufficient balance. Please deposit more chips.';
     return;
   }
