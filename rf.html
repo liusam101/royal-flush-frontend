@@ -42,6 +42,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 /* ── NAV ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:200;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 36px;background:rgba(8,8,10,.97);border-bottom:2px solid rgba(255,184,0,.15);backdrop-filter:blur(20px);box-shadow:0 0 0 1px rgba(255,184,0,.06),0 8px 40px rgba(0,0,0,.9);transition:transform .25s ease,opacity .25s ease}
 body.in-game nav{transform:translateY(-100%);opacity:0;pointer-events:none}
+body.in-lobby nav{pointer-events:auto !important}
 body.in-game{overflow:hidden;}
 /* ── MODE TOGGLE ──────────────────────────────────────────── */
 .ldr-row{display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(255,255,255,.02);border-radius:3px;margin-bottom:5px;transition:background .2s;cursor:pointer}
@@ -5858,6 +5859,7 @@ function showView(id){
     el.style.display='block'; el.classList.add('active');
     window.scrollTo(0,0);
     // Show mode toggle only in lobby
+    if(id !== 'vg') document.body.classList.remove('in-game');
     document.body.classList.toggle('in-lobby', id==='vl');
     document.body.classList.toggle('in-game',  id==='vg');
     if(id==='vl') setTimeout(()=>positionModeSlider(), 30);
@@ -7232,8 +7234,12 @@ async function doLogin(){
     localStorage.setItem('rf_email',    data.user.email);
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
-    // Update socket auth token so joinTable works without reconnect
-    if (typeof socket !== 'undefined') socket.auth = { token: data.token };
+    // Reconnect socket with new auth token so server sees authenticated user
+    if (typeof socket !== 'undefined') {
+      socket.auth = { token: data.token };
+      socket.disconnect();
+      socket.connect();
+    }
     // Update chips from DB
     _balRoyal = data.user.chips || 10;
     _balGold  = data.user.goldChips || 250000;
@@ -7323,8 +7329,12 @@ async function doSignup(){
     localStorage.setItem('rf_email',    data.user.email);
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
-    // Update socket auth token so joinTable works without reconnect
-    if (typeof socket !== 'undefined') socket.auth = { token: data.token };
+    // Reconnect socket with new auth token so server sees authenticated user
+    if (typeof socket !== 'undefined') {
+      socket.auth = { token: data.token };
+      socket.disconnect();
+      socket.connect();
+    }
     // Set chips from DB
     _balRoyal = data.user.chips || 10;
     _balGold  = data.user.goldChips || 250000;
