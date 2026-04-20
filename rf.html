@@ -5581,17 +5581,7 @@ function openPlayerProfile(name){
 }
 
 // ══ FRIENDS ════════════════════════════════════════════════════════
-function renderFriends(){
-  document.getElementById('side-friends').innerHTML=FRIENDS.map(f=>`
-    <div class="ldr-row" onclick="openPlayerProfile('${f.name}')" style="cursor:pointer">
-      <span class="${f.online?'online':'offline'}-dot"></span>
-      <div class="ldr-av" style="background:${f.col}">${f.name.slice(0,2).toUpperCase()}</div>
-      <div style="flex:1">
-        <div class="ldr-nm">${f.name}</div>
-        ${f.table?`<div style="font-size:8px;color:var(--txd)">${f.table}</div>`:'<div style="font-size:8px;color:#555">Offline</div>'}
-      </div>
-    </div>`).join('');
-}
+
 
 // ══ SEAT TOOLTIP ═══════════════════════════════════════════════════
 function showSeatTip(av,name){
@@ -6526,16 +6516,7 @@ function fmtExp(el){
   el.style.borderColor='';
 }
 
-function addNotif(icon,icoCls,label,msg,type){
-  const id=Date.now();
-  NOTIFS.unshift({id,type,icon,icoCls:'green',unread:true,msg,time:'Just now'});
-  const badge=document.getElementById('notif-badge');
-  if(badge){
-    const cur=parseInt(badge.textContent)||0;
-    badge.textContent=cur+1;
-    badge.style.display='flex';
-  }
-}
+
 
 // ══ NOTIFICATIONS ══════════════════════════════════════════════════
 // ── Real notifications — generated from actual game events ──
@@ -9877,7 +9858,7 @@ socket.on('timeBankUsed', ({ player, secondsAdded, bankRemaining }) => {
   addNotif('game','⏱','blue',`<b>${player}</b> uses their time bank`);
 });
 
-function useTimeBank() {
+function useTimeBankSocket() {
   if (!_backendActive || !_connectedTableId) return;
   if (_timeBankRemaining <= 0) { showToast('No time bank remaining'); return; }
   socket.emit('requestTimeBank', { tableId: _connectedTableId });
