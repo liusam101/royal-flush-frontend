@@ -6848,9 +6848,9 @@ function confirmBuyin(){
     document.getElementById('buyin-error').textContent = 'Insufficient balance. Please deposit more chips.';
     return;
   }
-  // Deduct buy-in from display balance
-  subBal(val);
-  TXNS.unshift({icon:'🪑',label:'Table Buy-in',table:_buyinTable,amt:-val,ts:'Just now'});
+  // Store buy-in amount — will deduct display balance only after server confirms
+  window._pendingBuyInAmt  = val;
+  window._pendingBuyInMode = isGold;
   // Update blinds to match tier
   SB_AMT = tier.sb; BB_AMT = tier.bb;
   closeOv('ov-buyin');
@@ -7232,6 +7232,8 @@ async function doLogin(){
     localStorage.setItem('rf_email',    data.user.email);
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
+    // Update socket auth token so joinTable works without reconnect
+    if (typeof socket !== 'undefined') socket.auth = { token: data.token };
     // Update chips from DB
     _balRoyal = data.user.chips || 10;
     _balGold  = data.user.goldChips || 250000;
@@ -7321,6 +7323,8 @@ async function doSignup(){
     localStorage.setItem('rf_email',    data.user.email);
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
+    // Update socket auth token so joinTable works without reconnect
+    if (typeof socket !== 'undefined') socket.auth = { token: data.token };
     // Set chips from DB
     _balRoyal = data.user.chips || 10;
     _balGold  = data.user.goldChips || 250000;
@@ -9146,15 +9150,23 @@ socket.on('joinedTable', ({ tableId, seat }) => {
   _backendActive    = true;
   _connectedTableId = tableId;
   console.log(`[Socket] joined ${tableId} at seat ${seat}`);
-  showToast(`✓ Connected — Seat ${seat + 1}`);
+  showToast(`✓ Seated — Seat ${seat + 1}`);
+  // NOW deduct display balance — server confirmed the join
+  if (window._pendingBuyInAmt) {
+    const amt  = window._pendingBuyInAmt;
+    const gold = window._pendingBuyInMode;
+    if (gold) _balGold -= amt; else _balRoyal -= amt;
+    _bal = gold ? _balGold : _balRoyal;
+    updBal();
+    TXNS.unshift({icon:'🪑',label:'Table Buy-in',table:tableId,amt:-amt,ts:'Just now'});
+    window._pendingBuyInAmt  = null;
+    window._pendingBuyInMode = null;
+  }
   startSessionClock();
-  // Save for reconnect
   sessionStorage.setItem('rf_last_table', tableId);
   refreshLobbyFromBackend && refreshLobbyFromBackend();
-  // Navigate to game view if not already there
-  if (!document.getElementById('vg')?.classList.contains('active')) {
-    showView('vg');
-  }
+  // Navigate to game view
+  showView('vg');
 });
 
 // Full table state — update names, stacks, pot, acting seat
