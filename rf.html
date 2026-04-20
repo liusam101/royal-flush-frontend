@@ -5602,7 +5602,7 @@ function hideSeatTip(av){
 // ══ INIT ═══════════════════════════════════════════════════════════
 (function init(){
   function safe(fn){ try{ fn(); }catch(e){ console.warn('[init]',e.message); } }
-  safe(renderLeaderboard);safe(renderSNGList);
+  safe(renderTiers);safe(renderLeaderboard);safe(renderSNGList);
   safe(()=>{ if(typeof renderStreakDots==='function') renderStreakDots(); });
   safe(()=>{ if(typeof updateRCWidget==='function') updateRCWidget(); });
   safe(refreshLobbyFromBackend);
@@ -6860,7 +6860,7 @@ function confirmBuyin(){
   // Update table name header
   const gname = document.getElementById('g-tname');
   if(gname) gname.textContent = _buyinTable;
-  showView('vg');
+  // DO NOT showView('vg') here — wait for joinedTable confirmation from server
 }
 
 // ══ TOURNAMENT (MTT) ENGINE ════════════════════════════════════════
@@ -9459,8 +9459,26 @@ socket.on('kicked', ({ reason }) => {
 // Error from server
 socket.on('error', ({ message }) => {
   console.warn('[Socket] error:', message);
-  // Don't show toast for "Not your turn" — happens during demo mode overlap
-  if (message !== 'Not your turn') showToast(`⚠ ${message}`);
+  if (message === 'Not your turn') return; // ignore during demo overlap
+  showToast(`⚠ ${message}`);
+  // If join failed (player not yet seated), refund chips and go back to lobby
+  if (!_backendActive && message && (
+    message.includes('Insufficient') ||
+    message.includes('not found') ||
+    message.includes('Payment failed') ||
+    message.includes('Access denied')
+  )) {
+    // Refund the deducted buy-in amount
+    const refundAmt = parseFloat(sessionStorage.getItem('rf_last_buyin')) || 0;
+    if (refundAmt > 0) {
+      if (_mode === 'gold') _balGold += refundAmt;
+      else _balRoyal += refundAmt;
+      updBal();
+      showToast(`↩ $${refundAmt.toFixed(2)} refunded`);
+    }
+    // Go back to lobby so player can try again
+    setTimeout(() => goLobby(), 1500);
+  }
 });
 
 // Disconnected
@@ -9758,14 +9776,24 @@ window.confirmBuyin = function() {
   if (_origConfirmBuyin) _origConfirmBuyin.apply(this, arguments);
   const playerName = localStorage.getItem('rf_username') || 'HighRoller';
   const buyIn      = parseFloat(document.getElementById('buyin-slider')?.value) || 100;
-  // If returning from bust use stored table, else use selected table from lobby
   const tableId    = window._bustReturnTableId || window._buyinBackendId || 'midnight-velvet';
   window._bustReturnTableId = null;
   // Clear stale seat data before rejoining
   SEATS.length = 0;
   _backendActive = false;
   _mySocketSeat  = null;
-  setTimeout(() => backendJoinTable(tableId, playerName, buyIn), 400);
+  showToast('⟳ Finding your seat...');
+  // Connect socket first, then join — gives time for connection if needed
+  backendConnect();
+  const doJoin = () => backendJoinTable(tableId, playerName, buyIn);
+  if (socket.connected) {
+    setTimeout(doJoin, 100);
+  } else {
+    // Wait for connection, then join
+    socket.once('connect', () => setTimeout(doJoin, 100));
+    // Fallback timeout — try anyway after 3s
+    setTimeout(() => { if (!_backendActive) doJoin(); }, 3000);
+  }
 };
 
 // On fold/call/raise → backend is source of truth when connected
