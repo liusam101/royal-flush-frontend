@@ -9790,23 +9790,23 @@ window.confirmBuyin = function() {
   SEATS.length = 0;
   _backendActive = false;
   _mySocketSeat  = null;
+  // Navigate to game view immediately so the user sees the table
+  showView('vg');
   showToast('⟳ Finding your seat...');
   const doJoin = () => backendJoinTable(tableId, playerName, buyIn);
-  // Always reconnect with fresh auth token before joining
+  // Connect with fresh auth token before joining
   const tok = localStorage.getItem('rf_token');
   socket.auth = { token: tok };
   if (socket.connected) {
-    // Already connected with current auth — join immediately
     setTimeout(doJoin, 150);
   } else {
-    // Connect fresh, then join once connected
     socket.once('connect', () => {
       console.log('[Join] Socket connected, joining table...');
       setTimeout(doJoin, 150);
     });
     socket.connect();
   }
-  // Safety fallback: if no joinedTable received in 8s, show error
+  // Safety fallback: if no joinedTable received in 8s, show error and return to lobby
   setTimeout(() => {
     if (!_backendActive) {
       showToast('⚠ Could not connect to table — please try again');
