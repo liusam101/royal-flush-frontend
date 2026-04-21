@@ -7235,12 +7235,8 @@ async function doLogin(){
     localStorage.setItem('rf_email',    data.user.email);
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
-    // Update socket auth token and reconnect so server gets valid userId
-    if (typeof socket !== 'undefined') {
-      socket.auth = { token: data.token };
-      if (socket.connected) socket.disconnect();
-      socket.connect();
-    }
+    // Update socket auth so it's used on next game join
+    if (typeof socket !== 'undefined') socket.auth = { token: data.token };
     // Update chips from DB
     _balRoyal = data.user.chips || 10;
     _balGold  = data.user.goldChips || 250000;
@@ -7330,12 +7326,8 @@ async function doSignup(){
     localStorage.setItem('rf_email',    data.user.email);
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
-    // Update socket auth token and reconnect so server gets valid userId
-    if (typeof socket !== 'undefined') {
-      socket.auth = { token: data.token };
-      if (socket.connected) socket.disconnect();
-      socket.connect();
-    }
+    // Update socket auth so it's used on next game join
+    if (typeof socket !== 'undefined') socket.auth = { token: data.token };
     // Set chips from DB
     _balRoyal = data.user.chips || 10;
     _balGold  = data.user.goldChips || 250000;
@@ -9507,11 +9499,13 @@ socket.on('connect', () => {
   const savedTable = sessionStorage.getItem('rf_last_table');
   const savedBuyIn = parseFloat(sessionStorage.getItem('rf_last_buyin')) || 100;
   const myName     = localStorage.getItem('rf_username') || 'HighRoller';
-  if (savedTable && !_backendActive) {
+  if (savedTable && !_backendActive && !window._pendingBuyInAmt) {
     console.log('[Socket] Auto-reconnecting to', savedTable);
     setTimeout(() => {
-      showToast('⟳ Reconnecting to table...');
-      backendJoinTable(savedTable, myName, savedBuyIn);
+      if (!_backendActive && !window._pendingBuyInAmt) {
+        showToast('⟳ Reconnecting to table...');
+        backendJoinTable(savedTable, myName, savedBuyIn);
+      }
     }, 600);
   }
 });
@@ -9786,6 +9780,8 @@ function syncTableState(state) {
 const _origConfirmBuyin = window.confirmBuyin;
 window.confirmBuyin = function() {
   if (_origConfirmBuyin) _origConfirmBuyin.apply(this, arguments);
+  // If original returned early (e.g. balance error), _pendingBuyInAmt stays null — don't proceed
+  if (!window._pendingBuyInAmt) return;
   const playerName = localStorage.getItem('rf_username') || 'HighRoller';
   const buyIn      = parseFloat(document.getElementById('buyin-slider')?.value) || 100;
   const tableId    = window._bustReturnTableId || window._buyinBackendId || 'midnight-velvet';
