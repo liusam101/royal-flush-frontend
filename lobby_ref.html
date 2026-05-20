@@ -1,0 +1,199 @@
+<div id="vl" class="view" style="display:none">
+  <div id="lobby-shell">
+
+    <!-- ══ LEFT SIDEBAR ══ -->
+    <aside class="l-sb">
+
+      <!-- Mode nameplate -->
+      <div class="sb-block" id="lobby-mode-header" style="padding-top:24px">
+        <div class="sb-mode-title" id="lobby-mode-title">Royal Chips</div>
+        <div class="sb-mode-sub" id="lobby-mode-sub">Real Stakes · Cash &amp; Tournaments</div>
+        <div class="sb-mode-badge" id="lobby-mode-badge">Royal Mode</div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="sb-nav-wrap">
+        <span class="sb-nav-cap">Game Rooms</span>
+        <div class="sni on" id="ni-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
+        <div class="sni" id="ni-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
+        <div class="sni" id="ni-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
+        <div class="sb-nav-hr"></div>
+        <span class="sb-nav-tools">Tools</span>
+        <div class="sni" id="ni-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--rf-gold);font-size:11px;line-height:1;vertical-align:middle">●</span></div>
+      </div>
+
+      <!-- Live Stats -->
+      <div class="sb-block">
+        <div class="shd">Live Now</div>
+        <div class="sb-stat"><span class="sb-stat-l">Players Online</span><span class="sb-stat-n" id="ls-users">0</span></div>
+        <div class="sb-stat"><span class="sb-stat-l">Hands Today</span><span class="sb-stat-n" id="ls-hands">0</span></div>
+        <div class="sb-stat"><span class="sb-stat-l" id="ls-chips-label">Chips in Play</span><span class="sb-stat-n" id="ls-chips">0</span></div>
+      </div>
+
+      <!-- Daily Bonus -->
+      <div class="sb-block">
+        <div class="shd">Daily Bonus</div>
+        <div class="bonus-frame" id="rc-claim-widget">
+          <div class="bonus-title">Claim Today</div>
+          <div class="bonus-sub" id="bonus-sub-text">1,250 Gold + 1 Royal Chip free</div>
+          <div class="s-dots" id="streak-dots" style="margin-bottom:12px"></div>
+          <div id="daily-btn-row">
+            <button class="btn btn-g btn-fw" id="claim-chips-btn" onclick="claimBonus()">Claim Daily Bonus</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="sb-block">
+        <div class="shd">Leaderboard</div>
+        <div id="ldr"></div>
+      </div>
+
+      <!-- Your Session -->
+      <div class="sb-block" id="lside-session-wrap">
+        <div class="shd">Your Session</div>
+        <div id="side-session"></div>
+      </div>
+
+      <!-- Friends Online -->
+      <div class="sb-block">
+        <div class="shd">Friends Online</div>
+        <div id="side-friends"></div>
+      </div>
+
+      <!-- VIP Status -->
+      <div class="sb-block">
+        <div class="shd">VIP Status</div>
+        <div id="vip-bar"></div>
+      </div>
+
+      <!-- Recent Big Pots -->
+      <div class="sb-block" id="lside-pots-wrap">
+        <div class="shd">Recent Big Pots</div>
+        <div id="side-pots"></div>
+      </div>
+
+    </aside>
+
+    <!-- ══ MAIN CONTENT ══ -->
+    <main class="l-main">
+
+      <!-- CASH TABLES PANEL -->
+      <div id="panel-cash" class="l-panel on">
+        <div class="ph">
+          <div>
+            <div class="ph-title">Cash Tables</div>
+            <div class="ph-sub">No Limit Hold'em · Pot Limit Omaha · Mixed</div>
+          </div>
+          <button class="btn btn-o btn-sm">+ Join Waitlist</button>
+        </div>
+        <div id="tgrid"></div>
+        <div class="tfoot">
+          <div class="tf-bgs">
+            <span class="tf-bg">SSL Secured</span>
+            <span class="tf-bg">Licensed · RGL-2024-0847</span>
+            <span class="tf-bg">18+</span>
+            <span class="tf-bg">Provably Fair</span>
+          </div>
+          <div class="tf-lks">
+            <span class="tf-lk" onclick="goReferral()">Refer a Friend</span><span class="tf-sep">·</span>
+            <span class="tf-lk" onclick="goAffiliate()">Affiliates</span><span class="tf-sep">·</span>
+            <span class="tf-lk" onclick="goRules()">Sweepstakes Rules</span><span class="tf-sep">·</span>
+            <span class="tf-lk" onclick="goRedeem()">Redeem Royal Chips</span><span class="tf-sep">·</span>
+            <span class="tf-lk" onclick="goRG()">Responsible Gambling</span><span class="tf-sep">·</span>
+            <span class="tf-lk" onclick="goTerms()">Terms &amp; Conditions</span><span class="tf-sep">·</span>
+            <span class="tf-lk" onclick="goPrivacy()">Privacy Policy</span>
+          </div>
+          <div class="tf-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · Gambling can be addictive. Play responsibly.</div>
+          <div class="tf-copy" style="margin-top:3px;color:rgba(255,255,255,.08)">Royal Chips are a sweepstakes currency with no cash value until redeemed. No purchase necessary. Void where prohibited. 18+.</div>
+        </div>
+      </div>
+
+      <!-- SIT & GO PANEL -->
+      <div id="panel-sng" class="l-panel">
+        <div class="ph">
+          <div>
+            <div class="ph-title">Sit &amp; Go</div>
+            <div class="ph-sub">Fill a seat, play instantly · Single-table tournaments</div>
+          </div>
+          <button class="btn btn-o btn-sm">+ Create SNG</button>
+        </div>
+        <div class="sng-grid" id="sng-list"></div>
+      </div>
+
+      <!-- TOURNAMENTS PANEL -->
+      <div id="panel-mtt" class="l-panel">
+        <div class="ph">
+          <div>
+            <div class="ph-title">Tournaments</div>
+            <div class="ph-sub">Multi-Table · Guaranteed Prize Pools · All times ET</div>
+          </div>
+        </div>
+        <div id="mtt-list"></div>
+      </div>
+
+      <!-- FILTERS PANEL -->
+      <div id="panel-filters" class="l-panel">
+        <div class="ph">
+          <div>
+            <div class="ph-title">Filters</div>
+            <div class="ph-sub">Refine the tables and tournaments shown</div>
+          </div>
+          <button class="btn btn-o btn-sm" onclick="resetFilters()">Clear All</button>
+        </div>
+        <div class="filt-panel">
+          <div class="filt-sec">
+            <div class="filt-lbl">Stakes</div>
+            <div class="fchips" id="filt-stakes">
+              <div class="fchip on" onclick="toggleFilter('stakes',this,'all')">All</div>
+              <div class="fchip" onclick="toggleFilter('stakes',this,'micro')">Micro</div>
+              <div class="fchip" onclick="toggleFilter('stakes',this,'low')">Low</div>
+              <div class="fchip" onclick="toggleFilter('stakes',this,'mid')">Mid</div>
+              <div class="fchip" onclick="toggleFilter('stakes',this,'high')">High</div>
+              <div class="fchip" onclick="toggleFilter('stakes',this,'nose')">Nosebleed</div>
+            </div>
+          </div>
+          <div class="filt-sec">
+            <div class="filt-lbl">Game Type</div>
+            <div class="fchips" id="filt-game">
+              <div class="fchip on" onclick="toggleFilter('game',this,'all')">All</div>
+              <div class="fchip" onclick="toggleFilter('game',this,'nlhe')">No Limit Hold'em</div>
+              <div class="fchip" onclick="toggleFilter('game',this,'plo')">Pot Limit Omaha</div>
+              <div class="fchip" onclick="toggleFilter('game',this,'mixed')">Mixed</div>
+            </div>
+          </div>
+          <div class="filt-sec">
+            <div class="filt-lbl">Speed</div>
+            <div class="fchips" id="filt-speed">
+              <div class="fchip on" onclick="toggleFilter('speed',this,'all')">All</div>
+              <div class="fchip" onclick="toggleFilter('speed',this,'normal')">Normal</div>
+              <div class="fchip" onclick="toggleFilter('speed',this,'turbo')">Turbo</div>
+              <div class="fchip" onclick="toggleFilter('speed',this,'hyper')">Hyper</div>
+            </div>
+          </div>
+          <div class="filt-sec">
+            <div class="filt-lbl">Availability</div>
+            <div class="fchips" id="filt-avail">
+              <div class="fchip on" onclick="toggleFilter('avail',this,'all')">Any</div>
+              <div class="fchip" onclick="toggleFilter('avail',this,'open')">Has Open Seat</div>
+              <div class="fchip" onclick="toggleFilter('avail',this,'full')">Full Tables Only</div>
+            </div>
+          </div>
+          <div class="filt-sec">
+            <div class="filt-lbl">Table Size</div>
+            <div class="fchips" id="filt-size">
+              <div class="fchip on" onclick="toggleFilter('size',this,'all')">Any</div>
+              <div class="fchip" onclick="toggleFilter('size',this,'hu')">Heads Up</div>
+              <div class="fchip" onclick="toggleFilter('size',this,'6max')">6-Max</div>
+              <div class="fchip" onclick="toggleFilter('size',this,'9max')">9-Max</div>
+            </div>
+          </div>
+          <div style="margin-top:32px">
+            <button class="btn btn-g" onclick="switchTab('cash')">View Tables</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
