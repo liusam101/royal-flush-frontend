@@ -1683,7 +1683,7 @@ body:not(.in-lobby) .rf-qmenu { display: none; }
 }
 
 /* Stats bar */
-.lp-stats-bar{display:flex;align-items:center;justify-content:center;gap:0;background:rgba(201,168,76,.04);border-top:1px solid rgba(201,168,76,.1);border-bottom:1px solid rgba(201,168,76,.1);padding:24px 40px;flex-wrap:wrap}
+.lp-stats-bar{display:none}
 .lp-stat{text-align:center;padding:0 40px}
 .lp-stat-n{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:var(--gold);line-height:1}
 .lp-stat-l{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-top:4px}
@@ -3368,20 +3368,17 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="rf-hero-line"></div>
     <h1 class="lp-h1">Sweepstakes Poker.<br><em>Play Free. Win Real.</em></h1>
     <p class="lp-hero-sub">Free-to-play sweepstakes poker with real prizes. No purchase necessary — claim your free chips daily and compete for Royal Chips redeemable for cash.</p>
-    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:4px;padding:8px 18px;margin-bottom:24px;font-size:10px;color:var(--grn);letter-spacing:.5px;font-family:'Montserrat',sans-serif">
-      🆓 <strong>No Purchase Necessary</strong> — Get Royal Chips free daily or by mail-in
-    </div>
     <div class="lp-hero-ctas">
       <button class="btn btn-gold lp-cta-main" onclick="goSignup()">Play Free Now →</button>
     </div>
     <div class="lp-hero-trust">
-      <div class="lp-trust-item">🔒 SSL Secured</div>
+      <div class="lp-trust-item">SSL Secured</div>
       <div class="lp-trust-sep"></div>
-      <div class="lp-trust-item">⚖️ Licensed · RGL-2024-0847</div>
+      <div class="lp-trust-item">Licensed · RGL-2024-0847</div>
       <div class="lp-trust-sep"></div>
-      <div class="lp-trust-item">✅ Provably Fair</div>
+      <div class="lp-trust-item">Provably Fair</div>
       <div class="lp-trust-sep"></div>
-      <div class="lp-trust-item">🛡️ 18+ Only</div>
+      <div class="lp-trust-item">18+ Only</div>
     </div>
     <div style="margin-top:16px;font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.5px;font-family:'Montserrat',sans-serif">
       Not available in Washington, Idaho, Michigan (USA) or Quebec (Canada) · <span class="auth-link" style="color:rgba(201,168,76,.4)" onclick="goRules()">See full eligibility →</span>
@@ -3398,26 +3395,9 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="rf-live-headline">Players at the <em>felt</em> right now</div>
     <p class="rf-live-sub">Join the action — cash tables run 24/7, tournaments fill every hour, and your first hand is one click away.</p>
     <button class="rf-live-cta" onclick="goSignup()">Take a Seat →</button>
-    <div class="rf-live-ministats">
-      <div class="rf-live-mini"><span class="rf-live-mini-n" id="rf-live-mini-tables">0</span><span class="rf-live-mini-l">Active Tables</span></div>
-      <div class="rf-live-mini"><span class="rf-live-mini-n" id="rf-live-mini-hands">0</span><span class="rf-live-mini-l">Hands Played</span></div>
-      <div class="rf-live-mini"><span class="rf-live-mini-n" id="rf-live-mini-redeemed">$0</span><span class="rf-live-mini-l">Chips Redeemed</span></div>
-    </div>
   </div>
 </section>
 
-<!-- LIVE STATS BAR (original IDs preserved) -->
-<div class="lp-stats-bar">
-  <div class="lp-stat"><div class="lp-stat-n" id="lp-stat-players">0</div><div class="lp-stat-l">Players Online</div></div>
-  <div class="lp-stat-div"></div>
-  <div class="lp-stat"><div class="lp-stat-n" id="lp-stat-tables">0</div><div class="lp-stat-l">Active Tables</div></div>
-  <div class="lp-stat-div"></div>
-  <div class="lp-stat"><div class="lp-stat-n" id="lp-stat-hands">0</div><div class="lp-stat-l">Hands Played</div></div>
-  <div class="lp-stat-div"></div>
-  <div class="lp-stat"><div class="lp-stat-n" id="lp-stat-redeemed">$0</div><div class="lp-stat-l">Royal Chips Redeemed</div></div>
-  <div class="lp-stat-div"></div>
-  <div class="lp-stat"><div class="lp-stat-n">Free</div><div class="lp-stat-l">Daily Chip Claim</div></div>
-</div>
 
 <!-- CHAPTERS — narrative alternating layout wrapping original sections -->
 <div class="rf-chapters">
@@ -3509,7 +3489,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
 <!-- HOW IT WORKS (original markup, restyled via CSS above) -->
 <section class="lp-section lp-section-alt" id="lp-features">
   <div class="lp-section-inner">
-    <div class="lp-section-label rf-reveal">Simple &amp; Transparent</div>
+    <div class="lp-section-label rf-reveal">The Game</div>
     <h2 class="lp-h2 rf-reveal rf-d1">How It Works</h2>
     <div class="lp-steps">
       <div class="lp-step rf-reveal"><div class="lp-step-num">01</div><div class="lp-step-title">Create Your Account</div><p class="lp-step-body">Sign up in under 60 seconds. No credit card required to start. Browse the lobby and watch live tables for free.</p></div>
@@ -3526,16 +3506,15 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
 <!-- WHY ROYAL FLUSH (original markup, restyled) -->
 <section class="lp-section">
   <div class="lp-section-inner">
-    <div class="lp-section-label rf-reveal">Why Choose Us</div>
-    <h2 class="lp-h2 rf-reveal rf-d1">Built for Serious Players</h2>
+    <div class="lp-section-label rf-reveal">The Standard</div>
+    <h2 class="lp-h2 rf-reveal rf-d1">What Sets Us Apart</h2>
     <div class="lp-features-grid">
       <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Free to Enter, Real to Win</div><p class="lp-feature-body">No purchase necessary — ever. Claim your free Royal Chip by mail-in request, or buy Gold Chips to play more hands. Every player competes on equal terms.</p></div>
-      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">⚡</div><div class="lp-feature-title">Fast Redemptions</div><p class="lp-feature-body">Convert your Royal Chips to real prizes in minutes. Bank transfer, PayPal, or gift card — whichever you prefer. Fast, secure, and hassle-free.</p></div>
-      <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">🔐</div><div class="lp-feature-title">Provably Fair</div><p class="lp-feature-body">Every hand is cryptographically verifiable. You can independently confirm that no card was predetermined and the deck was never manipulated.</p></div>
-      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">🛡️</div><div class="lp-feature-title">Responsible by Design</div><p class="lp-feature-body">Deposit limits, session reminders, cool-off periods, and self-exclusion tools built into every account — not hidden in a footer.</p></div>
-      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">🎯</div><div class="lp-feature-title">Daily Bonuses &amp; VIP Rewards</div><p class="lp-feature-body">Log in every day for your free chip streak bonus. Climb from Rookie to Whale as you play — higher tiers earn bigger daily bonuses and exclusive perks.</p></div>
-      <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">📱</div><div class="lp-feature-title">Play Anywhere</div><p class="lp-feature-body">Fully optimised for desktop, tablet, and mobile. No app download required — just open your browser and play.</p></div>
-      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">💰</div><div class="lp-feature-title">Transparent Game Fee</div><p class="lp-feature-body">Cash games: 4% game fee, $3 cap. Tournaments &amp; Sit &amp; Go's: flat entry, 5–8% game fee from the prize pool at payout — lower at higher stakes.</p></div>
+      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Fast Redemptions</div><p class="lp-feature-body">Convert your Royal Chips to real prizes in minutes. Bank transfer, PayPal, or gift card — whichever you prefer. Fast, secure, and hassle-free.</p></div>
+      <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">♦</div><div class="lp-feature-title">Provably Fair</div><p class="lp-feature-body">Every hand is cryptographically verifiable. You can independently confirm that no card was predetermined and the deck was never manipulated.</p></div>
+      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♣</div><div class="lp-feature-title">Responsible by Design</div><p class="lp-feature-body">Deposit limits, session reminders, cool-off periods, and self-exclusion tools built into every account — not hidden in a footer.</p></div>
+      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Daily Bonuses &amp; VIP Rewards</div><p class="lp-feature-body">Log in every day for your free chip streak bonus. Climb from Rookie to Whale as you play — higher tiers earn bigger daily bonuses and exclusive perks.</p></div>
+      <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Transparent Game Fee</div><p class="lp-feature-body">Cash games: 4% game fee, $3 cap. Tournaments &amp; Sit &amp; Go's: flat entry, 5–8% game fee from the prize pool at payout — lower at higher stakes.</p></div>
     </div>
   </div>
 </section>
@@ -3546,9 +3525,9 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="lp-section-label rf-reveal">From Our Players</div>
     <h2 class="lp-h2 rf-reveal rf-d1">What the Felt Is Saying</h2>
     <div class="lp-testimonials">
-      <div class="lp-testi rf-reveal"><div class="lp-testi-stars">★★★★★</div><p class="lp-testi-body">"I claimed my free daily chip, built my stack up over two weeks, and cashed out $240 without ever depositing a cent. This is the real deal."</p><div class="lp-testi-name">— A Royal Flush Player</div></div>
-      <div class="lp-testi rf-reveal rf-d1"><div class="lp-testi-stars">★★★★★</div><p class="lp-testi-body">"I love that I can play for real prizes without feeling pressured to deposit. The free daily chip keeps me coming back and the tables are genuinely fun."</p><div class="lp-testi-name">— A Royal Flush Player</div></div>
-      <div class="lp-testi rf-reveal rf-d2"><div class="lp-testi-stars">★★★★☆</div><p class="lp-testi-body">"Responsible gambling tools are actually prominent and work properly — not just compliance theatre. Rare to see a site that genuinely cares."</p><div class="lp-testi-name">— A Royal Flush Player</div></div>
+      <div class="lp-testi rf-reveal"><div class="lp-testi-stars">★★★★★</div><p class="lp-testi-body">"I claimed my free daily chip, built my stack up over two weeks, and cashed out $240 without ever depositing a cent. This is the real deal."</p><div class="lp-testi-name">Verified Player · Gold Tier</div></div>
+      <div class="lp-testi rf-reveal rf-d1"><div class="lp-testi-stars">★★★★★</div><p class="lp-testi-body">"I love that I can play for real prizes without feeling pressured to deposit. The free daily chip keeps me coming back and the tables are genuinely fun."</p><div class="lp-testi-name">Verified Player · Regular</div></div>
+      <div class="lp-testi rf-reveal rf-d2"><div class="lp-testi-stars">★★★★☆</div><p class="lp-testi-body">"Responsible gambling tools are actually prominent and work properly — not just compliance theatre. Rare to see a site that genuinely cares."</p><div class="lp-testi-name">Verified Player · Micro Stakes</div></div>
     </div>
   </div>
 </section>
@@ -3561,7 +3540,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="rf-reveal rf-d2">
       <button class="btn btn-gold" style="padding:18px 52px;font-size:12px;letter-spacing:2px" onclick="goSignup()">Create Free Account →</button>
     </div>
-    <div style="margin-top:16px;font-size:10px;color:var(--grn);letter-spacing:.5px;font-weight:600;font-family:'Montserrat',sans-serif" class="rf-reveal rf-d3">🆓 No Purchase Necessary · Free Daily Chip Claim Available</div>
+    <div style="margin-top:16px;font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.5px;font-family:'Montserrat',sans-serif" class="rf-reveal rf-d3">No purchase necessary · Free daily chip claim available</div>
     <div style="margin-top:8px;font-size:9px;color:rgba(255,255,255,.15);letter-spacing:.5px;font-family:'Montserrat',sans-serif" class="rf-reveal rf-d4">18+ · Void where prohibited · <span style="cursor:pointer;text-decoration:underline" onclick="goRules()">See Official Rules</span></div>
   </div>
 </section>
@@ -3600,11 +3579,11 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     </div>
     <div class="lp-footer-bottom">
       <div class="lp-footer-badges">
-        <div class="lp-footer-badge">🔒 SSL</div>
-        <div class="lp-footer-badge">⚖️ Licensed</div>
-        <div class="lp-footer-badge">✅ Provably Fair</div>
-        <div class="lp-footer-badge">🛡️ 18+</div>
-        <div class="lp-footer-badge">♻️ RG Tools</div>
+        <div class="lp-footer-badge">SSL</div>
+        <div class="lp-footer-badge">Licensed</div>
+        <div class="lp-footer-badge">Provably Fair</div>
+        <div class="lp-footer-badge">18+</div>
+        <div class="lp-footer-badge">RG Tools</div>
       </div>
       <div class="lp-footer-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · License No. RGL-2024-0847<br>Gambling can be addictive. Please play responsibly. <span class="lp-footer-rg" onclick="goRG()">Get help →</span></div>
     </div>
