@@ -5137,202 +5137,684 @@ window._showVerifyBanner = function(user){
 
 
 <div id="vl" class="view" style="display:none">
-  <div id="lobby-shell">
 
-    <!-- ══ LEFT SIDEBAR ══ -->
-    <aside class="l-sb">
+<style>
+/* ══ LOBBY REDESIGN STYLES (scoped to lobby view only) ══ */
+/* body rules scoped — do not override global body */
+#vl { font-family: 'Montserrat', system-ui, sans-serif; font-size: 11px; -webkit-font-smoothing: antialiased; }
+#vl.active ~ * { overflow: auto; }
 
-      <!-- Mode nameplate -->
-      <div class="sb-block" id="lobby-mode-header" style="padding-top:24px">
-        <div class="sb-mode-title" id="lobby-mode-title">Royal Chips</div>
-        <div class="sb-mode-sub" id="lobby-mode-sub">Real Stakes · Cash &amp; Tournaments</div>
-        <div class="sb-mode-badge" id="lobby-mode-badge">Royal Mode</div>
-      </div>
 
-      <!-- Navigation -->
-      <div class="sb-nav-wrap">
-        <span class="sb-nav-cap">Game Rooms</span>
-        <div class="sni on" id="ni-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
-        <div class="sni" id="ni-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
-        <div class="sni" id="ni-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
-        <div class="sb-nav-hr"></div>
-        <span class="sb-nav-tools">Tools</span>
-        <div class="sni" id="ni-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:#FFB800;font-size:11px;line-height:1;vertical-align:middle">●</span></div>
-      </div>
+:root {
+  --gold:    #FFB800;
+  --gold-lt: #FFD95A;
+  --gold-dk: #7A6000;
+  --bg:      #08080A;
+  --bg-s:    #0C0C10;
+  --bg-e:    #111118;
+  --tx:      #F2EDE6;
+  --txm:     #6B6580;
+  --ok:      #00E5A0;
+  --red:     #FF1744;
+  --pur:     #9B4DFF;
+  --nav-h:   62px;
+}
 
-      <!-- Live Stats -->
-      <div class="sb-block">
-        <div class="shd">Live Now</div>
-        <div class="sb-stat"><span class="sb-stat-l">Players Online</span><span class="sb-stat-n" id="ls-users">—</span></div>
-        <div class="sb-stat"><span class="sb-stat-l">Hands Today</span><span class="sb-stat-n" id="ls-hands">—</span></div>
-        <div class="sb-stat"><span class="sb-stat-l" id="ls-chips-label">Chips in Play</span><span class="sb-stat-n" id="ls-chips">—</span></div>
-      </div>
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 
-      <!-- Daily Bonus -->
-      <div class="sb-block">
-        <div class="shd">Daily Bonus</div>
-        <div class="bonus-frame" id="rc-claim-widget">
-          <div class="bonus-title">Claim Today</div>
-          <div class="bonus-sub" id="bonus-sub-text">1,250 Gold + 1 Royal Chip free</div>
-          <div class="s-dots" id="streak-dots"></div>
-          <div id="daily-btn-row">
-            <button class="btn btn-g btn-fw" id="claim-chips-btn" onclick="claimBonus()">Claim Daily Bonus</button>
-          </div>
-        </div>
-      </div>
 
-      <!-- Leaderboard -->
-      <div class="sb-block">
-        <div class="shd">Leaderboard</div>
-        <div id="ldr"></div>
-      </div>
 
-      <!-- Your Session -->
-      <div class="sb-block" id="lside-session-wrap">
-        <div class="shd">Your Session</div>
-        <div id="side-session"></div>
-      </div>
+/* felt grain — required per DESIGN.md */
+#vl::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: .25;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px;
+}
 
-      <!-- Friends Online -->
-      <div class="sb-block">
-        <div class="shd">Friends Online</div>
-        <div id="side-friends"></div>
-      </div>
+/* ── NAV ── */
+#vl .nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--nav-h);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: rgba(8,8,10,.97);
+  backdrop-filter: blur(20px);
+  border-bottom: 2px solid rgba(255,184,0,.15);
+  box-shadow: 0 0 0 1px rgba(255,184,0,.06), 0 8px 40px rgba(0,0,0,.9);
+}
+#vl .nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#vl .nav-logo span { color: var(--tx); }
+#vl .nav-r { display: flex; align-items: center; gap: 12px; }
+#vl .nav-chips {
+  background: rgba(255,184,0,.07);
+  border: 1px solid rgba(255,184,0,.2);
+  border-radius: 3px;
+  padding: 5px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  cursor: pointer;
+}
+#vl .nav-chips-n {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1;
+}
+#vl .nav-chips-l { font-size: 7px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--txm); }
+#vl .nav-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 6px;
+  border: 1px solid rgba(255,184,0,.12);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+#vl .nav-user:hover { border-color: rgba(255,184,0,.3); background: rgba(255,184,0,.04); }
+#vl .nav-av {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(255,184,0,.12);
+  border: 2px solid rgba(255,184,0,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--gold);
+}
+#vl .nav-uname { font-size: 11px; color: var(--tx); }
+#vl .nav-mode {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 3px;
+  padding: 2px;
+}
+#vl .nm-opt {
+  padding: 5px 12px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txm);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all .2s;
+}
+#vl .nm-opt.on { background: var(--bg-e); color: var(--gold); border: 1px solid rgba(255,184,0,.2); }
 
-      <!-- VIP Status -->
-      <div class="sb-block">
-        <div class="shd">VIP Status</div>
-        <div id="vip-bar"></div>
-      </div>
+/* ── LOBBY SHELL ── */
+#vl #lobby {
+  position: fixed;
+  top: var(--nav-h);
+  inset: var(--nav-h) 0 0 0;
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  overflow: hidden;
+}
 
-      <!-- Recent Big Pots -->
-      <div class="sb-block" id="lside-pots-wrap">
-        <div class="shd">Recent Big Pots</div>
-        <div id="side-pots"></div>
-      </div>
+/* ── LEFT SIDEBAR ── */
+.l-sb {
+  background: var(--bg-s);
+  border-right: 1px solid rgba(255,184,0,.08);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.l-sb::-webkit-scrollbar { width: 3px; }
+.l-sb::-webkit-scrollbar-thumb { background: rgba(255,255,255,.06); border-radius: 2px; }
 
-    </aside>
+/* ── MAIN CONTENT ── */
+.l-main {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+}
+.l-main::-webkit-scrollbar { width: 3px; }
+.l-main::-webkit-scrollbar-thumb { background: rgba(255,255,255,.05); border-radius: 2px; }
 
-    <!-- ══ MAIN CONTENT ══ -->
-    <main class="l-main">
+/* ── SIDEBAR PIECES ── */
+.sb-block {
+  padding: 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  flex-shrink: 0;
+}
+.sb-block:last-child { border-bottom: none; }
 
-      <!-- CASH TABLES PANEL -->
-      <div id="panel-cash" class="l-panel on">
-        <div class="ph">
-          <div>
-            <div class="ph-title">Cash Tables</div>
-            <div class="ph-sub">No Limit Hold'em · Pot Limit Omaha · Mixed</div>
-          </div>
-          <button class="btn btn-o btn-sm">+ Join Waitlist</button>
-        </div>
-        <div id="tgrid"></div>
-        <div class="tfoot">
-          <div class="tf-bgs">
-            <span class="tf-bg">SSL Secured</span><span class="tf-bg">Licensed · RGL-2024-0847</span><span class="tf-bg">18+</span><span class="tf-bg">Provably Fair</span>
-          </div>
-          <div class="tf-lks">
-            <span class="tf-lk" onclick="goReferral()">Refer a Friend</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goAffiliate()">Affiliates</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goRules()">Sweepstakes Rules</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goRG()">Responsible Gambling</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goTerms()">Terms &amp; Conditions</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goPrivacy()">Privacy Policy</span>
-          </div>
-          <div class="tf-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · Gambling can be addictive. Play responsibly.</div>
-          <div class="tf-copy" style="margin-top:3px;color:rgba(255,255,255,.08)">Royal Chips are a sweepstakes currency with no cash value until redeemed. No purchase necessary. Void where prohibited. 18+.</div>
-        </div>
-      </div>
+/* mode nameplate */
+.sb-mode-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  color: var(--tx);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.sb-mode-sub { font-size: 7px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,184,0,.3); margin-bottom: 10px; }
+.sb-mode-badge {
+  display: inline-block;
+  font-size: 7px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(255,184,0,.45);
+  border: 1px solid rgba(255,184,0,.14);
+  border-radius: 2px;
+  padding: 3px 8px;
+}
 
-      <!-- SIT &amp; GO PANEL -->
-      <div id="panel-sng" class="l-panel">
-        <div class="ph">
-          <div>
-            <div class="ph-title">Sit &amp; Go</div>
-            <div class="ph-sub">Fill a seat, play instantly · Single-table tournaments</div>
-          </div>
-          <button class="btn btn-o btn-sm">+ Create SNG</button>
-        </div>
-        <div class="sng-grid" id="sng-list"></div>
-      </div>
+/* navigation */
+.sb-nav-wrap { padding: 12px 0 8px; border-bottom: 1px solid rgba(255,255,255,.04); flex-shrink: 0; }
+.sb-nav-cap {
+  display: block;
+  font-size: 7px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(107,101,128,.4);
+  padding: 0 20px 8px;
+}
+.sni {
+  display: block;
+  padding: 10px 20px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; font-weight: 400;
+  color: rgba(107,101,128,.7);
+  cursor: pointer;
+  transition: color .15s, background .15s;
+  border-right: 1px solid transparent;
+  user-select: none;
+  line-height: 1.3;
+}
+.sni:hover:not(.on) { color: rgba(242,237,230,.6); background: rgba(255,184,0,.02); }
+.sni.on { font-style: italic; color: var(--tx); border-right-color: var(--gold); background: rgba(255,184,0,.04); }
+.sb-nav-hr { height: 1px; background: rgba(255,255,255,.04); margin: 6px 20px; }
+.sb-nav-tools { display: block; font-size: 7px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: rgba(107,101,128,.35); padding: 8px 20px 4px; }
 
-      <!-- TOURNAMENTS PANEL -->
-      <div id="panel-mtt" class="l-panel">
-        <div class="ph">
-          <div>
-            <div class="ph-title">Tournaments</div>
-            <div class="ph-sub">Multi-Table · Guaranteed Prize Pools · All times ET</div>
-          </div>
-        </div>
-        <div id="mtt-list"></div>
-      </div>
+/* SECTION LABEL (Label Doctrine: 8px Montserrat 600 2.5px CAPS gold + hairline) */
+.shd {
+  font-size: 8px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold);
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.shd::after { content: ''; flex: 1; height: 1px; background: rgba(255,184,0,.08); }
 
-      <!-- FILTERS PANEL -->
-      <div id="panel-filters" class="l-panel">
-        <div class="ph">
-          <div>
-            <div class="ph-title">Filters</div>
-            <div class="ph-sub">Refine the tables and tournaments shown</div>
-          </div>
-          <button class="btn btn-o btn-sm" onclick="resetFilters()">Clear All</button>
-        </div>
-        <div class="filt-panel">
-          <div class="filt-sec">
-            <div class="filt-lbl">Stakes</div>
-            <div class="fchips" id="filt-stakes">
-              <div class="fchip on" onclick="toggleFilter('stakes',this,'all')">All</div>
-              <div class="fchip" onclick="toggleFilter('stakes',this,'micro')">Micro</div>
-              <div class="fchip" onclick="toggleFilter('stakes',this,'low')">Low</div>
-              <div class="fchip" onclick="toggleFilter('stakes',this,'mid')">Mid</div>
-              <div class="fchip" onclick="toggleFilter('stakes',this,'high')">High</div>
-              <div class="fchip" onclick="toggleFilter('stakes',this,'nose')">Nosebleed</div>
-            </div>
-          </div>
-          <div class="filt-sec">
-            <div class="filt-lbl">Game Type</div>
-            <div class="fchips" id="filt-game">
-              <div class="fchip on" onclick="toggleFilter('game',this,'all')">All</div>
-              <div class="fchip" onclick="toggleFilter('game',this,'nlhe')">No Limit Hold'em</div>
-              <div class="fchip" onclick="toggleFilter('game',this,'plo')">Pot Limit Omaha</div>
-              <div class="fchip" onclick="toggleFilter('game',this,'mixed')">Mixed</div>
-            </div>
-          </div>
-          <div class="filt-sec">
-            <div class="filt-lbl">Speed</div>
-            <div class="fchips" id="filt-speed">
-              <div class="fchip on" onclick="toggleFilter('speed',this,'all')">All</div>
-              <div class="fchip" onclick="toggleFilter('speed',this,'normal')">Normal</div>
-              <div class="fchip" onclick="toggleFilter('speed',this,'turbo')">Turbo</div>
-              <div class="fchip" onclick="toggleFilter('speed',this,'hyper')">Hyper</div>
-            </div>
-          </div>
-          <div class="filt-sec">
-            <div class="filt-lbl">Availability</div>
-            <div class="fchips" id="filt-avail">
-              <div class="fchip on" onclick="toggleFilter('avail',this,'all')">Any</div>
-              <div class="fchip" onclick="toggleFilter('avail',this,'open')">Has Open Seat</div>
-              <div class="fchip" onclick="toggleFilter('avail',this,'full')">Full Tables Only</div>
-            </div>
-          </div>
-          <div class="filt-sec">
-            <div class="filt-lbl">Table Size</div>
-            <div class="fchips" id="filt-size">
-              <div class="fchip on" onclick="toggleFilter('size',this,'all')">Any</div>
-              <div class="fchip" onclick="toggleFilter('size',this,'hu')">Heads Up</div>
-              <div class="fchip" onclick="toggleFilter('size',this,'6max')">6-Max</div>
-              <div class="fchip" onclick="toggleFilter('size',this,'9max')">9-Max</div>
-            </div>
-          </div>
-          <div style="margin-top:32px">
-            <button class="btn btn-g" onclick="switchTab('cash')">View Tables</button>
-          </div>
-        </div>
-      </div>
+/* live stats */
+.sb-stat { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.025); }
+.sb-stat:first-of-type { border-top: none; }
+.sb-stat-n { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 300; color: var(--tx); opacity: .58; }
+.sb-stat-l { font-size: 8px; font-weight: 500; color: var(--txm); }
 
-    </main>
+/* bonus */
+.bonus-frame {
+  border: 1px solid rgba(255,184,0,.18);
+  border-radius: 2px;
+  padding: 14px;
+  background: rgba(255,184,0,.015);
+}
+.bonus-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 300; color: var(--tx); margin-bottom: 2px; }
+.bonus-sub { font-size: 8px; font-weight: 500; letter-spacing: .4px; color: var(--txm); margin-bottom: 10px; }
+.s-dots { display: flex; gap: 4px; margin-bottom: 12px; }
+.sd { width: 18px; height: 4px; border-radius: 1px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+.sd.done { background: var(--gold); border-color: var(--gold); }
+.sd.today { border-color: var(--gold); background: rgba(255,184,0,.22); }
+
+/* leaderboard */
+.ldr { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
+.ldr:last-child { border-bottom: none; }
+.ldr-rk { font-size: 8px; font-weight: 600; color: var(--txm); text-align: center; }
+.ldr-rk.g1 { color: var(--gold); }
+.ldr-rk.g2 { color: rgba(180,184,200,.6); }
+.ldr-rk.g3 { color: rgba(180,110,40,.6); }
+.ldr-nm { font-size: 10px; font-weight: 500; color: var(--tx); opacity: .72; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ldr-a { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 400; color: var(--gold); white-space: nowrap; }
+
+/* session */
+.sess { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
+.sess:last-child { border-bottom: none; }
+.sess-l { font-size: 8px; font-weight: 500; color: var(--txm); }
+.sess-v { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 400; color: var(--tx); opacity: .7; }
+.sess-v.pos { color: var(--ok); opacity: 1; }
+.sess-v.neg { color: var(--red); opacity: 1; }
+
+/* friends */
+.frd { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
+.frd:last-child { border-bottom: none; }
+.frd-av { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,184,0,.1); border: 1px solid rgba(255,184,0,.2); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: var(--gold); flex-shrink: 0; }
+.frd-nm { font-size: 10px; color: var(--tx); opacity: .7; flex: 1; }
+.frd-wh { font-size: 8px; color: var(--txm); }
+
+/* vip */
+.vip-tier-name { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+.vip-bar { height: 3px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+.vip-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dk), var(--gold)); border-radius: 2px; }
+.vip-meta { display: flex; justify-content: space-between; font-size: 7px; color: var(--txm); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; border: none; border-radius: 0;
+  transition: all .2s cubic-bezier(.16,1,.3,1);
+  white-space: nowrap;
+}
+.btn-g {
+  background: linear-gradient(135deg, #CC8800, var(--gold-lt));
+  color: var(--bg);
+  padding: 10px 20px;
+  box-shadow: 0 0 16px rgba(255,184,0,.25), 0 4px 20px rgba(0,0,0,.5);
+}
+.btn-g:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(255,184,0,.45), 0 8px 24px rgba(0,0,0,.5); }
+.btn-o {
+  background: transparent; color: var(--gold);
+  border: 1px solid rgba(255,184,0,.3);
+  padding: 8px 16px;
+}
+.btn-o:hover { border-color: rgba(255,184,0,.55); background: rgba(255,184,0,.06); }
+.btn-sm { padding: 6px 12px; font-size: 8px; }
+.btn-fw { width: 100%; justify-content: center; }
+
+/* ── PANELS ── */
+.l-panel { padding: 32px 40px; display: none; }
+.l-panel.on { display: block; }
+
+.ph { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.04); }
+.ph-title { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 300; color: var(--tx); letter-spacing: 1px; line-height: 1; }
+.ph-sub { font-size: 8px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--txm); margin-top: 6px; }
+
+/* ── CASH TABLE TIERS ── */
+.tier { margin-bottom: 32px; }
+.tier-hd { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.tier-nm { font-size: 8px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+.tier-ln { flex: 1; height: 1px; background: rgba(255,184,0,.08); }
+.tier-ct { font-size: 8px; font-weight: 600; letter-spacing: 1px; color: var(--txm); white-space: nowrap; }
+
+.t-cols {
+  display: grid;
+  grid-template-columns: 1fr 90px 64px 80px 72px;
+  padding: 0 10px 7px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  margin-bottom: 2px;
+}
+.t-col { font-size: 7px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(107,101,128,.45); }
+.t-col.c { text-align: center; }
+.t-col.r { text-align: right; }
+
+.tr {
+  display: grid;
+  grid-template-columns: 1fr 90px 64px 80px 72px;
+  align-items: center;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  cursor: pointer;
+  transition: background .12s;
+  border-radius: 2px;
+}
+.tr:last-child { border-bottom: none; }
+.tr:hover { background: rgba(255,184,0,.03); }
+
+/* nose tier: elevated treatment */
+.tier.nose .tr {
+  padding: 14px 14px;
+  border: 1px solid rgba(255,184,0,.13);
+  border-radius: 2px;
+  background: rgba(255,184,0,.02);
+  margin-bottom: 6px;
+}
+.tier.nose .tr:last-child { margin-bottom: 0; border-bottom: 1px solid rgba(255,184,0,.13); }
+.tier.nose .tr:hover { border-color: rgba(255,184,0,.3); background: rgba(255,184,0,.04); }
+.tier.nose .tr .tn { font-size: 18px; }
+
+.tn { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 600; color: var(--tx); line-height: 1.2; }
+.tg { font-size: 8px; font-weight: 500; letter-spacing: .3px; color: var(--txm); margin-top: 2px; }
+.ts { font-size: 9px; font-weight: 600; letter-spacing: .5px; color: var(--gold); }
+.tp { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 400; color: var(--tx); opacity: .52; text-align: right; }
+.tpl { font-size: 10px; font-weight: 500; color: var(--txm); text-align: center; }
+.tseat { font-size: 8px; font-weight: 600; text-align: center; letter-spacing: .5px; }
+.tseat.open { color: var(--ok); }
+.tseat.full { color: rgba(255,255,255,.2); }
+.tseat.wait { color: var(--txm); }
+
+/* ── STATUS PILLS ── */
+.pill {
+  display: inline-flex; align-items: center;
+  font-size: 7px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 10px; white-space: nowrap;
+}
+.pill.open  { background: rgba(0,229,160,.1);  color: var(--ok);  border: 1px solid rgba(0,229,160,.2); }
+.pill.reg   { background: rgba(0,229,160,.1);  color: var(--ok);  border: 1px solid rgba(0,229,160,.2); }
+.pill.run   { background: rgba(255,184,0,.12); color: var(--gold); border: 1px solid rgba(255,184,0,.22); }
+.pill.wait  { background: rgba(255,255,255,.04); color: var(--txm); border: 1px solid rgba(255,255,255,.08); }
+.pill.soon  { background: rgba(255,184,0,.07); color: rgba(255,184,0,.7); border: 1px solid rgba(255,184,0,.15); }
+.pill.late  { background: rgba(255,184,0,.14); color: var(--gold); border: 1px solid rgba(255,184,0,.25); }
+
+/* ── SNG ── */
+.sng-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px,1fr)); gap: 12px; }
+.sng-card {
+  background: linear-gradient(160deg, var(--bg-e), var(--bg-s));
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 2px;
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color .2s, transform .2s cubic-bezier(.16,1,.3,1);
+}
+.sng-card:hover { border-color: rgba(255,184,0,.28); transform: translateY(-2px); }
+.sng-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.sng-name { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 600; color: var(--tx); line-height: 1.1; }
+.sng-meta { font-size: 8px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--txm); margin-top: 2px; }
+.sng-buyin { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--gold); line-height: 1; }
+.sng-seats { display: flex; gap: 3px; margin-bottom: 14px; }
+.ss { width: 20px; height: 4px; border-radius: 1px; background: rgba(0,229,160,.22); border: 1px solid rgba(0,229,160,.38); }
+.ss.e { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
+.sng-ft { display: flex; justify-content: space-between; align-items: center; }
+
+/* ── MTT ── */
+.mtt-cols { display: grid; grid-template-columns: 1fr 130px 110px 90px; padding: 0 0 7px; border-bottom: 1px solid rgba(255,255,255,.04); margin-bottom: 2px; }
+.mtt-col { font-size: 7px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(107,101,128,.45); }
+.mtt-col.r { text-align: right; }
+
+.mtr {
+  display: grid;
+  grid-template-columns: 1fr 130px 110px 90px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  cursor: pointer;
+  transition: background .12s, padding-left .12s;
+  border-radius: 2px;
+}
+.mtr:last-child { border-bottom: none; }
+.mtr:hover { background: rgba(255,184,0,.03); padding-left: 8px; }
+.mtr.feat {
+  border: 1px solid rgba(155,77,255,.2);
+  border-radius: 2px;
+  padding: 16px 14px;
+  margin-bottom: 10px;
+  background: rgba(155,77,255,.025);
+}
+.mtr.feat:hover { background: rgba(155,77,255,.05); padding-left: 14px; }
+.mtr-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--tx); line-height: 1.1; }
+.mtr-meta { font-size: 8px; font-weight: 500; letter-spacing: .4px; color: var(--txm); margin-top: 3px; }
+.mtr-prize { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 300; color: var(--gold); line-height: 1; }
+.mtr-prize-l { font-size: 7px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--txm); margin-top: 2px; }
+.mtr-time { font-size: 11px; font-weight: 500; color: var(--tx); opacity: .72; }
+.mtr-time-l { font-size: 7px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--txm); margin-top: 2px; }
+.mtr-st { text-align: right; }
+.mtr-reg { font-size: 8px; color: var(--txm); margin-top: 5px; }
+
+/* ── FILTERS ── */
+.filt-panel { max-width: 600px; }
+.filt-sec { margin-bottom: 28px; }
+.filt-lbl { font-size: 8px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.filt-lbl::after { content: ''; flex: 1; height: 1px; background: rgba(255,184,0,.08); }
+.fchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fchip { padding: 6px 14px; font-size: 10px; font-weight: 500; color: var(--txm); border: 1px solid rgba(255,255,255,.07); border-radius: 2px; cursor: pointer; transition: all .14s; background: transparent; user-select: none; }
+.fchip:hover { border-color: rgba(255,184,0,.3); color: var(--tx); }
+.fchip.on { border-color: rgba(255,184,0,.55); color: var(--gold); background: rgba(255,184,0,.07); }
+
+/* ── TRUST FOOTER ── */
+.tfoot {
+  border-top: 1px solid rgba(255,255,255,.04);
+  padding: 24px 40px;
+  margin: 40px -40px -32px;
+  background: rgba(0,0,0,.22);
+}
+.tf-bgs { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+.tf-bg { font-size: 8px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.24); border: 1px solid rgba(255,255,255,.06); border-radius: 2px; padding: 4px 10px; background: rgba(255,255,255,.02); }
+.tf-lks { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 10px; }
+.tf-lk { font-size: 9px; color: rgba(255,184,0,.38); cursor: pointer; transition: color .15s; }
+.tf-lk:hover { color: var(--gold); }
+.tf-sep { color: rgba(255,255,255,.1); margin: 0 8px; font-size: 9px; }
+.tf-copy { font-size: 8px; color: rgba(255,255,255,.13); line-height: 1.6; }
+
+
+/* ── Lobby shell fills viewport below nav ── */
+#vl #lobby-shell {
+  position: fixed;
+  top: var(--nav-h);
+  inset: var(--nav-h) 0 0 0;
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  overflow: hidden;
+}
+</style>
+
+<!-- NAV (lobby nav, shown only when vl is active) -->
+<nav class="nav" id="vl-nav">
+  <div class="nav-logo" onclick="goHome()">Royal<span>Flush</span></div>
+  <div class="nav-r">
+    <div class="nav-mode">
+      <div class="nm-opt" id="nm-royal" onclick="switchMode('royal')">Royal</div>
+      <div class="nm-opt" id="nm-gold" onclick="switchMode('gold')">Gold</div>
+    </div>
+    <div class="nav-chips" onclick="openCashier()">
+      <div class="nav-chips-n" id="nav-chip-bal">—</div>
+      <div class="nav-chips-l" id="nav-chip-lbl">Royal Chips</div>
+    </div>
+    <div class="nav-user" onclick="goProfile()">
+      <div class="nav-av" id="nav-av">?</div>
+      <span class="nav-uname" id="nav-uname">—</span>
+    </div>
   </div>
+</nav>
+
+<div id="lobby-shell">
+
+  <!-- ══ LEFT SIDEBAR ══ -->
+  <aside class="l-sb">
+
+    <!-- Mode nameplate -->
+    <div class="sb-block" id="lobby-mode-header" style="padding-top:24px">
+      <div class="sb-mode-title" id="lobby-mode-title">Royal Chips</div>
+      <div class="sb-mode-sub" id="lobby-mode-sub">Real Stakes · Cash &amp; Tournaments</div>
+      <div class="sb-mode-badge" id="lobby-mode-badge">Royal Mode</div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sb-nav-wrap">
+      <span class="sb-nav-cap">Game Rooms</span>
+      <div class="sni on" id="ni-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
+      <div class="sni" id="ni-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
+      <div class="sni" id="ni-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
+      <div class="sb-nav-hr"></div>
+      <span class="sb-nav-tools">Tools</span>
+      <div class="sni" id="ni-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:#FFB800;font-size:11px;line-height:1;vertical-align:middle">●</span></div>
+    </div>
+
+    <!-- Live Stats -->
+    <div class="sb-block">
+      <div class="shd">Live Now</div>
+      <div class="sb-stat"><span class="sb-stat-l">Players Online</span><span class="sb-stat-n" id="ls-users">—</span></div>
+      <div class="sb-stat"><span class="sb-stat-l">Hands Today</span><span class="sb-stat-n" id="ls-hands">—</span></div>
+      <div class="sb-stat"><span class="sb-stat-l" id="ls-chips-label">Chips in Play</span><span class="sb-stat-n" id="ls-chips">—</span></div>
+    </div>
+
+    <!-- Daily Bonus -->
+    <div class="sb-block">
+      <div class="shd">Daily Bonus</div>
+      <div class="bonus-frame" id="rc-claim-widget">
+        <div class="bonus-title">Claim Today</div>
+        <div class="bonus-sub" id="bonus-sub-text">1,250 Gold + 1 Royal Chip free</div>
+        <div class="s-dots" id="streak-dots"></div>
+        <div id="daily-btn-row">
+          <button class="btn btn-g btn-fw" id="claim-chips-btn" onclick="claimBonus()">Claim Daily Bonus</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="sb-block">
+      <div class="shd">Leaderboard</div>
+      <div id="ldr"></div>
+    </div>
+
+    <!-- Your Session -->
+    <div class="sb-block" id="lside-session-wrap">
+      <div class="shd">Your Session</div>
+      <div id="side-session"></div>
+    </div>
+
+    <!-- Friends Online -->
+    <div class="sb-block">
+      <div class="shd">Friends Online</div>
+      <div id="side-friends"></div>
+    </div>
+
+    <!-- VIP Status -->
+    <div class="sb-block">
+      <div class="shd">VIP Status</div>
+      <div id="vip-bar"></div>
+    </div>
+
+    <!-- Recent Big Pots -->
+    <div class="sb-block" id="lside-pots-wrap">
+      <div class="shd">Recent Big Pots</div>
+      <div id="side-pots"></div>
+    </div>
+
+  </aside>
+
+  <!-- ══ MAIN CONTENT ══ -->
+  <main class="l-main">
+
+    <!-- CASH TABLES PANEL -->
+    <div id="panel-cash" class="l-panel on">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Cash Tables</div>
+          <div class="ph-sub">No Limit Hold'em · Pot Limit Omaha · Mixed</div>
+        </div>
+        <button class="btn btn-o btn-sm">+ Join Waitlist</button>
+      </div>
+      <div id="tgrid"></div>
+      <div class="tfoot">
+        <div class="tf-bgs">
+          <span class="tf-bg">SSL Secured</span><span class="tf-bg">Licensed · RGL-2024-0847</span><span class="tf-bg">18+</span><span class="tf-bg">Provably Fair</span>
+        </div>
+        <div class="tf-lks">
+          <span class="tf-lk" onclick="goReferral()">Refer a Friend</span><span class="tf-sep">·</span>
+          <span class="tf-lk" onclick="goAffiliate()">Affiliates</span><span class="tf-sep">·</span>
+          <span class="tf-lk" onclick="goRules()">Sweepstakes Rules</span><span class="tf-sep">·</span>
+          <span class="tf-lk" onclick="goRG()">Responsible Gambling</span><span class="tf-sep">·</span>
+          <span class="tf-lk" onclick="goTerms()">Terms &amp; Conditions</span><span class="tf-sep">·</span>
+          <span class="tf-lk" onclick="goPrivacy()">Privacy Policy</span>
+        </div>
+        <div class="tf-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · Gambling can be addictive. Play responsibly.</div>
+        <div class="tf-copy" style="margin-top:3px;color:rgba(255,255,255,.08)">Royal Chips are a sweepstakes currency with no cash value until redeemed. No purchase necessary. Void where prohibited. 18+.</div>
+      </div>
+    </div>
+
+    <!-- SIT & GO PANEL -->
+    <div id="panel-sng" class="l-panel">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Sit &amp; Go</div>
+          <div class="ph-sub">Fill a seat, play instantly · Single-table tournaments</div>
+        </div>
+        <button class="btn btn-o btn-sm">+ Create SNG</button>
+      </div>
+      <div class="sng-grid" id="sng-list"></div>
+    </div>
+
+    <!-- TOURNAMENTS PANEL -->
+    <div id="panel-mtt" class="l-panel">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Tournaments</div>
+          <div class="ph-sub">Multi-Table · Guaranteed Prize Pools · All times ET</div>
+        </div>
+      </div>
+      <div id="mtt-list"></div>
+    </div>
+
+    <!-- FILTERS PANEL -->
+    <div id="panel-filters" class="l-panel">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Filters</div>
+          <div class="ph-sub">Refine the tables and tournaments shown</div>
+        </div>
+        <button class="btn btn-o btn-sm" onclick="resetFilters()">Clear All</button>
+      </div>
+      <div class="filt-panel">
+        <div class="filt-sec">
+          <div class="filt-lbl">Stakes</div>
+          <div class="fchips" id="filt-stakes">
+            <div class="fchip on" onclick="toggleFilter('stakes',this,'all')">All</div>
+            <div class="fchip" onclick="toggleFilter('stakes',this,'micro')">Micro</div>
+            <div class="fchip" onclick="toggleFilter('stakes',this,'low')">Low</div>
+            <div class="fchip" onclick="toggleFilter('stakes',this,'mid')">Mid</div>
+            <div class="fchip" onclick="toggleFilter('stakes',this,'high')">High</div>
+            <div class="fchip" onclick="toggleFilter('stakes',this,'nose')">Nosebleed</div>
+          </div>
+        </div>
+        <div class="filt-sec">
+          <div class="filt-lbl">Game Type</div>
+          <div class="fchips" id="filt-game">
+            <div class="fchip on" onclick="toggleFilter('game',this,'all')">All</div>
+            <div class="fchip" onclick="toggleFilter('game',this,'nlhe')">No Limit Hold'em</div>
+            <div class="fchip" onclick="toggleFilter('game',this,'plo')">Pot Limit Omaha</div>
+            <div class="fchip" onclick="toggleFilter('game',this,'mixed')">Mixed</div>
+          </div>
+        </div>
+        <div class="filt-sec">
+          <div class="filt-lbl">Speed</div>
+          <div class="fchips" id="filt-speed">
+            <div class="fchip on" onclick="toggleFilter('speed',this,'all')">All</div>
+            <div class="fchip" onclick="toggleFilter('speed',this,'normal')">Normal</div>
+            <div class="fchip" onclick="toggleFilter('speed',this,'turbo')">Turbo</div>
+            <div class="fchip" onclick="toggleFilter('speed',this,'hyper')">Hyper</div>
+          </div>
+        </div>
+        <div class="filt-sec">
+          <div class="filt-lbl">Availability</div>
+          <div class="fchips" id="filt-avail">
+            <div class="fchip on" onclick="toggleFilter('avail',this,'all')">Any</div>
+            <div class="fchip" onclick="toggleFilter('avail',this,'open')">Has Open Seat</div>
+            <div class="fchip" onclick="toggleFilter('avail',this,'full')">Full Tables Only</div>
+          </div>
+        </div>
+        <div class="filt-sec">
+          <div class="filt-lbl">Table Size</div>
+          <div class="fchips" id="filt-size">
+            <div class="fchip on" onclick="toggleFilter('size',this,'all')">Any</div>
+            <div class="fchip" onclick="toggleFilter('size',this,'hu')">Heads Up</div>
+            <div class="fchip" onclick="toggleFilter('size',this,'6max')">6-Max</div>
+            <div class="fchip" onclick="toggleFilter('size',this,'9max')">9-Max</div>
+          </div>
+        </div>
+        <div style="margin-top:32px">
+          <button class="btn btn-g" onclick="switchTab('cash')">View Tables</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /lobby-shell -->
 </div>
 
-<!-- GAME -->
 <div id="vg" class="view" style="display:none">
   <div class="gtop">
     <div style="display:flex;align-items:center;gap:14px">
