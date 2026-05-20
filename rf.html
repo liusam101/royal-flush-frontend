@@ -30,8 +30,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 20px;border-radius:2px;border:none;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;transition:all .2s}
 .btn-ghost{background:transparent;color:var(--gold);border:1px solid rgba(201,168,76,.3)}
 .btn-ghost:hover{border-color:var(--gold);background:rgba(201,168,76,.06)}
-.btn-gold{background:linear-gradient(135deg,#CC8800,#FFB800,#FFD95A);color:#08080A;box-shadow:0 0 16px rgba(255,184,0,.25),0 4px 20px rgba(0,0,0,.5);font-weight:800;letter-spacing:1px}
-.btn-gold:hover{box-shadow:0 0 28px rgba(255,184,0,.45),0 0 8px rgba(255,184,0,.8),0 6px 24px rgba(0,0,0,.6);transform:translateY(-2px)}
+.btn-gold{background:linear-gradient(160deg,#B07C00,#FFB800);color:#08080A;box-shadow:0 2px 16px rgba(255,184,0,.18),0 4px 20px rgba(0,0,0,.5);font-weight:700;letter-spacing:1px}
+.btn-gold:hover{box-shadow:0 4px 24px rgba(255,184,0,.32),0 6px 24px rgba(0,0,0,.6);transform:translateY(-2px)}
 .btn-sm{padding:6px 14px;font-size:9px}
 .view{display:none}.view.active{display:block}
 #vg.active{display:flex}
@@ -471,9 +471,9 @@ body.royal-mode nav{
 .sd .sd-chips{font-size:7px;color:inherit;opacity:.75}
 
 /* ── TOURNAMENTS (MTT) ──────────────────────────────────────── */
-.mtt-card{background:linear-gradient(160deg,#111118,#0C0C10);border:1px solid rgba(255,255,255,.05);border-radius:0;overflow:hidden;margin-bottom:10px;transition:all .25s;cursor:pointer;position:relative;border-left:3px solid rgba(155,77,255,.4)}
-.mtt-card:hover{border-color:rgba(255,184,0,.2);border-left-color:var(--gold);box-shadow:0 0 0 1px rgba(255,184,0,.08),0 8px 40px rgba(0,0,0,.8);transform:translateX(3px)}
-.mtt-card.featured{border-left:3px solid var(--gold);box-shadow:0 0 20px rgba(255,184,0,.06)}
+.mtt-card{background:linear-gradient(160deg,#111118,#0C0C10);border:1px solid rgba(255,255,255,.05);border-radius:0;overflow:hidden;margin-bottom:10px;transition:all .25s;cursor:pointer;position:relative}
+.mtt-card:hover{border-color:rgba(255,184,0,.3);box-shadow:0 0 0 1px rgba(255,184,0,.08),0 8px 40px rgba(0,0,0,.8);transform:translateY(-2px)}
+.mtt-card.featured{border-color:rgba(255,184,0,.35);box-shadow:0 0 20px rgba(255,184,0,.06)}
 .mtt-header{background:linear-gradient(135deg,rgba(17,17,24,.95),rgba(12,12,16,.98));padding:18px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid rgba(255,184,0,.06)}
 .mtt-icon{font-size:32px;flex-shrink:0;width:48px;text-align:center}
 .mtt-info{flex:1;min-width:0}
@@ -1112,19 +1112,14 @@ body.royal-mode nav{
 .lp-hero{position:relative;min-height:86vh;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:80px 24px}
 .lp-hero-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .lp-hero-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 60%,rgba(13,59,46,.35) 0%,rgba(139,26,42,.12) 50%,transparent 70%)}
-.lp-hero-card{position:absolute;font-family:'Cormorant Garamond',serif;font-weight:700;border:1px solid rgba(201,168,76,.15);border-radius:6px;background:rgba(255,255,255,.02);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:heroCardFloat 8s ease-in-out infinite;opacity:.18}
-.lp-hero-card-1{width:80px;height:110px;font-size:28px;top:12%;left:8%;animation-delay:0s;color:var(--tx)}
-.lp-hero-card-2{width:68px;height:94px;font-size:22px;top:20%;right:10%;animation-delay:1.2s;color:#E87070}
-.lp-hero-card-3{width:90px;height:124px;font-size:32px;bottom:18%;left:14%;animation-delay:2.4s;color:#E87070}
-.lp-hero-card-4{width:64px;height:88px;font-size:20px;bottom:22%;right:16%;animation-delay:0.8s;color:var(--tx)}
-.lp-hero-card-5{width:100px;height:138px;font-size:36px;top:8%;left:42%;animation-delay:1.8s;color:var(--tx)}
+.lp-hero-card{display:none}
 @keyframes sngSeatPop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
-@keyframes heroCardFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-18px) rotate(3deg)}}
 .lp-hero-inner{position:relative;z-index:2;text-align:center;max-width:720px}
-.lp-hero-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(93,200,150,.08);border:1px solid rgba(93,200,150,.2);color:var(--grn);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 16px;border-radius:20px;margin-bottom:28px}
-.lp-h1{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,7vw,72px);font-weight:600;color:var(--tx);line-height:1.1;letter-spacing:1px;margin:0 0 20px}
-.lp-h1 em{color:var(--gold);font-style:italic}
-.lp-hero-sub{font-size:14px;color:var(--txd);line-height:1.8;max-width:520px;margin:0 auto 36px}
+.lp-hero-pill{display:inline-flex;align-items:center;gap:6px;color:var(--txd);font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:32px;background:none;border:none;padding:0}
+.lp-hero-pill::before{content:'♠';color:rgba(201,168,76,.4);font-size:10px}
+.lp-h1{font-family:'Cormorant Garamond',serif;font-size:clamp(52px,9vw,96px);font-weight:300;color:var(--tx);line-height:1.0;letter-spacing:-1px;margin:0 0 24px}
+.lp-h1 em{color:var(--gold);font-style:italic;font-weight:600}
+.lp-hero-sub{font-size:13px;color:var(--txd);line-height:1.85;max-width:500px;margin:0 auto 36px}
 .lp-hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:36px}
 .lp-cta-main{padding:16px 40px;font-size:11px;letter-spacing:2px}
 .lp-cta-ghost{padding:16px 32px;font-size:11px;letter-spacing:2px}
@@ -1138,11 +1133,11 @@ body.royal-mode nav{
 .lp-stat-l{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-top:4px}
 .lp-stat-div{width:1px;height:40px;background:rgba(201,168,76,.1)}
 /* Sections */
-.lp-section{padding:88px 24px}
-.lp-section-alt{background:rgba(255,255,255,.015)}
+.lp-section{padding:80px 24px}
+.lp-section-alt{background:rgba(255,255,255,.022);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04)}
 .lp-section-inner{max-width:1000px;margin:0 auto}
-.lp-section-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
-.lp-h2{font-family:'Cormorant Garamond',serif;font-size:clamp(24px,4vw,42px);font-weight:600;color:var(--tx);margin:0 0 48px;line-height:1.15}
+.lp-section-label{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:rgba(201,168,76,.55);margin-bottom:16px}
+.lp-h2{font-family:'Cormorant Garamond',serif;font-size:clamp(30px,5vw,52px);font-weight:300;color:var(--tx);margin:0 0 48px;line-height:1.1;letter-spacing:-.5px}
 /* Featured tables */
 .lp-tables-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 .lp-table-card{background:rgba(255,255,255,.02);border:1px solid rgba(201,168,76,.1);border-radius:6px;overflow:hidden;cursor:pointer;transition:all .25s}
@@ -1160,25 +1155,25 @@ body.royal-mode nav{
 /* How it works steps */
 .lp-steps{display:flex;align-items:flex-start;gap:0;flex-wrap:wrap}
 .lp-step{flex:1;min-width:180px;padding:0 24px}
-.lp-step-num{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:600;color:rgba(201,168,76,.15);line-height:1;margin-bottom:8px}
+.lp-step-num{font-family:'Cormorant Garamond',serif;font-size:64px;font-weight:300;color:rgba(201,168,76,.12);line-height:1;margin-bottom:8px}
 .lp-step-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--gold);margin-bottom:8px}
 .lp-step-body{font-size:11px;color:var(--txd);line-height:1.8}
 .lp-step-arrow{font-size:20px;color:rgba(201,168,76,.2);padding-top:18px;align-self:flex-start;flex-shrink:0}
 /* Features grid */
 .lp-features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-.lp-feature{background:rgba(255,255,255,.02);border:1px solid rgba(201,168,76,.08);border-radius:6px;padding:28px 24px;transition:border-color .25s}
+.lp-feature{background:rgba(255,255,255,.02);border:1px solid rgba(201,168,76,.08);border-radius:3px;padding:28px 24px;transition:border-color .25s}
 .lp-feature:hover{border-color:rgba(201,168,76,.25)}
-.lp-feature-icon{font-size:28px;margin-bottom:12px;font-family:'Cormorant Garamond',serif;color:var(--gold)}
+.lp-feature-icon{font-size:22px;margin-bottom:14px;font-family:'Cormorant Garamond',serif;color:rgba(201,168,76,.6)}
 .lp-feature-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--tx);margin-bottom:8px}
 .lp-feature-body{font-size:11px;color:var(--txd);line-height:1.8}
-/* Testimonials */
-.lp-testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
-.lp-testi{background:rgba(255,255,255,.02);border:1px solid rgba(201,168,76,.08);border-radius:6px;padding:28px 24px}
-.lp-testi-stars{color:var(--gold);font-size:13px;margin-bottom:14px;letter-spacing:2px}
-.lp-testi-body{font-size:12px;color:var(--txd);line-height:1.8;font-style:italic;margin-bottom:16px}
-.lp-testi-name{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(201,168,76,.5)}
+/* Testimonials — editorial single quote */
+.lp-testimonials{display:flex;flex-direction:column;gap:64px;max-width:680px}
+.lp-testi{display:grid;grid-template-columns:1fr;gap:20px}
+.lp-testi-stars{display:none}
+.lp-testi-body{font-family:'Cormorant Garamond',serif;font-size:clamp(20px,3vw,30px);font-weight:300;font-style:italic;color:var(--tx);line-height:1.45;margin:0;opacity:.85}
+.lp-testi-name{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--txd);padding-left:1px}
 /* CTA section */
-.lp-cta-section{padding:100px 24px;background:radial-gradient(ellipse at 50% 50%,rgba(13,59,46,.2) 0%,transparent 70%)}
+.lp-cta-section{padding:100px 24px;background:radial-gradient(ellipse at 50% 100%,rgba(201,168,76,.06) 0%,transparent 60%)}
 /* Footer */
 .lp-footer{background:rgba(0,0,0,.4);border-top:1px solid rgba(255,255,255,.04);padding:60px 48px 32px}
 .lp-footer-inner{max-width:1000px;margin:0 auto}
@@ -1546,43 +1541,34 @@ window.addEventListener('DOMContentLoaded', () => {
   <nav class="lp-nav">
     <div class="logo">Royal<span>Flush</span></div>
     <div class="lp-nav-links">
-      <span class="lp-nav-link" onclick="lpScrollTo('lp-features')">How It Works</span>
+      <span class="lp-nav-link" onclick="goLobby()">Tables</span>
       <span class="lp-nav-link" onclick="lpScrollTo('lp-features')">How It Works</span>
       <span class="lp-nav-link" onclick="goTerms()">Legal</span>
     </div>
     <div class="lp-nav-actions">
       <button class="btn btn-ghost btn-sm" onclick="goLogin()">Log In</button>
-      <button class="btn btn-gold btn-sm" onclick="goSignup()">Sign Up Free →</button>
+      <button class="btn btn-gold btn-sm" onclick="goSignup()">Sign Up →</button>
     </div>
   </nav>
 
   <!-- HERO -->
   <section class="lp-hero">
-    <div class="lp-hero-bg">
-      <div class="lp-hero-card lp-hero-card-1">A♠</div>
-      <div class="lp-hero-card lp-hero-card-2">K♥</div>
-      <div class="lp-hero-card lp-hero-card-3">Q♦</div>
-      <div class="lp-hero-card lp-hero-card-4">J♣</div>
-      <div class="lp-hero-card lp-hero-card-5">10♠</div>
-    </div>
+    <div class="lp-hero-bg"></div>
     <div class="lp-hero-inner">
-      <div class="lp-hero-pill">🟢 <span id="lp-live-count">0</span> players at the tables right now</div>
-      <h1 class="lp-h1">Sweepstakes Poker.<br><em>Play Free.</em> Win Real.</h1>
-      <p class="lp-hero-sub">Free-to-play sweepstakes poker with real prizes. No purchase necessary — claim your free chips daily and compete for Royal Chips redeemable for cash.</p>
-      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:6px;padding:8px 18px;margin-bottom:24px;font-size:10px;color:var(--grn);letter-spacing:.5px">
-        🆓 <strong>No Purchase Necessary</strong> — Get Royal Chips free daily or by mail-in
-      </div>
+      <div class="lp-hero-pill"><span id="lp-live-count">0</span> players at the tables right now</div>
+      <h1 class="lp-h1">The table<br>is <em>always open.</em></h1>
+      <p class="lp-hero-sub">Sweepstakes poker with real prizes. No purchase necessary — claim your free chips daily and compete for Royal Chips redeemable for cash.</p>
       <div class="lp-hero-ctas">
         <button class="btn btn-gold lp-cta-main" onclick="goSignup()">Play Free Now →</button>
       </div>
       <div class="lp-hero-trust">
-        <div class="lp-trust-item">🔒 SSL Secured</div>
+        <div class="lp-trust-item">SSL Secured</div>
         <div class="lp-trust-sep"></div>
-        <div class="lp-trust-item">⚖️ Licensed · RGL-2024-0847</div>
+        <div class="lp-trust-item">Licensed · RGL-2024-0847</div>
         <div class="lp-trust-sep"></div>
-        <div class="lp-trust-item">✅ Provably Fair</div>
+        <div class="lp-trust-item">Provably Fair</div>
         <div class="lp-trust-sep"></div>
-        <div class="lp-trust-item">🛡️ 18+ Only</div>
+        <div class="lp-trust-item">18+ Only</div>
       </div>
       <div style="margin-top:16px;font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.5px">
         Not available in Washington, Idaho, Michigan (USA) or Quebec (Canada) · <span class="auth-link" style="color:rgba(201,168,76,.4)" onclick="goRules()">See full eligibility →</span>
@@ -1590,25 +1576,13 @@ window.addEventListener('DOMContentLoaded', () => {
     </div>
   </section>
 
-  <!-- LIVE STATS BAR -->
-  <div class="lp-stats-bar">
-    <div class="lp-stat"><div class="lp-stat-n" id="lp-stat-players">0</div><div class="lp-stat-l">Players Online</div></div>
-    <div class="lp-stat-div"></div>
-    <div class="lp-stat"><div class="lp-stat-n">$4.8M</div><div class="lp-stat-l">Royal Chips Redeemed</div></div>
-    <div class="lp-stat-div"></div>
-    <div class="lp-stat"><div class="lp-stat-n">14</div><div class="lp-stat-l">Active Tables</div></div>
-    <div class="lp-stat-div"></div>
-    <div class="lp-stat"><div class="lp-stat-n">1 RC</div><div class="lp-stat-l">Free Daily Claim</div></div>
-    <div class="lp-stat-div"></div>
-    <div class="lp-stat"><div class="lp-stat-n">Free</div><div class="lp-stat-l">Daily Chip Claim</div></div>
-  </div>
 
   <!-- FEATURED TABLES -->
 
   <!-- HOW IT WORKS -->
   <section class="lp-section lp-section-alt" id="lp-features">
     <div class="lp-section-inner">
-      <div class="lp-section-label">Simple & Transparent</div>
+      <div class="lp-section-label">The Game</div>
       <h2 class="lp-h2">How It Works</h2>
       <div class="lp-steps">
         <div class="lp-step">
@@ -1641,8 +1615,8 @@ window.addEventListener('DOMContentLoaded', () => {
   <!-- WHY ROYAL FLUSH -->
   <section class="lp-section">
     <div class="lp-section-inner">
-      <div class="lp-section-label">Why Choose Us</div>
-      <h2 class="lp-h2">Built for Serious Players</h2>
+      <div class="lp-section-label">The Standard</div>
+      <h2 class="lp-h2">What Sets Us Apart</h2>
       <div class="lp-features-grid">
         <div class="lp-feature">
           <div class="lp-feature-icon">♠</div>
@@ -1650,34 +1624,19 @@ window.addEventListener('DOMContentLoaded', () => {
           <p class="lp-feature-body">No purchase necessary — ever. Claim your free Royal Chip by mail-in request, or buy Gold Chips to play more hands. Every player competes on equal terms.</p>
         </div>
         <div class="lp-feature">
-          <div class="lp-feature-icon">⚡</div>
+          <div class="lp-feature-icon">♥</div>
           <div class="lp-feature-title">Fast Redemptions</div>
           <p class="lp-feature-body">Convert your Royal Chips to real prizes in minutes. Bank transfer, PayPal, or gift card — whichever you prefer. Fast, secure, and hassle-free.</p>
         </div>
         <div class="lp-feature">
-          <div class="lp-feature-icon">🔐</div>
+          <div class="lp-feature-icon">♦</div>
           <div class="lp-feature-title">Provably Fair</div>
           <p class="lp-feature-body">Every hand is cryptographically verifiable. You can independently confirm that no card was predetermined and the deck was never manipulated.</p>
         </div>
         <div class="lp-feature">
-          <div class="lp-feature-icon">🛡️</div>
+          <div class="lp-feature-icon">♣</div>
           <div class="lp-feature-title">Responsible by Design</div>
           <p class="lp-feature-body">Deposit limits, session reminders, cool-off periods, and self-exclusion tools built into every account — not hidden in a footer.</p>
-        </div>
-        <div class="lp-feature">
-          <div class="lp-feature-icon">🎯</div>
-          <div class="lp-feature-title">Daily Bonuses & VIP Rewards</div>
-          <p class="lp-feature-body">Log in every day for your free chip streak bonus. Climb from Rookie to Whale as you play — higher tiers earn bigger daily bonuses and exclusive perks.</p>
-        </div>
-        <div class="lp-feature">
-          <div class="lp-feature-icon">📱</div>
-          <div class="lp-feature-title">Play Anywhere</div>
-          <p class="lp-feature-body">Fully optimised for desktop, tablet, and mobile. No app download required — just open your browser and play.</p>
-        </div>
-        <div class="lp-feature">
-          <div class="lp-feature-icon">💰</div>
-          <div class="lp-feature-title">Transparent Game Fee</div>
-          <p class="lp-feature-body">Cash games: 4% game fee, $3 cap. Tournaments &amp; Sit &amp; Go's: flat entry, 5–8% game fee from the prize pool at payout — lower at higher stakes.</p>
         </div>
       </div>
     </div>
@@ -1690,19 +1649,12 @@ window.addEventListener('DOMContentLoaded', () => {
       <h2 class="lp-h2">What the Felt Is Saying</h2>
       <div class="lp-testimonials">
         <div class="lp-testi">
-          <div class="lp-testi-stars">★★★★★</div>
-          <p class="lp-testi-body">"I claimed my free daily chip, built my stack up over two weeks, and cashed out $240 without ever depositing a cent. This is the real deal."</p>
-          <div class="lp-testi-name">— A Royal Flush Player</div>
+          <p class="lp-testi-body">"I claimed my free daily chip, built my stack up over two weeks, and cashed out $240 without ever depositing a cent."</p>
+          <div class="lp-testi-name">Verified player · Gold Tier</div>
         </div>
         <div class="lp-testi">
-          <div class="lp-testi-stars">★★★★★</div>
-          <p class="lp-testi-body">"I love that I can play for real prizes without feeling pressured to deposit. The free daily chip keeps me coming back and the tables are genuinely fun."</p>
-          <div class="lp-testi-name">— A Royal Flush Player</div>
-        </div>
-        <div class="lp-testi">
-          <div class="lp-testi-stars">★★★★☆</div>
-          <p class="lp-testi-body">"Responsible gambling tools are actually prominent and work properly — not just compliance theatre. Rare to see a site that genuinely cares."</p>
-          <div class="lp-testi-name">— A Royal Flush Player</div>
+          <p class="lp-testi-body">"Responsible gambling tools are actually prominent and work properly — not just compliance theatre. Rare to see a platform that genuinely cares."</p>
+          <div class="lp-testi-name">Verified player · Micro Stakes</div>
         </div>
       </div>
     </div>
@@ -1711,11 +1663,10 @@ window.addEventListener('DOMContentLoaded', () => {
   <!-- FINAL CTA -->
   <section class="lp-cta-section">
     <div class="lp-section-inner" style="text-align:center">
-      <h2 class="lp-h2" style="font-size:clamp(28px,5vw,52px);margin-bottom:16px">Start Playing Free Today</h2>
-      <p style="font-size:13px;color:var(--txd);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.8">Join thousands of players competing for real Royal Chip prizes. No purchase necessary — your first free chip is waiting.</p>
+      <h2 class="lp-h2" style="font-size:clamp(32px,6vw,64px);margin-bottom:16px">Your seat is waiting.</h2>
+      <p style="font-size:13px;color:var(--txd);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.8">Every hand is dealt from the same deck. No purchase needed to play for real prizes.</p>
       <button class="btn btn-gold" style="padding:16px 48px;font-size:12px;letter-spacing:2px" onclick="goSignup()">Create Free Account →</button>
-      <div style="margin-top:16px;font-size:10px;color:var(--grn);letter-spacing:.5px;font-weight:600">🆓 No Purchase Necessary · Free Daily Chip Claim Available</div>
-      <div style="margin-top:8px;font-size:9px;color:rgba(255,255,255,.15);letter-spacing:.5px">18+ · Void where prohibited · <span style="cursor:pointer;text-decoration:underline" onclick="goRules()">See Official Rules</span></div>
+      <div style="margin-top:12px;font-size:9px;color:rgba(255,255,255,.15);letter-spacing:.5px">18+ · No purchase necessary · Void where prohibited · <span style="cursor:pointer;text-decoration:underline" onclick="goRules()">See Official Rules</span></div>
     </div>
   </section>
 
@@ -1753,11 +1704,11 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="lp-footer-bottom">
         <div class="lp-footer-badges">
-          <div class="lp-footer-badge">🔒 SSL</div>
-          <div class="lp-footer-badge">⚖️ Licensed</div>
-          <div class="lp-footer-badge">✅ Provably Fair</div>
-          <div class="lp-footer-badge">🛡️ 18+</div>
-          <div class="lp-footer-badge">♻️ RG Tools</div>
+          <div class="lp-footer-badge">SSL</div>
+          <div class="lp-footer-badge">Licensed</div>
+          <div class="lp-footer-badge">Provably Fair</div>
+          <div class="lp-footer-badge">18+</div>
+          <div class="lp-footer-badge">RG Tools</div>
         </div>
         <div class="lp-footer-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · License No. RGL-2024-0847<br>Gambling can be addictive. Please play responsibly. <span class="lp-footer-rg" onclick="goRG()">Get help →</span></div>
       </div>
