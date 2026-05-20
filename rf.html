@@ -5599,6 +5599,24 @@ window._showVerifyBanner = function(user){
   grid-template-columns: 248px 1fr;
   overflow: hidden;
 }
+
+/* ── COLLAPSIBLE SECONDARY SIDEBAR ── */
+.sb-more-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 11px 20px;
+  font-size: 8px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
+  color: rgba(107,101,128,.4);
+  background: none; border: none;
+  border-top: 1px solid rgba(255,255,255,.04);
+  cursor: pointer; user-select: none;
+  transition: color .15s, background .15s;
+  flex-shrink: 0;
+}
+.sb-more-btn:hover { color: rgba(107,101,128,.7); background: rgba(255,255,255,.015); }
+.sb-more-caret { font-size: 9px; line-height: 1; transition: transform .2s cubic-bezier(.22,1,.36,1); display: inline-block; }
+.sb-more-btn.open .sb-more-caret { transform: rotate(180deg); }
+.sb-more-wrap { display: none; flex-shrink: 0; }
+.sb-more-wrap.open { display: block; }
 </style>
 
 <!-- NAV (lobby nav, shown only when vl is active) -->
@@ -5664,34 +5682,44 @@ window._showVerifyBanner = function(user){
       </div>
     </div>
 
-    <!-- Leaderboard -->
-    <div class="sb-block">
-      <div class="shd">Leaderboard</div>
-      <div id="ldr"></div>
-    </div>
+    <!-- Secondary sections toggle -->
+    <button class="sb-more-btn" id="sb-more-btn" onclick="toggleSbMore()">
+      Stats &amp; Activity <span class="sb-more-caret">▾</span>
+    </button>
 
-    <!-- Your Session -->
-    <div class="sb-block" id="lside-session-wrap">
-      <div class="shd">Your Session</div>
-      <div id="side-session"></div>
-    </div>
+    <!-- Collapsible secondary sections -->
+    <div class="sb-more-wrap" id="sb-more-wrap">
 
-    <!-- Friends Online -->
-    <div class="sb-block">
-      <div class="shd">Friends Online</div>
-      <div id="side-friends"></div>
-    </div>
+      <!-- Leaderboard -->
+      <div class="sb-block">
+        <div class="shd">Leaderboard</div>
+        <div id="ldr"></div>
+      </div>
 
-    <!-- VIP Status -->
-    <div class="sb-block">
-      <div class="shd">VIP Status</div>
-      <div id="vip-bar"></div>
-    </div>
+      <!-- Your Session -->
+      <div class="sb-block" id="lside-session-wrap">
+        <div class="shd">Your Session</div>
+        <div id="side-session"></div>
+      </div>
 
-    <!-- Recent Big Pots -->
-    <div class="sb-block" id="lside-pots-wrap">
-      <div class="shd">Recent Big Pots</div>
-      <div id="side-pots"></div>
+      <!-- Friends Online -->
+      <div class="sb-block">
+        <div class="shd">Friends Online</div>
+        <div id="side-friends"></div>
+      </div>
+
+      <!-- VIP Status -->
+      <div class="sb-block">
+        <div class="shd">VIP Status</div>
+        <div id="vip-bar"></div>
+      </div>
+
+      <!-- Recent Big Pots -->
+      <div class="sb-block" id="lside-pots-wrap">
+        <div class="shd">Recent Big Pots</div>
+        <div id="side-pots"></div>
+      </div>
+
     </div>
 
   </aside>
@@ -11892,6 +11920,15 @@ function kycSubmit(){
     if(el){el.classList.remove('active');el.classList.add('done');}
   });
 }
+function toggleSbMore(){
+  const btn = document.getElementById('sb-more-btn');
+  const wrap = document.getElementById('sb-more-wrap');
+  if (!btn || !wrap) return;
+  const opening = !wrap.classList.contains('open');
+  wrap.classList.toggle('open', opening);
+  btn.classList.toggle('open', opening);
+}
+
 function switchTab(t){
   if(t==='mtt') setTimeout(renderMTT, 50);
   if(t==='cash') setTimeout(()=>{ renderTiers(); }, 30);
