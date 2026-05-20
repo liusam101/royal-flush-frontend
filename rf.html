@@ -2215,7 +2215,7 @@ nav:not(.lp-nav)::after {
   overflow: hidden !important;
 }
 
-/* ─── LEFT NAV + CENTER CONTENT WRAPPER ─── */
+/* ─── CENTER CONTENT WRAPPER ─── */
 .lmain {
   display: flex !important;
   flex: 1 !important;
@@ -2223,24 +2223,22 @@ nav:not(.lp-nav)::after {
   overflow: hidden !important;
   padding: 0 !important;
   border-right: none !important;
-  flex-direction: row !important;
+  flex-direction: column !important;
 }
 
-/* ─── LEFT NAV (was: horizontal tab bar) ─── */
+/* ─── LEFT NAV (inside .lside) ─── */
 .lobby-tabs {
-  width: 172px !important;
-  min-width: 172px !important;
+  width: 100% !important;
   flex-shrink: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   padding-top: 24px !important;
-  background: var(--rf-bg2) !important;
-  border-right: 1px solid var(--rf-border) !important;
-  border-bottom: none !important;
+  padding-bottom: 8px !important;
+  background: transparent !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--rf-border) !important;
   margin-bottom: 0 !important;
   gap: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
 }
 .lobby-tabs::before {
   content: 'Game Rooms';
@@ -2315,39 +2313,71 @@ nav:not(.lp-nav)::after {
   padding: 28px 36px !important;
 }
 
-/* ─── RIGHT SIDEBAR ─── */
+/* ─── LEFT SIDEBAR (nav + context) ─── */
 .lside {
-  width: 244px !important;
-  min-width: 244px !important;
+  width: 248px !important;
+  min-width: 248px !important;
   flex-shrink: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   background: var(--rf-bg2) !important;
-  padding: 22px 18px !important;
-  border-left: 1px solid var(--rf-border) !important;
+  padding: 0 !important;
+  border-left: none !important;
+  border-right: 1px solid var(--rf-border) !important;
+  order: -1 !important;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 0 !important;
 }
 
-/* ─── SECTION HEADERS ─── */
+/* Context widget sections */
+.lside > div:not(.lobby-tabs) {
+  padding: 20px 18px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+}
+.lside > div:not(.lobby-tabs):last-child {
+  border-bottom: none !important;
+}
+
+/* ─── SECTION HEADERS — Label Doctrine ─── */
 .shd {
   font-family: var(--rf-font-body) !important;
   font-size: 8px !important;
-  letter-spacing: 3px !important;
+  font-weight: 600 !important;
+  letter-spacing: 2.5px !important;
   text-transform: uppercase !important;
-  color: rgba(107,96,128,0.5) !important;
-  margin-bottom: 16px !important;
+  color: var(--rf-gold) !important;
+  margin-bottom: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
 }
-.shd::after { background: rgba(255,255,255,0.04) !important; }
+.shd::after {
+  content: '' !important;
+  flex: 1 !important;
+  height: 1px !important;
+  background: rgba(212,175,55,0.08) !important;
+}
 
 .side-h3 {
   font-family: var(--rf-font-body) !important;
   font-size: 8px !important;
-  letter-spacing: 3px !important;
+  font-weight: 600 !important;
+  letter-spacing: 2.5px !important;
   text-transform: uppercase !important;
-  color: rgba(107,96,128,0.5) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+  color: var(--rf-gold) !important;
+  border-bottom: none !important;
   margin-bottom: 12px !important;
-  padding-bottom: 8px !important;
+  padding-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.side-h3::after {
+  content: '' !important;
+  flex: 1 !important;
+  height: 1px !important;
+  background: rgba(212,175,55,0.08) !important;
 }
 
 /* ── TIER CARDS: ROOM PORTRAITS ── */
@@ -5381,13 +5411,6 @@ window._showVerifyBanner = function(user){
   </div>
   <div class="lbody">
     <div class="lmain">
-      <div class="lobby-tabs">
-        <div class="ltab active" id="ltab-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
-        <div class="ltab" id="ltab-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
-        <div class="ltab" id="ltab-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
-        <div class="ltab" id="ltab-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--gold);font-size:11px;line-height:1;vertical-align:middle">●</span></div>
-      </div>
-
       <!-- FILTERS PANEL -->
       <div id="lpanel-filters" style="display:none">
         <div class="filter-panel">
@@ -5462,6 +5485,12 @@ window._showVerifyBanner = function(user){
       </div>
     </div><!-- /lmain -->
     <div class="lside">
+      <div class="lobby-tabs">
+        <div class="ltab active" id="ltab-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
+        <div class="ltab" id="ltab-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
+        <div class="ltab" id="ltab-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
+        <div class="ltab" id="ltab-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--gold);font-size:11px;line-height:1;vertical-align:middle">●</span></div>
+      </div>
       <div>
         <div class="bonus-banner" id="rc-claim-widget">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
