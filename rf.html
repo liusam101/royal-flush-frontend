@@ -5574,6 +5574,12 @@ window._showVerifyBanner = function(user){
 .fchip:hover { border-color: rgba(255,184,0,.3); color: var(--tx); }
 .fchip.on { border-color: rgba(255,184,0,.55); color: var(--gold); background: rgba(255,184,0,.07); }
 
+/* ── INLINE FILTER STRIP ── */
+.inline-filt { display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid rgba(255,255,255,.04); }
+.inline-filt-lbl { font-size: 8px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,184,0,.5); white-space: nowrap; flex-shrink: 0; }
+.inline-filt .fchips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.inline-filt .fchips::-webkit-scrollbar { display: none; }
+
 /* ── TRUST FOOTER ── */
 .tfoot {
   border-top: 1px solid rgba(255,255,255,.04);
@@ -5735,6 +5741,17 @@ window._showVerifyBanner = function(user){
           <div class="ph-sub">No Limit Hold'em · Pot Limit Omaha · Mixed</div>
         </div>
         <button class="btn btn-o btn-sm">+ Join Waitlist</button>
+      </div>
+      <div class="inline-filt">
+        <span class="inline-filt-lbl">Stakes</span>
+        <div class="fchips" id="inline-stakes">
+          <div class="fchip on" onclick="setStakesFilter(this,'all')">All</div>
+          <div class="fchip" onclick="setStakesFilter(this,'micro')">Micro</div>
+          <div class="fchip" onclick="setStakesFilter(this,'low')">Low</div>
+          <div class="fchip" onclick="setStakesFilter(this,'mid')">Mid</div>
+          <div class="fchip" onclick="setStakesFilter(this,'high')">High</div>
+          <div class="fchip" onclick="setStakesFilter(this,'nose')">Nosebleed</div>
+        </div>
       </div>
       <div id="tgrid"></div>
       <div class="tfoot">
@@ -10417,6 +10434,18 @@ function toggleFilter(group, el, val){
   _filters[group]=val;
   el.closest('.fchips').querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
+  if(group==='stakes'){
+    document.querySelectorAll('#inline-stakes .fchip').forEach(c=>c.classList.toggle('on',c.getAttribute('onclick')===`setStakesFilter(this,'${val}')`));
+  }
+  updateFilterDot();
+  applyFilters();
+}
+
+function setStakesFilter(el, val){
+  _filters.stakes=val;
+  document.querySelectorAll('#inline-stakes .fchip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('#filt-stakes .fchip').forEach(c=>c.classList.toggle('on',c.getAttribute('onclick')===`toggleFilter('stakes',this,'${val}')`));
   updateFilterDot();
   applyFilters();
 }
@@ -10434,6 +10463,7 @@ function resetFilters(){
     const txt=c.textContent.trim();
     c.classList.toggle('on', txt==='All'||txt==='Any');
   });
+  document.querySelectorAll('#inline-stakes .fchip').forEach(c=>c.classList.toggle('on',c.textContent.trim()==='All'));
   clearSeatsInput();
 }
 
