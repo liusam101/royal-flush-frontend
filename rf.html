@@ -2095,169 +2095,246 @@ nav:not(.lp-nav)::after {
 .dd-item:hover { background: rgba(212,175,55,0.06) !important; color: var(--rf-text) !important; }
 .dd-section { border-color: var(--rf-border) !important; }
 
-/* ══ LOBBY — PREMIUM REDESIGN ══════════════════════════════════════ */
+/* ══ LOBBY — DIRECTORY LAYOUT ══════════════════════════════════════ */
 
-/* ── HERO: NAMEPLATE ── */
+/* ─── SHELL ─── */
 #vl { padding-top: var(--rf-nav-h) !important; }
 
+/* ─── TOPBAR (collapsed from tall nameplate hero) ─── */
 .lhero {
-  padding: 36px 52px 30px !important;
+  height: 68px !important;
+  min-height: 68px !important;
+  padding: 0 40px !important;
   display: flex !important;
-  align-items: flex-end !important;
+  align-items: center !important;
   justify-content: space-between !important;
   background: none !important;
   border-bottom: 1px solid var(--rf-border) !important;
+  flex-shrink: 0 !important;
   position: relative !important;
-  gap: 40px !important;
+  gap: 0 !important;
 }
-
-/* Centered gold accent line across the top of the hero */
 .lhero::after {
   content: '';
   position: absolute;
-  top: 0; left: 52px; right: 52px;
+  bottom: -1px; left: 10%; right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.2) 30%, rgba(212,175,55,0.2) 70%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.12) 30%, rgba(212,175,55,0.12) 70%, transparent);
   pointer-events: none;
 }
 
 .lobby-mode-header {
+  display: flex !important;
   padding: 0 !important;
   border: none !important;
   margin: 0 !important;
-  align-items: flex-end !important;
-  gap: 18px !important;
+  align-items: center !important;
+  gap: 12px !important;
 }
-
 .lobby-mode-icon {
-  font-size: 20px !important;
+  font-size: 11px !important;
   color: var(--rf-gold) !important;
-  opacity: 0.3 !important;
+  opacity: 0.45 !important;
   line-height: 1 !important;
-  margin-bottom: 6px !important;
+  margin-bottom: 0 !important;
 }
 
-/* The room name — this is the nameplate */
 .lobby-mode-title {
   font-family: var(--rf-font-disp) !important;
-  font-size: 42px !important;
+  font-size: 20px !important;
   font-weight: 300 !important;
-  letter-spacing: 3px !important;
+  letter-spacing: 2px !important;
   color: var(--rf-text) !important;
   line-height: 1 !important;
 }
-
 .lobby-mode-sub {
-  font-family: var(--rf-font-body) !important;
-  font-size: 8px !important;
-  letter-spacing: 3px !important;
-  text-transform: uppercase !important;
-  color: rgba(212,175,55,0.35) !important;
-  margin-top: 10px !important;
-}
-
-.lobby-mode-badge {
   font-family: var(--rf-font-body) !important;
   font-size: 7px !important;
   letter-spacing: 2.5px !important;
   text-transform: uppercase !important;
-  padding: 4px 12px !important;
+  color: rgba(212,175,55,0.28) !important;
+  margin-top: 4px !important;
+}
+.lobby-mode-badge {
+  font-family: var(--rf-font-body) !important;
+  font-size: 7px !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  padding: 3px 8px !important;
   border-radius: 2px !important;
-  border: 1px solid rgba(212,175,55,0.18) !important;
-  color: rgba(212,175,55,0.5) !important;
+  border: 1px solid rgba(212,175,55,0.12) !important;
+  color: rgba(212,175,55,0.35) !important;
   background: transparent !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 0 !important;
+  align-self: center !important;
 }
 
-/* Stats: ambient data, not hero metrics */
+/* Stats: compact inline data */
 .lstats {
   display: flex !important;
   gap: 0 !important;
-  align-items: flex-end !important;
+  align-items: center !important;
 }
-
 .lstats > div {
-  padding: 0 22px !important;
+  padding: 0 18px !important;
   border-right: 1px solid rgba(255,255,255,0.05) !important;
   text-align: right !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 5px !important;
 }
-
 .lstats > div:last-child {
   padding-right: 0 !important;
   border-right: none !important;
 }
-
 .lsn {
-  font-family: var(--rf-font-disp) !important;
-  font-size: 22px !important;
-  font-weight: 300 !important;
-  color: var(--rf-text) !important;
-  line-height: 1 !important;
-  opacity: 0.65 !important;
-}
-
-.lsl {
-  font-family: var(--rf-font-body) !important;
-  font-size: 8px !important;
-  letter-spacing: 1.5px !important;
-  color: var(--rf-muted) !important;
-  text-transform: uppercase !important;
-  margin-top: 4px !important;
-  display: block !important;
-  opacity: 0.7 !important;
-}
-
-/* ── LOBBY BODY ── */
-.lbody {
-  grid-template-columns: 1fr 264px !important;
-  height: calc(100vh - var(--rf-nav-h) - 128px) !important;
-}
-
-.lmain { padding: 0 52px 28px !important; border-right: 1px solid var(--rf-border) !important; }
-
-.lside {
-  background: var(--rf-bg2) !important;
-  padding: 22px 18px !important;
-  border-left: none !important;
-  gap: 0 !important;
-}
-
-/* ── TABS: MENU CARD FEEL ── */
-.lobby-tabs {
-  border-bottom: 1px solid var(--rf-border) !important;
-  margin-bottom: 28px !important;
-  gap: 0 !important;
-  display: flex !important;
-}
-
-.ltab {
-  padding: 18px 28px !important;
   font-family: var(--rf-font-disp) !important;
   font-size: 15px !important;
   font-weight: 300 !important;
-  letter-spacing: 0.5px !important;
+  color: var(--rf-text) !important;
+  line-height: 1 !important;
+  opacity: 0.5 !important;
+}
+.lsl {
+  font-family: var(--rf-font-body) !important;
+  font-size: 7px !important;
+  letter-spacing: 1.5px !important;
   color: var(--rf-muted) !important;
-  border-bottom: 1px solid transparent !important;
-  transition: color 0.2s !important;
-  cursor: pointer;
-  text-transform: none !important;
+  text-transform: uppercase !important;
+  margin-top: 0 !important;
+  display: inline !important;
+  opacity: 0.6 !important;
 }
 
-.ltab:hover:not(.active) { color: rgba(242,237,230,0.55) !important; }
+/* ─── THREE-COLUMN BODY ─── */
+.lbody {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0 !important;
+  height: calc(100vh - var(--rf-nav-h) - 68px) !important;
+  overflow: hidden !important;
+}
 
+/* ─── LEFT NAV + CENTER CONTENT WRAPPER ─── */
+.lmain {
+  display: flex !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  border-right: none !important;
+  flex-direction: row !important;
+}
+
+/* ─── LEFT NAV (was: horizontal tab bar) ─── */
+.lobby-tabs {
+  width: 172px !important;
+  min-width: 172px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-top: 24px !important;
+  background: var(--rf-bg2) !important;
+  border-right: 1px solid var(--rf-border) !important;
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  gap: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+.lobby-tabs::before {
+  content: 'Game Rooms';
+  display: block;
+  font-family: var(--rf-font-body);
+  font-size: 7px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(107,96,120,0.38);
+  padding: 0 20px 10px;
+  pointer-events: none;
+}
+
+/* ─── NAV ITEMS ─── */
+.ltab {
+  padding: 11px 20px !important;
+  font-family: var(--rf-font-disp) !important;
+  font-size: 15px !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.3px !important;
+  color: rgba(107,96,128,0.65) !important;
+  border-bottom: none !important;
+  border-right: 1px solid transparent !important;
+  transition: color 0.2s, background 0.2s !important;
+  cursor: pointer;
+  text-transform: none !important;
+  text-align: left !important;
+  display: block !important;
+  line-height: 1.4 !important;
+  user-select: none !important;
+}
+.ltab:hover:not(.active) {
+  color: rgba(237,232,223,0.55) !important;
+  background: rgba(212,175,55,0.025) !important;
+}
 .ltab.active {
   font-style: italic !important;
   color: var(--rf-text) !important;
-  border-bottom-color: var(--rf-gold) !important;
+  border-right-color: var(--rf-gold) !important;
+  background: rgba(212,175,55,0.045) !important;
+  border-bottom: none !important;
 }
 
-/* ── SECTION HEADERS ── */
+/* Filters tab: "Tools" section break */
+#ltab-filters {
+  margin-top: 12px !important;
+  padding-top: 28px !important;
+  border-top: 1px solid rgba(255,255,255,0.04) !important;
+  position: relative !important;
+}
+#ltab-filters::before {
+  content: 'Tools';
+  position: absolute;
+  top: 8px; left: 20px;
+  font-family: var(--rf-font-body);
+  font-size: 7px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(107,96,128,0.3);
+  pointer-events: none;
+}
+
+/* ─── CENTER CONTENT PANELS ─── */
+#lpanel-cash,
+#lpanel-sng,
+#lpanel-mtt,
+#lpanel-filters {
+  flex: 1 !important;
+  min-width: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 28px 36px !important;
+}
+
+/* ─── RIGHT SIDEBAR ─── */
+.lside {
+  width: 244px !important;
+  min-width: 244px !important;
+  flex-shrink: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: var(--rf-bg2) !important;
+  padding: 22px 18px !important;
+  border-left: 1px solid var(--rf-border) !important;
+  gap: 0 !important;
+}
+
+/* ─── SECTION HEADERS ─── */
 .shd {
   font-family: var(--rf-font-body) !important;
   font-size: 8px !important;
   letter-spacing: 3px !important;
   text-transform: uppercase !important;
-  color: rgba(107,96,128,0.55) !important;
+  color: rgba(107,96,128,0.5) !important;
   margin-bottom: 16px !important;
 }
 .shd::after { background: rgba(255,255,255,0.04) !important; }
@@ -2267,7 +2344,7 @@ nav:not(.lp-nav)::after {
   font-size: 8px !important;
   letter-spacing: 3px !important;
   text-transform: uppercase !important;
-  color: rgba(107,96,128,0.55) !important;
+  color: rgba(107,96,128,0.5) !important;
   border-bottom: 1px solid rgba(255,255,255,0.04) !important;
   margin-bottom: 12px !important;
   padding-bottom: 8px !important;
