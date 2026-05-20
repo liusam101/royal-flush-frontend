@@ -2298,14 +2298,13 @@ nav:not(.lp-nav)::after {
 .mtt-card {
   background: var(--rf-bg2) !important;
   border: 1px solid var(--rf-border) !important;
-  border-left: 3px solid rgba(212,175,55,0.3) !important;
   border-radius: 5px !important;
   margin-bottom: 10px !important;
-  transition: all 0.2s !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
   overflow: hidden !important;
 }
-.mtt-card:hover { border-color: var(--rf-border-hi) !important; border-left-color: var(--rf-gold) !important; transform: translateX(3px) !important; }
-.mtt-card.featured { border-left-color: var(--rf-gold) !important; }
+.mtt-card:hover { border-color: var(--rf-border-hi) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important; }
+.mtt-card.featured { border-color: rgba(212,175,55,0.35) !important; }
 .mtt-header { background: linear-gradient(135deg, rgba(212,175,55,0.04), rgba(0,0,0,0)) !important; border-bottom: 1px solid var(--rf-border) !important; }
 .mtt-name { font-family: var(--rf-font-disp) !important; font-size: 22px !important; color: var(--rf-text) !important; }
 .mtt-prize-amt { font-family: var(--rf-font-disp) !important; font-size: 26px !important; color: var(--rf-gold) !important; }
@@ -2355,10 +2354,10 @@ nav:not(.lp-nav)::after {
 .ldr-row {
   border-radius: 3px !important;
   background: rgba(255,255,255,0.02) !important;
-  border-left: 2px solid transparent !important;
+  border: 1px solid transparent !important;
   transition: all 0.15s !important;
 }
-.ldr-row:hover { background: rgba(212,175,55,0.05) !important; border-left-color: var(--rf-gold) !important; }
+.ldr-row:hover { background: rgba(212,175,55,0.05) !important; border-color: rgba(212,175,55,0.15) !important; }
 .ldr-nm { font-family: var(--rf-font-body) !important; font-size: 11px !important; }
 .ldr-amt { font-family: var(--rf-font-disp) !important; font-size: 13px !important; color: var(--rf-gold) !important; }
 .ldr-rk { font-family: var(--rf-font-disp) !important; font-size: 15px !important; }
@@ -5121,7 +5120,7 @@ window._showVerifyBanner = function(user){
         <div class="ltab active" id="ltab-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
         <div class="ltab" id="ltab-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
         <div class="ltab" id="ltab-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
-        <div class="ltab" id="ltab-filters" onclick="switchTab('filters')">⚙ Filters <span id="filter-dot" style="display:none;color:var(--gold);font-size:8px">●</span></div>
+        <div class="ltab" id="ltab-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--gold);font-size:8px">●</span></div>
       </div>
 
       <!-- FILTERS PANEL -->
@@ -5201,7 +5200,7 @@ window._showVerifyBanner = function(user){
       <div>
         <div class="bonus-banner" id="rc-claim-widget">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-            <div class="bonus-title">🎁 Daily Bonus</div>
+            <div class="bonus-title">Daily Bonus</div>
             <div style="font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--grn)">Free Every Day</div>
           </div>
           <div class="bonus-sub" id="bonus-sub-text">Claim 1,250 Gold Chips + 1 Royal Chip free</div>
@@ -5215,7 +5214,7 @@ window._showVerifyBanner = function(user){
             <div style="font-size:9px;color:var(--txd)">♦ 1 Royal Chip included</div>
           </div>
           <div style="display:flex;gap:8px" id="daily-btn-row">
-            <button class="btn btn-gold" id="claim-chips-btn" style="flex:1;padding:10px;font-size:10px;letter-spacing:1.5px" onclick="claimBonus()">🎁 Claim Daily Bonus</button>
+            <button class="btn btn-gold" id="claim-chips-btn" style="flex:1;padding:10px;font-size:10px;letter-spacing:1.5px" onclick="claimBonus()">Claim Daily Bonus</button>
           </div>
         </div>
       </div>
@@ -5247,10 +5246,10 @@ window._showVerifyBanner = function(user){
   <!-- Lobby trust footer -->
   <div class="lobby-trust-footer">
     <div class="ltf-badges">
-      <div class="ltf-badge">🔒 SSL Secured</div>
-      <div class="ltf-badge">⚖️ Licensed · RGL-2024-0847</div>
-      <div class="ltf-badge">🛡️ 18+ Only</div>
-      <div class="ltf-badge">✅ Provably Fair</div>
+      <div class="ltf-badge">SSL Secured</div>
+      <div class="ltf-badge">Licensed · RGL-2024-0847</div>
+      <div class="ltf-badge">18+</div>
+      <div class="ltf-badge">Provably Fair</div>
     </div>
     <div class="ltf-links">
       <span class="ltf-link" onclick="goReferral()">Refer a Friend</span>
@@ -6305,7 +6304,7 @@ function _renderBonusPanel(){
       : 'Claim 1,250 Gold Chips + 1 Royal Chip free';
   }
   if(btn){
-    btn.textContent = _bonusClaimed ? '✓ Claimed Today' : '🎁 Claim Daily Bonus';
+    btn.textContent = _bonusClaimed ? '✓ Claimed Today' : 'Claim Daily Bonus';
     btn.disabled = _bonusClaimed;
     btn.style.opacity = _bonusClaimed ? '0.5' : '1';
   }
