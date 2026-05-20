@@ -2106,7 +2106,13 @@ nav:not(.lp-nav)::after {
   display: grid !important;
   grid-template-columns: 248px 1fr !important;
   overflow: hidden !important;
+  --rf-gold: #FFB800 !important;
+  --rf-gold-lt: #FFD95A !important;
+  --rf-gold-dk: #CC8800 !important;
 }
+
+/* hide featured-table widget — not part of lobby.html design */
+#featured-table-wrap { display: none !important; }
 
 /* ─── LEFT SIDEBAR ─── */
 .l-sb {
@@ -2216,8 +2222,8 @@ nav:not(.lp-nav)::after {
   padding: 8px 20px 4px !important;
 }
 
-/* Nav tabs styled as sidebar items */
-.ltab {
+/* Sidebar nav items */
+.sni {
   display: block !important;
   padding: 10px 20px !important;
   font-family: var(--rf-font-disp) !important;
@@ -2235,11 +2241,11 @@ nav:not(.lp-nav)::after {
   text-align: left !important;
   text-shadow: none !important;
 }
-.ltab:hover:not(.active) {
+.sni:hover:not(.on) {
   color: rgba(237,232,223,.6) !important;
   background: rgba(212,175,55,.02) !important;
 }
-.ltab.active {
+.sni.on {
   font-style: italic !important;
   color: var(--rf-text) !important;
   border-right-color: var(--rf-gold) !important;
@@ -2379,7 +2385,8 @@ nav:not(.lp-nav)::after {
 .btn-sm { padding: 6px 12px !important; font-size: 8px !important; }
 
 /* ─── CONTENT PANELS ─── */
-.l-panel { padding: 32px 40px !important; }
+.l-panel { padding: 32px 40px !important; display: none !important; }
+.l-panel.on { display: block !important; }
 
 .ph {
   display: flex !important;
@@ -2533,7 +2540,7 @@ nav:not(.lp-nav)::after {
   margin-bottom: 12px !important;
 }
 .filt-lbl::after { content: '' !important; flex: 1 !important; height: 1px !important; background: rgba(212,175,55,.08) !important; }
-.filter-chips { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
+.fchips { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
 .fchip {
   padding: 6px 14px !important;
   font-family: var(--rf-font-body) !important;
@@ -2550,7 +2557,7 @@ nav:not(.lp-nav)::after {
   text-transform: none !important;
 }
 .fchip:hover { border-color: rgba(212,175,55,.3) !important; color: var(--rf-text) !important; }
-.fchip.active { border-color: rgba(212,175,55,.55) !important; color: var(--rf-gold) !important; background: rgba(212,175,55,.07) !important; }
+.fchip.on { border-color: rgba(212,175,55,.55) !important; color: var(--rf-gold) !important; background: rgba(212,175,55,.07) !important; }
 .filter-seats-in {
   background: rgba(255,255,255,.04) !important;
   border: 1px solid rgba(255,255,255,.08) !important;
@@ -5390,21 +5397,20 @@ window._showVerifyBanner = function(user){
 
       <!-- Mode nameplate -->
       <div class="sb-block" id="lobby-mode-header" style="padding-top:24px">
-        <div class="sb-mode-icon" id="lobby-mode-icon">♦</div>
         <div class="sb-mode-title" id="lobby-mode-title">Royal Chips</div>
-        <div class="sb-mode-sub" id="lobby-mode-sub">Sweepstakes · Redeemable for prizes</div>
-        <div class="sb-mode-badge" id="lobby-mode-badge">Sweepstakes</div>
+        <div class="sb-mode-sub" id="lobby-mode-sub">Real Stakes · Cash &amp; Tournaments</div>
+        <div class="sb-mode-badge" id="lobby-mode-badge">Royal Mode</div>
       </div>
 
       <!-- Navigation -->
       <div class="sb-nav-wrap">
         <span class="sb-nav-cap">Game Rooms</span>
-        <div class="ltab active" id="ltab-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
-        <div class="ltab" id="ltab-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
-        <div class="ltab" id="ltab-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
+        <div class="sni on" id="ni-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
+        <div class="sni" id="ni-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
+        <div class="sni" id="ni-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
         <div class="sb-nav-hr"></div>
         <span class="sb-nav-tools">Tools</span>
-        <div class="ltab" id="ltab-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--rf-gold);font-size:11px;line-height:1;vertical-align:middle">●</span></div>
+        <div class="sni" id="ni-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--rf-gold);font-size:11px;line-height:1;vertical-align:middle">●</span></div>
       </div>
 
       <!-- Live Stats -->
@@ -5419,14 +5425,9 @@ window._showVerifyBanner = function(user){
       <div class="sb-block">
         <div class="shd">Daily Bonus</div>
         <div class="bonus-frame" id="rc-claim-widget">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-            <div class="bonus-title">Claim Today</div>
-            <div style="font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--grn)">Free Every Day</div>
-          </div>
-          <div class="bonus-sub" id="bonus-sub-text">Claim 1,250 Gold Chips + 1 Royal Chip free</div>
-          <div class="streak-dots" id="streak-dots" style="margin:8px 0"></div>
-          <div style="height:1px;background:rgba(255,255,255,.06);margin:10px 0"></div>
-          <div style="font-size:9px;color:var(--txd);margin-bottom:10px">♦ 1 Royal Chip included</div>
+          <div class="bonus-title">Claim Today</div>
+          <div class="bonus-sub" id="bonus-sub-text">1,250 Gold + 1 Royal Chip free</div>
+          <div class="s-dots" id="streak-dots" style="margin-bottom:12px"></div>
           <div id="daily-btn-row">
             <button class="btn btn-g btn-fw" id="claim-chips-btn" onclick="claimBonus()">Claim Daily Bonus</button>
           </div>
@@ -5469,14 +5470,14 @@ window._showVerifyBanner = function(user){
     <main class="l-main">
 
       <!-- CASH TABLES PANEL -->
-      <div id="lpanel-cash" class="l-panel">
+      <div id="panel-cash" class="l-panel on">
         <div class="ph">
           <div>
             <div class="ph-title">Cash Tables</div>
             <div class="ph-sub">No Limit Hold'em · Pot Limit Omaha · Mixed</div>
           </div>
+          <button class="btn btn-o btn-sm">+ Join Waitlist</button>
         </div>
-        <div id="featured-table-wrap"></div>
         <div id="tgrid"></div>
         <div class="tfoot">
           <div class="tf-bgs">
@@ -5492,36 +5493,27 @@ window._showVerifyBanner = function(user){
             <span class="tf-lk" onclick="goRedeem()">Redeem Royal Chips</span><span class="tf-sep">·</span>
             <span class="tf-lk" onclick="goRG()">Responsible Gambling</span><span class="tf-sep">·</span>
             <span class="tf-lk" onclick="goTerms()">Terms &amp; Conditions</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goPrivacy()">Privacy Policy</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goCookies()">Cookie Policy</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goAML()">AML Policy</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goFair()">Provably Fair</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goDispute()">Dispute Resolution</span><span class="tf-sep">·</span>
-            <span class="tf-lk" onclick="goKYC()">Verify Identity (KYC)</span>
+            <span class="tf-lk" onclick="goPrivacy()">Privacy Policy</span>
           </div>
-          <div class="ltf-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · Gambling can be addictive. Play responsibly.</div>
-          <div class="ltf-copy" style="color:rgba(255,255,255,.08)">Royal Chips are a sweepstakes currency with no cash value until redeemed. No purchase necessary. Void where prohibited. 18+.</div>
+          <div class="tf-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · Gambling can be addictive. Play responsibly.</div>
+          <div class="tf-copy" style="margin-top:3px;color:rgba(255,255,255,.08)">Royal Chips are a sweepstakes currency with no cash value until redeemed. No purchase necessary. Void where prohibited. 18+.</div>
         </div>
       </div>
 
-      <!-- SIT &amp; GO PANEL -->
-      <div id="lpanel-sng" class="l-panel" style="display:none">
+      <!-- SIT & GO PANEL -->
+      <div id="panel-sng" class="l-panel">
         <div class="ph">
           <div>
             <div class="ph-title">Sit &amp; Go</div>
-            <div class="ph-sub">Fill a seat · play instantly · Single-table tournaments</div>
+            <div class="ph-sub">Fill a seat, play instantly · Single-table tournaments</div>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn-o btn-sm" onclick="openSNG('t1')">+ Micro</button>
-            <button class="btn btn-o btn-sm" onclick="openSNG('t2')">+ Low</button>
-            <button class="btn btn-o btn-sm" onclick="openSNG('t3')">+ High</button>
-          </div>
+          <button class="btn btn-o btn-sm">+ Create SNG</button>
         </div>
-        <div class="sng-list" id="sng-list"></div>
+        <div class="sng-grid" id="sng-list"></div>
       </div>
 
       <!-- TOURNAMENTS PANEL -->
-      <div id="lpanel-mtt" class="l-panel" style="display:none">
+      <div id="panel-mtt" class="l-panel">
         <div class="ph">
           <div>
             <div class="ph-title">Tournaments</div>
@@ -5532,19 +5524,19 @@ window._showVerifyBanner = function(user){
       </div>
 
       <!-- FILTERS PANEL -->
-      <div id="lpanel-filters" class="l-panel" style="display:none">
+      <div id="panel-filters" class="l-panel">
         <div class="ph">
           <div>
             <div class="ph-title">Filters</div>
             <div class="ph-sub">Refine the tables and tournaments shown</div>
           </div>
-          <button class="btn btn-o btn-sm" onclick="resetFilters()">✕ Clear All</button>
+          <button class="btn btn-o btn-sm" onclick="resetFilters()">Clear All</button>
         </div>
         <div class="filt-panel">
           <div class="filt-sec">
             <div class="filt-lbl">Stakes</div>
-            <div class="filter-chips" id="filt-stakes">
-              <div class="fchip active" onclick="toggleFilter('stakes',this,'all')">All</div>
+            <div class="fchips" id="filt-stakes">
+              <div class="fchip on" onclick="toggleFilter('stakes',this,'all')">All</div>
               <div class="fchip" onclick="toggleFilter('stakes',this,'micro')">Micro</div>
               <div class="fchip" onclick="toggleFilter('stakes',this,'low')">Low</div>
               <div class="fchip" onclick="toggleFilter('stakes',this,'mid')">Mid</div>
@@ -5553,9 +5545,18 @@ window._showVerifyBanner = function(user){
             </div>
           </div>
           <div class="filt-sec">
+            <div class="filt-lbl">Game Type</div>
+            <div class="fchips" id="filt-game">
+              <div class="fchip on" onclick="toggleFilter('game',this,'all')">All</div>
+              <div class="fchip" onclick="toggleFilter('game',this,'nlhe')">No Limit Hold'em</div>
+              <div class="fchip" onclick="toggleFilter('game',this,'plo')">Pot Limit Omaha</div>
+              <div class="fchip" onclick="toggleFilter('game',this,'mixed')">Mixed</div>
+            </div>
+          </div>
+          <div class="filt-sec">
             <div class="filt-lbl">Speed</div>
-            <div class="filter-chips" id="filt-speed">
-              <div class="fchip active" onclick="toggleFilter('speed',this,'all')">All</div>
+            <div class="fchips" id="filt-speed">
+              <div class="fchip on" onclick="toggleFilter('speed',this,'all')">All</div>
               <div class="fchip" onclick="toggleFilter('speed',this,'normal')">Normal</div>
               <div class="fchip" onclick="toggleFilter('speed',this,'turbo')">Turbo</div>
               <div class="fchip" onclick="toggleFilter('speed',this,'hyper')">Hyper</div>
@@ -5563,28 +5564,22 @@ window._showVerifyBanner = function(user){
           </div>
           <div class="filt-sec">
             <div class="filt-lbl">Availability</div>
-            <div class="filter-chips" id="filt-avail">
-              <div class="fchip active" onclick="toggleFilter('avail',this,'all')">Any</div>
+            <div class="fchips" id="filt-avail">
+              <div class="fchip on" onclick="toggleFilter('avail',this,'all')">Any</div>
               <div class="fchip" onclick="toggleFilter('avail',this,'open')">Has Open Seat</div>
               <div class="fchip" onclick="toggleFilter('avail',this,'full')">Full Tables Only</div>
             </div>
           </div>
           <div class="filt-sec">
-            <div class="filt-lbl">Number of Seats at Table</div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-              <div style="display:flex;flex-direction:column;gap:4px">
-                <label style="font-size:8px;color:var(--txd);letter-spacing:1px;text-transform:uppercase">Min seats</label>
-                <input class="filter-seats-in" id="filt-seats-min" type="number" min="2" max="9" placeholder="2" oninput="applyFilters()">
-              </div>
-              <span style="color:var(--txd)">—</span>
-              <div style="display:flex;flex-direction:column;gap:4px">
-                <label style="font-size:8px;color:var(--txd);letter-spacing:1px;text-transform:uppercase">Max seats</label>
-                <input class="filter-seats-in" id="filt-seats-max" type="number" min="2" max="9" placeholder="9" oninput="applyFilters()">
-              </div>
-              <button class="btn btn-o btn-sm" onclick="clearSeatsInput()">Clear</button>
+            <div class="filt-lbl">Table Size</div>
+            <div class="fchips" id="filt-size">
+              <div class="fchip on" onclick="toggleFilter('size',this,'all')">Any</div>
+              <div class="fchip" onclick="toggleFilter('size',this,'hu')">Heads Up</div>
+              <div class="fchip" onclick="toggleFilter('size',this,'6max')">6-Max</div>
+              <div class="fchip" onclick="toggleFilter('size',this,'9max')">9-Max</div>
             </div>
           </div>
-          <div style="margin-top:32px;display:flex;gap:10px">
+          <div style="margin-top:32px">
             <button class="btn btn-g" onclick="switchTab('cash')">View Tables</button>
           </div>
         </div>
@@ -10167,8 +10162,8 @@ let _filters={stakes:'all',speed:'all',avail:'all'};
 
 function toggleFilter(group, el, val){
   _filters[group]=val;
-  el.closest('.filter-chips').querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
+  el.closest('.fchips').querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
   updateFilterDot();
   applyFilters();
 }
@@ -10182,9 +10177,9 @@ function clearSeatsInput(){
 
 function resetFilters(){
   _filters={stakes:'all',speed:'all',avail:'all'};
-  document.querySelectorAll('#lpanel-filters .filter-chips .fchip').forEach(c=>{
+  document.querySelectorAll('#panel-filters .fchips .fchip').forEach(c=>{
     const txt=c.textContent.trim();
-    c.classList.toggle('active', txt==='All'||txt==='Any');
+    c.classList.toggle('on', txt==='All'||txt==='Any');
   });
   clearSeatsInput();
 }
@@ -11674,16 +11669,16 @@ function kycSubmit(){
 }
 function switchTab(t){
   if(t==='mtt') setTimeout(renderMTT, 50);
-  if(t==='cash') setTimeout(()=>{ renderFeaturedTable(); renderTiers(); }, 30);
+  if(t==='cash') setTimeout(()=>{ renderTiers(); }, 30);
   _tab=t;
-  document.getElementById('ltab-cash').classList.toggle('active',t==='cash');
-  document.getElementById('ltab-sng').classList.toggle('active',t==='sng');
-  document.getElementById('ltab-mtt').classList.toggle('active',t==='mtt');
-  document.getElementById('ltab-filters').classList.toggle('active',t==='filters');
-  document.getElementById('lpanel-cash').style.display=t==='cash'?'':'none';
-  document.getElementById('lpanel-sng').style.display=t==='sng'?'':'none';
-  document.getElementById('lpanel-mtt').style.display=t==='mtt'?'':'none';
-  document.getElementById('lpanel-filters').style.display=t==='filters'?'':'none';
+  ['cash','sng','mtt','filters'].forEach(id=>{
+    const ni=document.getElementById('ni-'+id);
+    const panel=document.getElementById('panel-'+id);
+    if(ni) ni.classList.toggle('on',id===t);
+    if(panel) panel.classList.toggle('on',id===t);
+  });
+  const lm=document.querySelector('.l-main');
+  if(lm) lm.scrollTop=0;
 }
 function openOv(id){document.getElementById(id).classList.add('show');}
 function closeOv(id){document.getElementById(id).classList.remove('show');}
