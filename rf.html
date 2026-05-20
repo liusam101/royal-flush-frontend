@@ -432,7 +432,7 @@ body.royal-mode nav{
 .tc-tag{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);background:rgba(255,255,255,.04);padding:3px 7px;border-radius:2px}
 .buyin-range{font-size:9px;color:var(--txd);margin-top:2px}
 .tier-tables-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-.ttr{display:flex;align-items:center;gap:7px;padding:5px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:2px;transition:all .18s}
+.ttr{display:flex;align-items:center;gap:7px;padding:5px 8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:2px;transition:all .18s;cursor:pointer}
 .ttr:hover{background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.2)}
 .ttr-name{font-size:10px;font-weight:500;min-width:105px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ttr-bar{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
@@ -445,20 +445,20 @@ body.royal-mode nav{
 /* ── FEATURED TABLE ── */
 .featured-table {
   position: relative;
-  background: linear-gradient(135deg, #0E1A0A 0%, #0A0E08 50%, #150A0A 100%);
-  border: 1px solid rgba(212,175,55,0.25);
-  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid rgba(212,175,55,0.28);
+  border-radius: 6px;
   overflow: hidden;
   margin-bottom: 16px;
   cursor: pointer;
-  transition: all 0.25s;
+  transition: border-color 0.25s, box-shadow 0.25s;
 }
 .featured-table:hover { border-color: rgba(212,175,55,0.5); box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.12); }
 .featured-table::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(212,175,55,0.06) 0%, transparent 50%, rgba(232,74,95,0.04) 100%);
+  background: linear-gradient(135deg, rgba(212,175,55,0.04) 0%, transparent 60%);
   pointer-events: none;
 }
 .ft-accent { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #A07A14, #D4AF37 40%, #F0CC5A 60%, #A07A14); }
@@ -487,7 +487,7 @@ body.royal-mode nav{
   background: rgba(0,201,139,0.12); border: 1px solid rgba(0,201,139,0.3);
   border-radius: 3px; padding: 3px 10px;
   font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: #00C98B; font-family: 'Inter', sans-serif;
+  color: #00C98B; font-family: 'Montserrat', sans-serif;
   margin-bottom: 8px; white-space: nowrap;
 }
 .ft-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: #00C98B; box-shadow: 0 0 6px #00C98B; animation: pulse 1.5s infinite; }
@@ -536,9 +536,9 @@ body.royal-mode nav{
 .sd .sd-chips{font-size:7px;color:inherit;opacity:.75}
 
 /* ── TOURNAMENTS (MTT) ──────────────────────────────────────── */
-.mtt-card{background:linear-gradient(160deg,#111118,#0C0C10);border:1px solid rgba(255,255,255,.05);border-radius:0;overflow:hidden;margin-bottom:10px;transition:all .25s;cursor:pointer;position:relative;border-left:3px solid rgba(155,77,255,.4)}
-.mtt-card:hover{border-color:rgba(255,184,0,.2);border-left-color:var(--gold);box-shadow:0 0 0 1px rgba(255,184,0,.08),0 8px 40px rgba(0,0,0,.8);transform:translateX(3px)}
-.mtt-card.featured{border-left:3px solid var(--gold);box-shadow:0 0 20px rgba(255,184,0,.06)}
+.mtt-card{background:linear-gradient(160deg,#111118,#0C0C10);border:1px solid rgba(255,255,255,.05);border-radius:0;overflow:hidden;margin-bottom:10px;transition:all .25s;cursor:pointer;position:relative}
+.mtt-card:hover{border-color:rgba(255,184,0,.2);box-shadow:0 0 0 1px rgba(255,184,0,.08),0 8px 40px rgba(0,0,0,.8)}
+.mtt-card.featured{border-color:rgba(212,175,55,.35);box-shadow:0 0 20px rgba(255,184,0,.06)}
 .mtt-header{background:linear-gradient(135deg,rgba(17,17,24,.95),rgba(12,12,16,.98));padding:18px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid rgba(255,184,0,.06)}
 .mtt-icon{font-size:32px;flex-shrink:0;width:48px;text-align:center}
 .mtt-info{flex:1;min-width:0}
@@ -636,7 +636,7 @@ body.royal-mode nav{
 .felt-bet-disc.fbd-purple{background:radial-gradient(circle at 50% 30%,rgba(255,255,255,0.9) 0%,transparent 70%) #7b1fa2;border:2px dashed #4a148c}
 .felt-bet-disc.fbd-gold{background:radial-gradient(circle at 50% 30%,rgba(255,255,255,0.9) 0%,transparent 70%) #f9a825;border:2px dashed #f57f17}
 .felt-bet-lbl{color:#ffb800;font-family:'Montserrat',sans-serif;font-size:clamp(8px,1vw,13px);font-weight:700;text-shadow:1px 1px 2px #000;white-space:nowrap;letter-spacing:.5px;margin-top:4px;}
-.card{width:clamp(44px,6.5vw,78px);height:clamp(62px,9vw,110px);background:linear-gradient(180deg,#FFFFFF,#F5F3ED);border-radius:clamp(4px,.5vw,7px);box-shadow:0 4px 12px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.3),inset 0 0 0 1px rgba(0,0,0,.06);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:clamp(2px,0.4vw,5px);position:relative;transform-style:preserve-3d;transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease,opacity .3s ease,filter .3s ease}
+.card{width:clamp(44px,6.5vw,78px);height:clamp(62px,9vw,110px);background:linear-gradient(180deg,#FFFFFF,#F5F3ED);border-radius:clamp(4px,.5vw,7px);box-shadow:0 4px 12px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.3),inset 0 0 0 1px rgba(0,0,0,.06);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:clamp(2px,0.4vw,5px);position:relative;transform-style:preserve-3d;transition:transform .35s cubic-bezier(0.16,1,0.3,1),box-shadow .3s ease,opacity .3s ease,filter .3s ease}
 .ct,.cb{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:clamp(12px,1.5vw,18px);line-height:1;display:flex;flex-direction:column;align-items:center}
 .cb{transform:rotate(180deg)}.cm{font-size:clamp(20px,2.8vw,34px);line-height:1}.cs{font-size:clamp(8px,1vw,13px);line-height:1}
 .card.red .ct,.card.red .cb,.card.red .cm{color:#C41414}
@@ -658,7 +658,7 @@ body.royal-mode nav{
 .comm-cards .card:nth-child(4){--tilt:0.7deg}
 .comm-cards .card:nth-child(5){--tilt:-0.5deg}
 /* winner/kicker use transition so adding the class slides cards smoothly without re-rendering */
-.card{transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease,opacity .3s ease,filter .3s ease}
+.card{transition:transform .35s cubic-bezier(0.16,1,0.3,1),box-shadow .3s ease,opacity .3s ease,filter .3s ease}
 .card.winner{box-shadow:0 0 0 3px var(--gold),0 0 20px rgba(201,168,76,.6),0 0 40px rgba(201,168,76,.3),0 8px 24px rgba(0,0,0,.7);z-index:10;transform:translateY(-22px) scale(1.1)}
 .felt-hole .card.winner{transform:translateY(-8px) scale(1.08)}
 .card.winner.red .ct,.card.winner.red .cb,.card.winner.red .cm{color:#C41414}
@@ -710,7 +710,7 @@ body.royal-mode nav{
 .felt-hole .card.back::before{content:'';position:absolute;inset:2px;border-radius:3px;border:1px solid rgba(201,168,76,.12);background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(201,168,76,.03) 2px,rgba(201,168,76,.03) 4px)}
 .felt-hole .card.back::after{content:"♠";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;color:rgba(201,168,76,.3)}
 @keyframes avatarDeal{from{opacity:0;transform:scale(.2) translateY(-30px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.felt-hole .card.dealt{animation:avatarDeal .25s cubic-bezier(.34,1.56,.64,1) both}
+.felt-hole .card.dealt{animation:avatarDeal .25s cubic-bezier(0.16,1,0.3,1) both}
 .felt-hole .card:nth-child(1).dealt{animation-delay:0s}
 .felt-hole .card:nth-child(2).dealt{animation-delay:.1s}
 .felt-hole.folded{opacity:0;transform:translate(-50%,-50%) scale(.6);transition:opacity .4s ease,transform .4s ease;filter:grayscale(1) brightness(.5)}
@@ -842,7 +842,7 @@ body.royal-mode nav{
 .vip-next-name{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--txd)}
 .vip-next-val{font-size:9px;color:var(--gold);margin-top:1px}
 .vip-bar-track{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:6px}
-.vip-bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.34,1.56,.64,1);background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-light));box-shadow:0 0 8px rgba(201,168,76,.4)}
+.vip-bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(0.16,1,0.3,1);background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-light));box-shadow:0 0 8px rgba(201,168,76,.4)}
 .vip-bar-labels{display:flex;justify-content:space-between;align-items:center}
 .vip-xp{font-size:9px;color:var(--txd)}
 .vip-xp b{color:var(--tx)}
@@ -911,7 +911,7 @@ body.royal-mode nav{
 .win-hand-label{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   pointer-events:none;z-index:60;text-align:center;
-  animation:winLabelIn .45s cubic-bezier(.34,1.56,.64,1) both;
+  animation:winLabelIn .45s cubic-bezier(0.16,1,0.3,1) both;
 }
 .win-hand-label.fade-out{animation:winLabelOut .4s ease forwards}
 .win-hand-label-suit{font-size:18px;letter-spacing:8px;color:rgba(201,168,76,.5);margin-bottom:4px}
@@ -1553,14 +1553,14 @@ body.royal-mode nav{
 .rf-live-section { background: linear-gradient(180deg, #08080C 0%, #0E0C10 100%); border-top: 1px solid rgba(212,175,55,0.08); border-bottom: 1px solid rgba(212,175,55,0.08); padding: 64px 24px; text-align: center; position: relative; overflow: hidden; }
 .rf-live-section::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 60%); pointer-events: none; }
 .rf-live-inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
-.rf-live-label { display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #00C98B; margin-bottom: 18px; }
+.rf-live-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--rf-font-body); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #00C98B; margin-bottom: 18px; }
 .rf-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #00C98B; box-shadow: 0 0 12px #00C98B; animation: rfLivePulse 1.5s ease-in-out infinite; }
 @keyframes rfLivePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; box-shadow: 0 0 24px #00C98B; } }
 .rf-live-number { font-family: 'Cormorant Garamond', serif; font-size: clamp(60px, 12vw, 120px); font-weight: 600; line-height: 1; background: linear-gradient(135deg, #A07A14 0%, #D4AF37 35%, #F2D06B 60%, #D4AF37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; text-shadow: 0 0 60px rgba(212,175,55,0.25); letter-spacing: -1px; }
 .rf-live-headline { font-family: 'Cormorant Garamond', serif; font-size: clamp(20px, 3vw, 28px); font-weight: 300; color: #EDE8DF; margin-bottom: 14px; letter-spacing: 0.5px; }
 .rf-live-headline em { font-style: italic; color: #D4AF37; }
 .rf-live-sub { font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,0.4); margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; }
-.rf-live-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: linear-gradient(135deg, #A07A14, #D4AF37 50%, #F0CC5A); color: #08080A; border: none; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(212,175,55,0.3); transition: all 0.2s; }
+.rf-live-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: linear-gradient(135deg, #A07A14, #D4AF37 50%, #F0CC5A); color: #08080A; border: none; border-radius: 4px; font-family: var(--rf-font-body); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(212,175,55,0.3); transition: all 0.2s; }
 .rf-live-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(212,175,55,0.5); }
 .rf-live-ministats { display: flex; justify-content: center; gap: 32px; margin-top: 36px; padding-top: 28px; border-top: 1px solid rgba(212,175,55,0.1); flex-wrap: wrap; }
 .rf-live-mini { text-align: center; }
@@ -1578,14 +1578,14 @@ body.royal-mode nav{
 .rf-mega-trigger:hover::after { opacity: 1; transform: rotate(180deg); }
 .rf-mega-panel { position: absolute; top: calc(100% + 12px); left: -20px; width: 580px; background: #0C0C12; border: 1px solid rgba(212,175,55,0.18); border-radius: 8px; padding: 24px; display: none; grid-template-columns: 1fr 1fr; gap: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.85), 0 0 0 1px rgba(212,175,55,0.05); z-index: 300; }
 .rf-mega-trigger:hover .rf-mega-panel, .rf-mega-panel:hover { display: grid; }
-.rf-mega-col-title { font-family: 'Inter', sans-serif; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(212,175,55,0.7); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(212,175,55,0.1); }
-.rf-mega-link { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.65); cursor: pointer; transition: color 0.15s; letter-spacing: 0.3px; }
+.rf-mega-col-title { font-family: var(--rf-font-body); font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(212,175,55,0.7); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(212,175,55,0.1); }
+.rf-mega-link { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; font-family: var(--rf-font-body); font-size: 12px; color: rgba(255,255,255,0.65); cursor: pointer; transition: color 0.15s; letter-spacing: 0.3px; }
 .rf-mega-link:hover { color: #D4AF37; }
 .rf-mega-link-icon { width: 18px; font-size: 13px; opacity: 0.7; flex-shrink: 0; text-align: center; padding-top: 1px; }
 .rf-mega-link-sub { display: block; font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0; margin-top: 2px; }
 
 /* ── STICKY CTA (top-right) ───────────────────────────── */
-.rf-sticky-cta { position: fixed; top: 14px; right: 22px; z-index: 250; display: none; align-items: center; gap: 6px; padding: 11px 22px; background: linear-gradient(135deg, #A07A14, #D4AF37 50%, #F0CC5A); color: #08080A; border: none; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 24px rgba(212,175,55,0.4); animation: rfStickyIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transition: transform 0.2s, box-shadow 0.2s; }
+.rf-sticky-cta { position: fixed; top: 14px; right: 22px; z-index: 250; display: none; align-items: center; gap: 6px; padding: 11px 22px; background: linear-gradient(135deg, #A07A14, #D4AF37 50%, #F0CC5A); color: #08080A; border: none; border-radius: 4px; font-family: var(--rf-font-body); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 24px rgba(212,175,55,0.4); animation: rfStickyIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); transition: transform 0.2s, box-shadow 0.2s; }
 .rf-sticky-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 32px rgba(212,175,55,0.6); }
 /* Sticky CTA removed — was covering nav controls */
 .rf-sticky-cta, .rf-sticky-cta.show { display: none !important; visibility: hidden !important; pointer-events: none !important; }
@@ -1660,7 +1660,7 @@ body:not(.in-lobby) .rf-qmenu { display: none; }
   position: absolute;
   z-index: 2;
   color: #0A0A0C;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--rf-font-body);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
@@ -1960,7 +1960,7 @@ body:not(.in-lobby) .rf-qmenu { display: none; }
   --rf-red:       #E84A5F;
   --rf-nav-h:     68px;
   --rf-radius:    4px;
-  --rf-font-body: 'Inter', 'Montserrat', sans-serif;
+  --rf-font-body: 'Montserrat', sans-serif;
   --rf-font-disp: 'Cormorant Garamond', serif;
 }
 
@@ -2379,6 +2379,31 @@ nav:not(.lp-nav)::after {
 .fchip:hover { border-color: var(--rf-border-hi) !important; color: var(--rf-text) !important; }
 .fchip.active { border-color: var(--rf-gold) !important; color: var(--rf-gold) !important; background: rgba(212,175,55,0.07) !important; }
 .filter-section-title { font-family: var(--rf-font-body) !important; font-size: 9px !important; letter-spacing: 2px !important; color: var(--rf-muted) !important; }
+
+/* ── PASSIVE SIDEBAR SECTIONS ── */
+#lside-pots-wrap {
+  border-top: 1px solid var(--rf-border) !important;
+  padding-top: 18px !important;
+  margin-top: 2px !important;
+}
+#lside-pots-wrap .side-h3,
+#lside-session-wrap .side-h3 {
+  color: rgba(107,96,128,0.55) !important;
+  font-size: 8px !important;
+  letter-spacing: 2px !important;
+}
+
+/* ── FEATURED TABLE SURFACE ── */
+.featured-table {
+  background: var(--rf-bg2) !important;
+  border: 1px solid rgba(212,175,55,0.28) !important;
+  border-radius: 6px !important;
+  transition: border-color 0.25s, box-shadow 0.25s !important;
+}
+.featured-table:hover { border-color: var(--rf-border-hi) !important; }
+.ft-name { font-family: var(--rf-font-disp) !important; color: var(--rf-text) !important; }
+.ft-stakes { color: var(--rf-gold) !important; }
+.ft-badge { font-family: var(--rf-font-body) !important; }
 
 /* ── TRUST FOOTER ── */
 .lobby-trust-footer {
@@ -5104,7 +5129,7 @@ window._showVerifyBanner = function(user){
       <div class="lobby-mode-icon" id="lobby-mode-icon">♦</div>
       <div>
         <div class="lobby-mode-title" id="lobby-mode-title">Royal Chips</div>
-        <div class="lobby-mode-sub" id="lobby-mode-sub">Sweepstakes · Redeemable for prizes · No purchase necessary</div>
+        <div class="lobby-mode-sub" id="lobby-mode-sub">Sweepstakes · Redeemable for prizes</div>
       </div>
       <div class="lobby-mode-badge" id="lobby-mode-badge">Sweepstakes</div>
     </div>
@@ -5120,7 +5145,7 @@ window._showVerifyBanner = function(user){
         <div class="ltab active" id="ltab-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
         <div class="ltab" id="ltab-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
         <div class="ltab" id="ltab-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
-        <div class="ltab" id="ltab-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--gold);font-size:8px">●</span></div>
+        <div class="ltab" id="ltab-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:var(--gold);font-size:11px;line-height:1;vertical-align:middle">●</span></div>
       </div>
 
       <!-- FILTERS PANEL -->
@@ -5172,7 +5197,7 @@ window._showVerifyBanner = function(user){
           </div>
           <div class="filter-footer">
             <button class="btn btn-ghost btn-sm" onclick="resetFilters()">✕ Clear All</button>
-            <button class="btn btn-gold btn-sm" onclick="switchTab('cash')">View Tables →</button>
+            <button class="btn btn-gold btn-sm" onclick="switchTab('cash')">View Tables</button>
           </div>
         </div>
       </div>
@@ -5233,11 +5258,11 @@ window._showVerifyBanner = function(user){
         <div class="side-h3">Friends Online</div>
         <div id="side-friends"></div>
       </div>
-      <div>
+      <div id="lside-pots-wrap">
         <div class="side-h3">Recent Big Pots</div>
         <div id="side-pots"></div>
       </div>
-      <div>
+      <div id="lside-session-wrap">
         <div class="side-h3">Your Session</div>
         <div id="side-session"></div>
       </div>
@@ -8971,7 +8996,7 @@ function setMode(mode, silent) {
   const clabel= document.getElementById('ls-chips-label');
   if (icon)  icon.textContent  = isGold ? '🟡' : '♦';
   if (title) { title.textContent = isGold ? 'Gold Chips' : 'Royal Chips'; title.style.color = isGold ? '#E8C040' : 'var(--gold)'; }
-  if (sub)   sub.textContent   = isGold ? 'Free Play · No cash value · Just for fun' : 'Sweepstakes · Redeemable for prizes · No purchase necessary';
+  if (sub)   sub.textContent   = isGold ? 'Practice mode · No cash value' : 'Sweepstakes · Redeemable for prizes';
   if (badge) { badge.textContent = isGold ? 'Free Play' : 'Sweepstakes'; badge.style.color = isGold ? '#E8C040' : 'var(--gold)'; badge.style.borderColor = isGold ? 'rgba(232,192,64,.3)' : 'rgba(201,168,76,.3)'; badge.style.background = isGold ? 'rgba(232,192,64,.08)' : 'rgba(201,168,76,.06)'; }
   if (clabel) clabel.textContent = isGold ? 'Gold Chips in Play' : 'Royal Chips in Play';
 
@@ -9918,7 +9943,7 @@ function renderTiersFiltered(tiers){
   document.getElementById('tgrid').innerHTML=tiers.map(t=>{
     const stacks=(CHIP_STACKS[t.id]||CHIP_STACKS.micro);
     const chips=stacks.map(([col,h])=>_chipSVG(col,h)).join('');
-    const rows=t.tables.map(tb=>{const s=tb.players||Math.round(tb.fill*t.seats),open=t.seats-s;return`<div class="ttr"><span class="ttr-name">${tb.name}</span><div class="ttr-bar"><div class="ttr-fill" style="width:${(s/t.seats)*100}%"></div></div><span class="ttr-cnt">${s}/${t.seats}</span><span class="ttr-open ${open>0?'has':'full'}">${open>0?open+' open':'Full'}</span></div>`;}).join('');
+    const rows=t.tables.map(tb=>{const s=tb.players||Math.round(tb.fill*t.seats),open=t.seats-s;return`<div class="ttr" data-tier="${t.id}" data-table="${tb.name}" data-bid="${t.backendId||t.id}" title="Click to join ${tb.name}"><span class="ttr-name">${tb.name}</span><div class="ttr-bar"><div class="ttr-fill" style="width:${(s/t.seats)*100}%"></div></div><span class="ttr-cnt">${s}/${t.seats}</span><span class="ttr-open ${open>0?'has':'full'}">${open>0?open+' open':'Full'}</span></div>`;}).join('');
     return`<div class="tc"><div class="tc-felt" style="background:radial-gradient(ellipse at 50% 50%,${t.bg},#030608)"><div class="cr" style="align-items:flex-end;gap:2px">${chips}</div><div class="tier-badge">${t.id.toUpperCase()}</div></div><div class="tc-info"><div class="tc-row"><div><div class="tc-name">${t.name}</div><div class="tc-stakes">${chip(t.sb)}/${chip(t.bb)}</div></div><div class="tc-tag">${chip(t.min)}–${chip(t.max)} buy-in</div></div><div class="buyin-range" style="display:none"></div><div class="tier-tables-list">${rows}</div><div class="tier-actions"><button class="btn btn-gold btn-sm" style="flex:1" onclick="openBuyin('${t.id}','${t.tables[0]?.name||t.name}','${t.backendId||t.id}')">Quick Join</button><button class="btn btn-ghost btn-sm" style="flex:1" onclick="openBrowse('${t.id}')">Browse</button></div></div></div>`;
   }).join('');
 }
@@ -11368,6 +11393,25 @@ function switchTab(t){
 function openOv(id){document.getElementById(id).classList.add('show');}
 function closeOv(id){document.getElementById(id).classList.remove('show');}
 function closeOvOut(e,id){if(e.target===document.getElementById(id))closeOv(id);}
+
+// Lobby keyboard shortcuts: 1-4 switch tabs when in lobby and not typing
+document.addEventListener('keydown', e => {
+  if(!document.body.classList.contains('in-lobby')) return;
+  const tag = document.activeElement?.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+  const map = {'1':'cash','2':'sng','3':'mtt','4':'filters'};
+  if(map[e.key]) { e.preventDefault(); switchTab(map[e.key]); }
+});
+
+// Single-click on ttr row triggers quick join for that tier
+document.addEventListener('click', e => {
+  const row = e.target.closest('.ttr');
+  if(!row) return;
+  const tier = row.dataset.tier;
+  const tname = row.dataset.table;
+  const bid = row.dataset.bid;
+  if(tier) openBuyin(tier, tname||tier, bid||tier);
+});
 </script>
 <!-- View transition overlay -->
 <div id="view-transition"></div>
