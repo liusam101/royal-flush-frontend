@@ -463,13 +463,67 @@ body::after {
 .mtr-st { text-align: right; }
 .mtr-reg { font-size: var(--tx-xs); color: var(--txm); margin-top: 5px; }
 
-/* ── FILTERS ── */
-.filt-panel { max-width: 600px; }
-.filt-sec { margin-bottom: 28px; }
-.filt-lbl { font-size: var(--tx-xs); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.filt-lbl::after { content: ''; flex: 1; height: 1px; background: rgba(255,184,0,.08); }
-.fchips { display: flex; flex-wrap: wrap; gap: 6px; }
-.fchip { padding: 6px 14px; font-size: var(--tx-xs); font-weight: 500; color: var(--txm); border: 1px solid rgba(255,255,255,.07); border-radius: 2px; cursor: pointer; transition: all .14s; background: transparent; user-select: none; }
+/* ── FILTER BAR ── */
+.fbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  margin-bottom: 24px;
+}
+.fbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 1px;
+}
+.fbar-inner::-webkit-scrollbar { display: none; }
+.fbar-grp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.fbar-lbl {
+  font-size: var(--tx-xs);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(107,101,128,.45);
+  white-space: nowrap;
+  margin-right: 2px;
+  padding-right: 4px;
+}
+.fbar-div {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,.06);
+  flex-shrink: 0;
+  margin: 0 6px;
+}
+.fbar-clear {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgba(255,184,0,.2);
+  color: rgba(255,184,0,.6);
+  font-family: 'Montserrat', sans-serif;
+  font-size: var(--tx-xs);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.fbar-clear:hover { border-color: rgba(255,184,0,.45); color: var(--gold); }
+.fchip { padding: 5px 11px; font-size: var(--tx-xs); font-weight: 500; color: var(--txm); border: 1px solid rgba(255,255,255,.07); border-radius: 2px; cursor: pointer; transition: all .14s; background: transparent; user-select: none; white-space: nowrap; }
 .fchip:hover { border-color: rgba(255,184,0,.3); color: var(--tx); }
 .fchip.on { border-color: rgba(255,184,0,.55); color: var(--gold); background: rgba(255,184,0,.07); }
 
@@ -532,9 +586,6 @@ body::after {
         <div class="sni on" id="ni-cash"    onclick="nav('cash',this)">♠ Cash Tables</div>
         <div class="sni"    id="ni-sng"     onclick="nav('sng',this)">♣ Sit &amp; Go</div>
         <div class="sni"    id="ni-mtt"     onclick="nav('mtt',this)">♦ Tournaments</div>
-        <div class="sb-nav-hr"></div>
-        <span class="sb-nav-tools">Tools</span>
-        <div class="sni"    id="ni-filters" onclick="nav('filters',this)">♥ Filters</div>
       </div>
 
     </div><!-- /.l-sb-top -->
@@ -614,6 +665,47 @@ body::after {
           <div class="ph-sub">No Limit Hold'em · Pot Limit Omaha · Mixed</div>
         </div>
         <button class="btn btn-o btn-sm">+ Join Waitlist</button>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="fbar">
+        <div class="fbar-inner">
+          <div class="fbar-grp">
+            <span class="fbar-lbl">Stakes</span>
+            <div class="fchip" onclick="tf(this)">Micro</div>
+            <div class="fchip" onclick="tf(this)">Low</div>
+            <div class="fchip" onclick="tf(this)">Mid</div>
+            <div class="fchip" onclick="tf(this)">High</div>
+            <div class="fchip" onclick="tf(this)">Nosebleed</div>
+          </div>
+          <div class="fbar-div"></div>
+          <div class="fbar-grp">
+            <span class="fbar-lbl">Game</span>
+            <div class="fchip" onclick="tf(this)">NLHE</div>
+            <div class="fchip" onclick="tf(this)">PLO</div>
+            <div class="fchip" onclick="tf(this)">Mixed</div>
+          </div>
+          <div class="fbar-div"></div>
+          <div class="fbar-grp">
+            <span class="fbar-lbl">Speed</span>
+            <div class="fchip" onclick="tf(this)">Turbo</div>
+            <div class="fchip" onclick="tf(this)">Hyper</div>
+          </div>
+          <div class="fbar-div"></div>
+          <div class="fbar-grp">
+            <span class="fbar-lbl">Seats</span>
+            <div class="fchip" onclick="tf(this)">Open Only</div>
+            <div class="fchip" onclick="tf(this)">Full</div>
+          </div>
+          <div class="fbar-div"></div>
+          <div class="fbar-grp">
+            <span class="fbar-lbl">Size</span>
+            <div class="fchip" onclick="tf(this)">HU</div>
+            <div class="fchip" onclick="tf(this)">6-Max</div>
+            <div class="fchip" onclick="tf(this)">9-Max</div>
+          </div>
+        </div>
+        <button class="fbar-clear" id="fbar-clear" style="display:none" onclick="clearFilters()">Clear</button>
       </div>
 
       <!-- NOSEBLEED -->
@@ -805,67 +897,6 @@ body::after {
       </div>
     </div>
 
-    <!-- ── FILTERS ── -->
-    <div id="panel-filters" class="l-panel">
-      <div class="ph">
-        <div>
-          <div class="ph-title">Filters</div>
-          <div class="ph-sub">Refine the tables and tournaments shown</div>
-        </div>
-        <button class="btn btn-o btn-sm" onclick="resetF()">Clear All</button>
-      </div>
-      <div class="filt-panel">
-        <div class="filt-sec">
-          <div class="filt-lbl">Stakes</div>
-          <div class="fchips">
-            <div class="fchip on" onclick="tf(this)">All</div>
-            <div class="fchip" onclick="tf(this)">Micro</div>
-            <div class="fchip" onclick="tf(this)">Low</div>
-            <div class="fchip" onclick="tf(this)">Mid</div>
-            <div class="fchip" onclick="tf(this)">High</div>
-            <div class="fchip" onclick="tf(this)">Nosebleed</div>
-          </div>
-        </div>
-        <div class="filt-sec">
-          <div class="filt-lbl">Game Type</div>
-          <div class="fchips">
-            <div class="fchip on" onclick="tf(this)">All</div>
-            <div class="fchip" onclick="tf(this)">No Limit Hold'em</div>
-            <div class="fchip" onclick="tf(this)">Pot Limit Omaha</div>
-            <div class="fchip" onclick="tf(this)">Mixed</div>
-          </div>
-        </div>
-        <div class="filt-sec">
-          <div class="filt-lbl">Speed</div>
-          <div class="fchips">
-            <div class="fchip on" onclick="tf(this)">All</div>
-            <div class="fchip" onclick="tf(this)">Normal</div>
-            <div class="fchip" onclick="tf(this)">Turbo</div>
-            <div class="fchip" onclick="tf(this)">Hyper</div>
-          </div>
-        </div>
-        <div class="filt-sec">
-          <div class="filt-lbl">Availability</div>
-          <div class="fchips">
-            <div class="fchip on" onclick="tf(this)">Any</div>
-            <div class="fchip" onclick="tf(this)">Has Open Seat</div>
-            <div class="fchip" onclick="tf(this)">Full Tables Only</div>
-          </div>
-        </div>
-        <div class="filt-sec">
-          <div class="filt-lbl">Table Size</div>
-          <div class="fchips">
-            <div class="fchip on" onclick="tf(this)">Any</div>
-            <div class="fchip" onclick="tf(this)">Heads Up</div>
-            <div class="fchip" onclick="tf(this)">6-Max</div>
-            <div class="fchip" onclick="tf(this)">9-Max</div>
-          </div>
-        </div>
-        <div style="margin-top:32px">
-          <button class="btn btn-g" onclick="nav('cash',document.getElementById('ni-cash'))">View Tables</button>
-        </div>
-      </div>
-    </div>
 
   </main>
 </div>
@@ -878,8 +909,15 @@ function nav(id, el) {
   if (el) el.classList.add('on');
   document.querySelector('.l-main').scrollTop = 0;
 }
-function tf(el) { el.classList.toggle('on'); }
-function resetF() { document.querySelectorAll('.fchip').forEach(f => f.classList.remove('on')); }
+function tf(el) {
+  el.classList.toggle('on');
+  var n = document.querySelectorAll('.fbar .fchip.on').length;
+  document.getElementById('fbar-clear').style.display = n ? 'inline-flex' : 'none';
+}
+function clearFilters() {
+  document.querySelectorAll('.fbar .fchip').forEach(function(f) { f.classList.remove('on'); });
+  document.getElementById('fbar-clear').style.display = 'none';
+}
 </script>
 </body>
 </html>
