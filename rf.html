@@ -14245,6 +14245,25 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   let _t3Renderer=null, _t3Scene=null, _t3Camera=null, _t3Controls=null, _t3AnimId=null;
   let _t3Active = false;
 
+  // Write to IndexedDB (GLBs are too large for localStorage)
+  function _saveAsset(key, data){
+    try {
+      const req = indexedDB.open('rf_assets', 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('assets'))
+          db.createObjectStore('assets', { keyPath: 'type' });
+      };
+      req.onsuccess = e => {
+        const db = e.target.result;
+        const type = key === GLB_KEY ? 'glb' : 'bg';
+        db.transaction('assets','readwrite').objectStore('assets').put({ type, ...data });
+      };
+    } catch(_) {
+      try { localStorage.setItem(key, JSON.stringify(data)); } catch(__) {}
+    }
+  }
+
   // Read from localStorage or IndexedDB
   function _getAsset(key, cb){
     try {
@@ -14455,7 +14474,12 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   function _hookSocket(){
     if(typeof socket === 'undefined' || !socket) return;
     socket.on('assetUpdate', data => {
-      console.log('[RF] Asset update from admin:', data);
+      console.log('[RF] Asset update from admin:', data.type, data.name || '');
+      // Server relays the full dataUrl — save it locally so _getAsset can read it
+      if (data.dataUrl) {
+        const key = data.type === 'glb' ? GLB_KEY : BG_KEY;
+        _saveAsset(key, { dataUrl: data.dataUrl, name: data.name, pushedAt: data.pushedAt });
+      }
       if(data.type === 'bg'){
         _getAsset(BG_KEY, bgData => {
           if(bgData?.dataUrl) applyBackground(bgData.dataUrl);
@@ -14564,3 +14588,4 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   window.rf3D = { check: checkAndApplyAssets, destroy: destroyT3, refreshSeats: _applySeatUpdate };
 })();
 </script>
+
