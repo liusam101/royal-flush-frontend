@@ -10883,7 +10883,8 @@ function confirmBuyin(){
 
   const playerName = getMyName();
   const token = localStorage.getItem('rf_token');
-  const backendId = _buyinBackendId || tier.backendId || 'midnight-velvet';
+  const backendId = window._bustReturnTableId || _buyinBackendId || tier.backendId || 'midnight-velvet';
+  window._bustReturnTableId = null;
 
   if(token && !(_mode === 'gold')){
     // Logged-in: show only player's own seat (server provides real table state)
@@ -13921,29 +13922,6 @@ function syncTableState(state) {
 }
 
 // ══ HOOK INTO GAME FLOW ═══════════════════════════════════════════════
-
-// On buy-in confirm → join backend table (only if logged in + Royal mode)
-const _origConfirmBuyin = window.confirmBuyin;
-window.confirmBuyin = function() {
-  if (_origConfirmBuyin) _origConfirmBuyin.apply(this, arguments);
-
-  // Only join backend table if user is authenticated and in Royal Chips mode.
-  // For demo (no token) or Gold Chips (free play), the original confirmBuyin
-  // already populated SEATS with bots — don't wipe them.
-  const hasAuth = !!localStorage.getItem('rf_token');
-  const isRoyal = _mode !== 'gold';
-  if (!hasAuth || !isRoyal) return;
-
-  const playerName = localStorage.getItem('rf_username') || 'HighRoller';
-  const buyIn      = parseFloat(document.getElementById('buyin-slider')?.value) || 100;
-  const tableId    = window._bustReturnTableId || window._buyinBackendId || 'midnight-velvet';
-  window._bustReturnTableId = null;
-  // Clear stale seat data before rejoining (backend will repopulate via tableState)
-  SEATS.length = 0;
-  _backendActive = false;
-  _mySocketSeat  = null;
-  setTimeout(() => backendJoinTable(tableId, playerName, buyIn), 400);
-};
 
 // On fold/call/raise → backend is source of truth when connected
 const _origDemoAct = window.demoAct;
