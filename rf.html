@@ -13690,6 +13690,7 @@ function syncTableState(state) {
     dealer: !!s.isDealer,
     allIn:  !!s.allIn,
     socketSeat: s.seat,
+    avatarUrl: i === 0 ? (window._myAvatarDataUrl || null) : null,
   }));
 
   // Rebuild if seat count or names changed
