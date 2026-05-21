@@ -109,7 +109,7 @@ body:not(.in-lobby) .mode-bal-pill{display:none}
 .mode-banner-pill{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 8px;border-radius:8px;font-weight:600}
 .gold-banner .mode-banner-pill{background:rgba(232,192,64,.2);color:#E8C040}
 .royal-banner .mode-banner-pill{background:rgba(201,168,76,.15);color:var(--gold)}
-.mode-banner-dismiss{margin-left:auto;cursor:pointer;opacity:.5;font-size:14px}
+.mode-banner-dismiss{margin-left:auto;cursor:pointer;opacity:.5;font-size:14px;background:none;border:none;color:inherit;padding:0;line-height:1}
 /* ── LOBBY MODE HEADER ────────────────────────────────────── */
 .lobby-mode-header{display:flex;align-items:center;gap:16px;padding:0 0 18px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:20px}
 .lobby-mode-icon{font-size:28px;line-height:1}
@@ -2910,12 +2910,12 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="mode-banner gold-banner" id="mode-banner-gold">
   <span class="mode-banner-pill">Free Play</span>
   🟡 <b>Gold Chips</b>: play for fun, no cash value. Switch to Royal mode to play for prizes.
-  <span class="mode-banner-dismiss" onclick="this.parentElement.classList.remove('visible')">✕</span>
+  <button class="mode-banner-dismiss" onclick="this.parentElement.classList.remove('visible')" aria-label="Dismiss">✕</button>
 </div>
 <div class="mode-banner royal-banner" id="mode-banner-royal">
   <span class="mode-banner-pill">Sweepstakes</span>
   ♦ <b>Royal Chips</b>: redeemable for prizes. No purchase necessary to play or win.
-  <span class="mode-banner-dismiss" onclick="this.parentElement.classList.remove('visible')">✕</span>
+  <button class="mode-banner-dismiss" onclick="this.parentElement.classList.remove('visible')" aria-label="Dismiss">✕</button>
 </div>
 
 <!-- LOBBY -->
@@ -4347,7 +4347,7 @@ body.in-auth > nav { display: none !important; }
             <div class="nauth-dot"></div>
           </div>
           <div class="nauth-field">
-            <label class="nauth-label">Email Address</label>
+            <label class="nauth-label" for="nauth-l-email">Email Address</label>
             <input class="nauth-input" id="nauth-l-email" type="email" placeholder="you@example.com"
               onkeydown="if(event.key==='Enter') nauthNext('l1')">
           </div>
@@ -4361,17 +4361,17 @@ body.in-auth > nav { display: none !important; }
         <div class="nauth-step" id="nauth-step-l2" data-mode="login">
           <div class="nauth-step-label">Step 2 of 2</div>
           <div class="nauth-step-title">Enter password</div>
-          <div class="nauth-step-sub" id="nauth-l2-email-display">Signing in as <span style="color:#D4AF37"></span></div>
+          <div class="nauth-step-sub" id="nauth-l2-email-display">Signing in as <span style="color:var(--gold)"></span></div>
           <div class="nauth-progress">
             <div class="nauth-dot done"></div>
             <div class="nauth-dot active"></div>
           </div>
           <div class="nauth-field">
-            <label class="nauth-label">Password</label>
+            <label class="nauth-label" for="nauth-l-pass">Password</label>
             <div class="nauth-pw-wrap">
               <input class="nauth-input nauth-input-pw" id="nauth-l-pass" type="password" placeholder="••••••••"
                 onkeydown="if(event.key==='Enter') nauthDoLogin()">
-              <button class="nauth-pw-toggle" onclick="nauthTogglePW('nauth-l-pass', this)">
+              <button class="nauth-pw-toggle" onclick="nauthTogglePW('nauth-l-pass', this)" aria-label="Show password" aria-pressed="false">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
@@ -4394,7 +4394,7 @@ body.in-auth > nav { display: none !important; }
             <div class="nauth-dot"></div>
           </div>
           <div class="nauth-field">
-            <label class="nauth-label">Email Address</label>
+            <label class="nauth-label" for="nauth-s-email">Email Address</label>
             <input class="nauth-input" id="nauth-s-email" type="email" placeholder="you@example.com"
               onkeydown="if(event.key==='Enter') nauthNext('s1')">
           </div>
@@ -4415,7 +4415,7 @@ body.in-auth > nav { display: none !important; }
             <div class="nauth-dot"></div>
           </div>
           <div class="nauth-field">
-            <label class="nauth-label">Username</label>
+            <label class="nauth-label" for="nauth-s-user">Username</label>
             <input class="nauth-input" id="nauth-s-user" type="text" maxlength="16"
               placeholder="e.g. AceKing99"
               onkeydown="if(event.key==='Enter') nauthNext('s2')">
@@ -4437,13 +4437,13 @@ body.in-auth > nav { display: none !important; }
             <div class="nauth-dot"></div>
           </div>
           <div class="nauth-field">
-            <label class="nauth-label">Password</label>
+            <label class="nauth-label" for="nauth-s-pass">Password</label>
             <div class="nauth-pw-wrap">
               <input class="nauth-input nauth-input-pw" id="nauth-s-pass" type="password"
                 placeholder="Min. 8 characters"
                 oninput="nauthPWStrength(this.value)"
                 onkeydown="if(event.key==='Enter') nauthNext('s3')">
-              <button class="nauth-pw-toggle" onclick="nauthTogglePW('nauth-s-pass', this)">
+              <button class="nauth-pw-toggle" onclick="nauthTogglePW('nauth-s-pass', this)" aria-label="Show password" aria-pressed="false">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
@@ -4451,11 +4451,11 @@ body.in-auth > nav { display: none !important; }
             <div class="nauth-pw-strength-lbl" id="nauth-pw-lbl"></div>
           </div>
           <div class="nauth-field">
-            <label class="nauth-label">Date of Birth <span style="color:rgba(255,255,255,.18)">(18+ required)</span></label>
-            <div class="nauth-dob-row">
-              <input class="nauth-input" id="nauth-s-dob-m" type="number" min="1" max="12" placeholder="MM" style="width:64px;flex-shrink:0">
-              <input class="nauth-input" id="nauth-s-dob-d" type="number" min="1" max="31" placeholder="DD" style="width:64px;flex-shrink:0">
-              <input class="nauth-input" id="nauth-s-dob-y" type="number" min="1900" max="2099" placeholder="YYYY" style="flex:1">
+            <span class="nauth-label" id="nauth-dob-label">Date of Birth <span style="color:rgba(255,255,255,.18)">(18+ required)</span></span>
+            <div class="nauth-dob-row" role="group" aria-labelledby="nauth-dob-label">
+              <input class="nauth-input" id="nauth-s-dob-m" type="number" min="1" max="12" placeholder="MM" aria-label="Month" style="width:64px;flex-shrink:0">
+              <input class="nauth-input" id="nauth-s-dob-d" type="number" min="1" max="31" placeholder="DD" aria-label="Day" style="width:64px;flex-shrink:0">
+              <input class="nauth-input" id="nauth-s-dob-y" type="number" min="1900" max="2099" placeholder="YYYY" aria-label="Year" style="flex:1">
             </div>
           </div>
           <div class="nauth-error" id="nauth-err-s3"></div>
@@ -4489,7 +4489,7 @@ body.in-auth > nav { display: none !important; }
             </label>
           </div>
           <div class="nauth-field">
-            <label class="nauth-label">Referral code <span style="color:rgba(255,255,255,.18)">(optional)</span></label>
+            <label class="nauth-label" for="nauth-s-ref">Referral code <span style="color:rgba(255,255,255,.18)">(optional)</span></label>
             <input class="nauth-input" id="nauth-s-ref" type="text" placeholder="e.g. RF-ACES2026"
               oninput="nauthCheckRef(this.value)">
             <div id="nauth-ref-status" style="margin-top:5px;min-height:14px;font-size:9px;letter-spacing:0.5px"></div>
@@ -4503,15 +4503,15 @@ body.in-auth > nav { display: none !important; }
         <div class="nauth-step" id="nauth-step-verify">
           <div class="nauth-step-label">Almost there</div>
           <div class="nauth-step-title">Check your email</div>
-          <div class="nauth-step-sub">We sent a 6-digit code to <span id="nauth-verify-email" style="color:#D4AF37"></span></div>
+          <div class="nauth-step-sub">We sent a 6-digit code to <span id="nauth-verify-email" style="color:var(--gold)"></span></div>
           <div style="margin-bottom:24px">
-            <div class="nauth-otp-wrap" id="nauth-otp-wrap">
-              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]">
-              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]">
-              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]">
-              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]">
-              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]">
-              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <div class="nauth-otp-wrap" id="nauth-otp-wrap" role="group" aria-label="Email verification code">
+              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Digit 1 of 6">
+              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Digit 2 of 6">
+              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Digit 3 of 6">
+              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Digit 4 of 6">
+              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Digit 5 of 6">
+              <input class="nauth-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Digit 6 of 6">
             </div>
             <div class="nauth-resend">Didn't get it? <span onclick="nauthResend()">Resend code</span></div>
           </div>
@@ -4663,6 +4663,8 @@ function nauthTogglePW(inputId, btn){
   if(!inp) return;
   const show = inp.type === 'password';
   inp.type = show ? 'text' : 'password';
+  btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
   btn.innerHTML = show
     ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
     : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -5660,15 +5662,15 @@ window._showVerifyBanner = function(user){
     </div>
 
     <!-- Navigation -->
-    <div class="sb-nav-wrap">
+    <nav class="sb-nav-wrap" aria-label="Lobby navigation">
       <span class="sb-nav-cap">Game Rooms</span>
-      <div class="sni on" id="ni-cash" onclick="switchTab('cash')">♠ Cash Tables</div>
-      <div class="sni" id="ni-sng" onclick="switchTab('sng')">♣ Sit &amp; Go</div>
-      <div class="sni" id="ni-mtt" onclick="switchTab('mtt')">♦ Tournaments</div>
-      <div class="sb-nav-hr"></div>
+      <div class="sni on" id="ni-cash" onclick="switchTab('cash')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('cash')}" role="button" tabindex="0" aria-current="page">♠ Cash Tables</div>
+      <div class="sni" id="ni-sng" onclick="switchTab('sng')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('sng')}" role="button" tabindex="0" aria-current="false">♣ Sit &amp; Go</div>
+      <div class="sni" id="ni-mtt" onclick="switchTab('mtt')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('mtt')}" role="button" tabindex="0" aria-current="false">♦ Tournaments</div>
+      <div class="sb-nav-hr" role="separator"></div>
       <span class="sb-nav-tools">Tools</span>
-      <div class="sni" id="ni-filters" onclick="switchTab('filters')">♥ Filters <span id="filter-dot" style="display:none;color:#FFB800;font-size:11px;line-height:1;vertical-align:middle">●</span></div>
-    </div>
+      <div class="sni" id="ni-filters" onclick="switchTab('filters')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('filters')}" role="button" tabindex="0" aria-current="false">♥ Filters <span id="filter-dot" style="display:none;color:#FFB800;font-size:11px;line-height:1;vertical-align:middle" aria-hidden="true">●</span></div>
+    </nav>
 
     <!-- Live Stats -->
     <div class="sb-block">
@@ -11969,7 +11971,7 @@ function switchTab(t){
   ['cash','sng','mtt','filters'].forEach(id=>{
     const ni=document.getElementById('ni-'+id);
     const panel=document.getElementById('panel-'+id);
-    if(ni) ni.classList.toggle('on',id===t);
+    if(ni){ ni.classList.toggle('on',id===t); ni.setAttribute('aria-current',id===t?'page':'false'); }
     if(panel) panel.classList.toggle('on',id===t);
   });
   const lm=document.querySelector('.l-main');
