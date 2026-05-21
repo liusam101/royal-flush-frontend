@@ -160,6 +160,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
   <div class="login-box">
     <input type="password" id="admin-key" placeholder="Admin secret key" autocomplete="off">
     <button onclick="doLogin()">AUTHENTICATE →</button>
+    <div id="login-error" style="font-family:var(--mono);font-size:11px;color:var(--red);text-align:center;display:none"></div>
   </div>
 </div>
 
@@ -175,16 +176,16 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
   <div class="layout">
     <nav>
       <div class="nav-section">Overview</div>
-      <div class="nav-item active" onclick="nav('dashboard')"><span class="nav-icon">◈</span>Dashboard</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">◈</span>Dashboard</div>
       <div class="nav-section">Tables</div>
-      <div class="nav-item" onclick="nav('tables')"><span class="nav-icon">▣</span>Cash Tables</div>
+      <div class="nav-item" onclick="nav('tables',this)"><span class="nav-icon">▣</span>Cash Tables</div>
       <div class="nav-section">Tournaments</div>
-      <div class="nav-item" onclick="nav('tournaments')"><span class="nav-icon">◉</span>Manage MTTs</div>
-      <div class="nav-item" onclick="nav('create-tourn')"><span class="nav-icon">⊕</span>Create MTT</div>
+      <div class="nav-item" onclick="nav('tournaments',this)"><span class="nav-icon">◉</span>Manage MTTs</div>
+      <div class="nav-item" onclick="nav('create-tourn',this)"><span class="nav-icon">⊕</span>Create MTT</div>
       <div class="nav-section">Platform</div>
-      <div class="nav-item" onclick="nav('broadcast')"><span class="nav-icon">◎</span>Broadcast</div>
-      <div class="nav-item" onclick="nav('anticheat')"><span class="nav-icon">⚑</span>Anti-Cheat</div>
-      <div class="nav-item" onclick="nav('log')"><span class="nav-icon">≡</span>Event Log</div>
+      <div class="nav-item" onclick="nav('broadcast',this)"><span class="nav-icon">◎</span>Broadcast</div>
+      <div class="nav-item" onclick="nav('anticheat',this)"><span class="nav-icon">⚑</span>Anti-Cheat</div>
+      <div class="nav-item" onclick="nav('log',this)"><span class="nav-icon">≡</span>Event Log</div>
     </nav>
     <main>
       <!-- Dashboard -->
@@ -410,7 +411,13 @@ function initSocket(key) {
     log('Connected to backend', 'success');
   });
   socket.on('disconnect', () => { setConnected(false); log('Disconnected','error'); });
-  socket.on('error', (e) => { toast(e.message||'Error','error'); log(e.message,'error'); });
+  socket.on('error', (e) => {
+    const msg = e.message || 'Authentication failed';
+    toast(msg, 'error');
+    log(msg, 'error');
+    const errEl = document.getElementById('login-error');
+    if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+  });
 
   socket.on('adminSnapshot', (snap) => {
     document.getElementById('login-screen').style.display = 'none';
@@ -452,6 +459,17 @@ function initSocket(key) {
   socket.on('tournCancelled',(d)=> { toast('Tournament cancelled','warn'); });
   socket.on('adminBroadcast',(d)=> { log('Broadcast sent: '+d.message,'info'); });
   socket.on('kicked', (d) => { log('Player kicked: '+d.reason,'warn'); });
+
+  socket.on('acAlert', (alert) => {
+    _acData.recentAlerts = [alert, ...(_acData.recentAlerts||[])].slice(0, 50);
+    if (alert.severity === 4) _acData.criticalAlerts = (_acData.criticalAlerts||0) + 1;
+    if (alert.severity >= 3)  _acData.highAlerts     = (_acData.highAlerts||0) + 1;
+    if (document.getElementById('panel-anticheat')?.classList.contains('active')) { renderACAlerts(); renderACStats(); }
+    if (alert.severity >= 3) {
+      toast(`⚠ ${alert.severityName}: ${alert.type} — ${alert.playerName||'?'}`, alert.severity===4?'error':'warn');
+      log(`[AC] ${alert.severityName} ${alert.type}: ${alert.detail}`, 'warn');
+    }
+  });
 }
 
 function setConnected(yes) {
@@ -460,11 +478,13 @@ function setConnected(yes) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────
-function nav(id) {
-  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+function nav(id, el) {
+  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+  const target = el || document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+  if (target) target.classList.add('active');
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
+  if (id === 'anticheat') fetchACData();
   refresh();
 }
 
@@ -769,20 +789,7 @@ function banEntry(type) {
     .then(()=>{toast(`Banned ${type}: ${val}`,'success');fetchACData();document.getElementById('ban-'+type).value='';});
 }
 
-socket.on('acAlert',(alert)=>{
-  _acData.recentAlerts=[alert,...(_acData.recentAlerts||[])].slice(0,50);
-  if(alert.severity===4) _acData.criticalAlerts=(_acData.criticalAlerts||0)+1;
-  if(alert.severity>=3)  _acData.highAlerts=(_acData.highAlerts||0)+1;
-  if(document.getElementById('panel-anticheat')?.classList.contains('active')){renderACAlerts();renderACStats();}
-  if(alert.severity>=3){
-    toast(`⚠ ${alert.severityName}: ${alert.type} — ${alert.playerName||'?'}`,alert.severity===4?'error':'warn');
-    log(`[AC] ${alert.severityName} ${alert.type}: ${alert.detail}`,'warn');
-  }
-});
-
-// Refresh AC data when panel opens
-const _origNav=window.nav;
-window.nav=function(id){_origNav?.call(this,id);if(id==='anticheat')fetchACData();};
 </script>
 </body>
 </html>
+
