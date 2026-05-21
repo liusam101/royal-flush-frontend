@@ -506,6 +506,88 @@ body::after {
 .fchip:hover { border-color: rgba(255,184,0,.3); color: var(--tx); }
 .fchip.on { border-color: rgba(255,184,0,.55); color: var(--gold); background: rgba(255,184,0,.07); }
 
+/* ── MOBILE NAV TABS ── */
+.mob-nav {
+  display: none;
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 90;
+  background: var(--bg-s);
+  border-bottom: 1px solid rgba(255,184,0,.1);
+}
+.mni {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 8px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: var(--tx-base);
+  font-weight: 400;
+  color: rgba(107,101,128,.7);
+  cursor: pointer;
+  transition: color .15s, background .15s;
+  user-select: none;
+  border-bottom: 2px solid transparent;
+  text-align: center;
+  min-height: 44px;
+}
+.mni:hover:not(.on) { color: rgba(242,237,230,.6); }
+.mni.on { font-style: italic; color: var(--tx); border-bottom-color: var(--gold); background: rgba(255,184,0,.03); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 767px) {
+  body { overflow-y: auto; height: auto; }
+
+  #lobby {
+    position: static;
+    inset: unset;
+    margin-top: var(--nav-h);
+    grid-template-columns: 1fr;
+    overflow: visible;
+    min-height: calc(100vh - var(--nav-h));
+  }
+
+  .l-sb { display: none; }
+  .mob-nav { display: flex; }
+  .l-main { overflow: visible; height: auto; }
+
+  /* Nav */
+  .nav { padding: 0 16px; }
+  .nav-r { gap: 8px; }
+  .nav-uname { display: none; }
+  .nav-user { padding: 5px 8px 5px 6px; }
+
+  /* Panels */
+  .l-panel { padding: 20px 16px; }
+  .ph { margin-bottom: 20px; padding-bottom: 14px; }
+  .ph-title { font-size: var(--tx-2xl); }
+
+  /* Cash table: keep Table + Blinds + Seats, drop Players + Avg Pot */
+  .t-cols { grid-template-columns: 1fr 80px 70px; padding: 0 8px 7px; }
+  .tr { grid-template-columns: 1fr 80px 70px; padding: 10px 8px; }
+  .t-col:nth-child(3), .t-col:nth-child(4),
+  .tr > div:nth-child(3), .tr > div:nth-child(4) { display: none; }
+  .tier.nose .tr { padding: 12px 10px; }
+
+  /* SNG: keep Name + Buy-in + Action, drop seat dots */
+  .sng-cols { grid-template-columns: 1fr 72px 120px; padding: 0 8px 7px; }
+  .snr { grid-template-columns: 1fr 72px 120px; padding: 10px 8px; }
+  .sng-col:nth-child(3), .snr > div:nth-child(3) { display: none; }
+
+  /* MTT: keep Tournament + Prize + Status, drop Start Time */
+  .mtt-cols { grid-template-columns: 1fr 110px 90px; }
+  .mtr { grid-template-columns: 1fr 110px 90px; }
+  .mtr.feat { grid-template-columns: 1fr 110px 90px; padding: 14px 10px; }
+  .mtt-col:nth-child(3), .mtr > div:nth-child(3) { display: none; }
+
+  /* Filter bar */
+  .fbar { gap: 8px; }
+
+  /* Trust footer */
+  .tfoot { padding: 20px 16px; margin: 32px -16px -20px; }
+}
+
 /* ── TRUST FOOTER ── */
 .tfoot {
   border-top: 1px solid rgba(255,255,255,.04);
@@ -628,6 +710,13 @@ body::after {
 
   <!-- ══ MAIN CONTENT ══ -->
   <main class="l-main">
+
+    <!-- mobile tab strip — hidden on desktop, sticky on mobile -->
+    <div class="mob-nav">
+      <div class="mni on" id="mni-cash" onclick="nav('cash',this)">♠ Cash</div>
+      <div class="mni" id="mni-sng" onclick="nav('sng',this)">♣ Sit &amp; Go</div>
+      <div class="mni" id="mni-mtt" onclick="nav('mtt',this)">♦ Tournaments</div>
+    </div>
 
     <!-- ── CASH TABLES ── -->
     <div id="panel-cash" class="l-panel on">
@@ -886,9 +975,13 @@ body::after {
 function nav(id, el) {
   document.querySelectorAll('.l-panel').forEach(p => p.classList.remove('on'));
   document.getElementById('panel-' + id).classList.add('on');
-  document.querySelectorAll('.sni').forEach(n => n.classList.remove('on'));
-  if (el) el.classList.add('on');
+  document.querySelectorAll('.sni, .mni').forEach(n => n.classList.remove('on'));
+  var sbEl = document.getElementById('ni-' + id);
+  var mbEl = document.getElementById('mni-' + id);
+  if (sbEl) sbEl.classList.add('on');
+  if (mbEl) mbEl.classList.add('on');
   document.querySelector('.l-main').scrollTop = 0;
+  window.scrollTo(0, 0);
 }
 function tf(el) {
   el.classList.toggle('on');
