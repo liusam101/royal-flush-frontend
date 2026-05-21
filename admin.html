@@ -850,7 +850,9 @@ async function showGLBPreview(dataUrl){
     src="${_prevObjectUrl}"
     auto-rotate camera-controls shadow-intensity="1"
     style="width:100%;height:220px;background:#0c1020;--poster-color:#0c1020"
-  ></model-viewer>`;
+  ><div slot="error" style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;font-size:12px;color:rgba(255,100,100,0.8)">
+    Failed to load — file may be corrupted or not a valid GLB
+  </div></model-viewer>`;
 
   // Set a default poker-table aspect ratio for seat auto-calc
   // (elongated ellipse: ~2:1 width:depth)
@@ -883,6 +885,13 @@ function handleAssetFile(file, type) {
   const statusEl = document.getElementById(type+'-status');
   const btnEl    = document.getElementById(type+'-push-btn');
   const _fmtSz = b => b>=1048576 ? (b/1048576).toFixed(1)+'MB' : b>=1024 ? Math.round(b/1024)+'KB' : b+'B';
+  // GLB files under 5KB cannot contain any real geometry
+  if (type === 'glb' && file.size < 5000) {
+    statusEl.textContent = `⚠ ${file.name} — ${_fmtSz(file.size)} — too small to be a valid GLB (likely an alias or iCloud placeholder not yet downloaded)`;
+    statusEl.style.color = 'var(--gold)';
+    btnEl.disabled = false; btnEl.style.opacity = '1';
+    return;
+  }
   statusEl.textContent = `Reading ${file.name} (${_fmtSz(file.size)})…`;
   statusEl.style.color = 'var(--txd)';
   const reader = new FileReader();
