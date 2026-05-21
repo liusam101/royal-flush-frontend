@@ -5628,6 +5628,46 @@ window._showVerifyBanner = function(user){
 .sb-more-btn.open .sb-more-caret { transform: rotate(180deg); }
 .sb-more-wrap { display: none; flex-shrink: 0; }
 .sb-more-wrap.open { display: block; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px) {
+  /* Sidebar collapses; main fills viewport */
+  #vl #lobby-shell { grid-template-columns: 1fr; }
+  #vl .l-sb { display: none; }
+
+  /* Cash table: drop players + buy-in columns, keep name/blinds/seats */
+  .t-cols,
+  .tr { grid-template-columns: 1fr 76px 56px; }
+  .t-col:nth-child(3),
+  .t-col:nth-child(4),
+  .tpl,
+  .tp { display: none; }
+
+  /* MTT table: drop status column */
+  .mtt-cols,
+  .mtr { grid-template-columns: 1fr 110px 80px; }
+  .mtt-col:nth-child(4),
+  .mtr-st { display: none; }
+
+  /* Inline filter strip */
+  .inline-filt { padding: 8px 16px; gap: 8px; }
+
+  /* Touch targets */
+  .ltab { min-height: 40px; padding: 10px 12px; display: inline-flex; align-items: center; }
+  .fchip { min-height: 36px; padding: 8px 14px; display: inline-flex; align-items: center; justify-content: center; }
+  .sni { min-height: 44px; display: flex; align-items: center; }
+}
+
+@media(min-width:641px) and (max-width:900px) {
+  /* Narrow sidebar on tablet */
+  #vl #lobby-shell { grid-template-columns: 200px 1fr; }
+
+  /* Cash table: drop buy-in column on tablet */
+  .t-cols,
+  .tr { grid-template-columns: 1fr 80px 58px 64px; }
+  .t-col:nth-child(4),
+  .tp { display: none; }
+}
 </style>
 
 <!-- NAV (lobby nav, shown only when vl is active) -->
