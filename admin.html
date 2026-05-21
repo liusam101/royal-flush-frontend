@@ -426,12 +426,22 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
               </select>
             </div>
             <div style="flex:1"></div>
+            <button class="btn btn-cyan" onclick="autoCalcSeats()" style="font-size:11px">⟳ Auto from Table</button>
             <button class="btn" onclick="resetSeats()" style="border-color:var(--border);color:var(--txd)">↺ Reset</button>
             <button class="btn btn-green" onclick="pushSeats()">▶ Push to Players</button>
           </div>
+          <!-- Angle slider -->
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:10px 14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--txd);white-space:nowrap">Table Angle</span>
+            <input type="range" id="se-angle" min="0" max="359" value="0" step="1"
+              oninput="updateSeAngle(this.value)"
+              style="flex:1;accent-color:var(--gold);cursor:pointer">
+            <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:32px;text-align:right">0°</span>
+            <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=0;updateSeAngle(0)" style="border-color:var(--border);color:var(--txd);font-size:10px">↺</button>
+          </div>
           <canvas id="seat-canvas" style="width:100%;max-width:700px;display:block;margin:0 auto;border-radius:4px;border:1px solid var(--border);cursor:default"></canvas>
           <div style="font-family:var(--mono);font-size:10px;color:var(--txd);margin-top:10px;text-align:center">
-            Drag seat markers to reposition · <span style="color:var(--cyan)">◈ Seat 1</span> = "You" (local player) · Other seats distribute clockwise
+            Drag seat markers · <span style="color:var(--cyan)">◈ Seat 1</span> = "You" · Angle rotates the view · "Auto from Table" fits seats to your GLB geometry
           </div>
         </div>
       </div>
@@ -862,6 +872,13 @@ async function showGLBPreview(dataUrl){
     model.scale.setScalar(sc);
     model.position.sub(ctr.multiplyScalar(sc));
     scene.add(model);
+    // Store table XZ proportions for seat auto-calculate
+    // X = table width, Z = table depth (Y is vertical height)
+    const maxXZ=Math.max(sz.x,sz.z)||1;
+    window._glbTableDims={
+      rx: (sz.x/maxXZ)*0.38,
+      ry: (sz.z/maxXZ)*0.30
+    };
   }, undefined, ()=>{ wrap.style.display='none'; _destroyPreview(); });
 
   (function tick(){ _prevAnimId=requestAnimationFrame(tick); _prevControls?.update(); _prevRenderer?.render(scene,cam); })();
@@ -946,6 +963,17 @@ function pushAsset(type) {
 // ── Seat Editor ───────────────────────────────────────────────────
 const SE_W=700, SE_H=420;
 let _seSeats=[], _seDragging=null, _seCanvas=null, _seCtx=null;
+let _seTableRx=0.38, _seTableRy=0.30, _seLayoutAngle=0;
+
+function _seInvRotate(clientX, clientY){
+  const rect=_seCanvas.getBoundingClientRect();
+  let px=(clientX-rect.left)*(SE_W/rect.width);
+  let py=(clientY-rect.top)*(SE_H/rect.height);
+  const rad=-_seLayoutAngle*Math.PI/180;
+  const cos=Math.cos(rad), sin=Math.sin(rad);
+  const dx=px-SE_W/2, dy=py-SE_H/2;
+  return { x:dx*cos-dy*sin+SE_W/2, y:dx*sin+dy*cos+SE_H/2 };
+}
 
 function seatEditorInit(){
   _seCanvas=document.getElementById('seat-canvas');
@@ -954,18 +982,18 @@ function seatEditorInit(){
   _seCtx=_seCanvas.getContext('2d');
   const n=parseInt(document.getElementById('se-count').value)||6;
 
-  // Default: evenly spaced on ellipse rim
-  const cx=0.5,cy=0.5,rx=0.38,ry=0.30;
   _seSeats=Array.from({length:n},(_,i)=>{
     const a=(i/n)*Math.PI*2 - Math.PI/2;
-    return {x:cx+rx*Math.cos(a), y:cy+ry*Math.sin(a)};
+    return {x:0.5+_seTableRx*Math.cos(a), y:0.5+_seTableRy*Math.sin(a)};
   });
 
-  // Load saved positions if they match current n
   try {
     const raw=localStorage.getItem('rf_admin_seat_positions');
     if(raw){ const d=JSON.parse(raw); if(d.seats?.length===n) _seSeats=d.seats.map(s=>({x:s.x,y:s.y})); }
   } catch(_){}
+
+  const angleEl=document.getElementById('se-angle');
+  if(angleEl){ _seLayoutAngle=parseInt(angleEl.value)||0; document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°'; }
 
   _seDrawSeats();
   _seBindEvents();
@@ -973,49 +1001,49 @@ function seatEditorInit(){
 
 function _seDrawSeats(){
   if(!_seCtx) return;
-  const ctx=_seCtx, W=SE_W, H=SE_H, cx=W/2, cy=H/2, rx=W*0.38, ry=H*0.30;
+  const ctx=_seCtx, W=SE_W, H=SE_H;
+  const cx=W/2, cy=H/2;
+  const rx=W*_seTableRx, ry=H*_seTableRy;
   ctx.clearRect(0,0,W,H);
+
+  ctx.save();
+  ctx.translate(cx,cy); ctx.rotate(_seLayoutAngle*Math.PI/180); ctx.translate(-cx,-cy);
 
   // Rail
   ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,ry+10,0,0,Math.PI*2);
   ctx.fillStyle='#3a2200'; ctx.fill();
-
   // Felt
   ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
   ctx.fillStyle='#0d3318'; ctx.fill();
   ctx.strokeStyle='rgba(255,184,0,0.35)'; ctx.lineWidth=3; ctx.stroke();
-
-  // Inner felt line
+  // Inner line
   ctx.beginPath(); ctx.ellipse(cx,cy,rx-14,ry-12,0,0,Math.PI*2);
   ctx.strokeStyle='rgba(255,184,0,0.1)'; ctx.lineWidth=1; ctx.stroke();
-
   // Pot label
   ctx.beginPath(); ctx.ellipse(cx,cy,42,28,0,0,Math.PI*2);
   ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
   ctx.fillStyle='rgba(255,184,0,0.5)'; ctx.font='bold 11px monospace';
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('POT',cx,cy);
-
-  // Seats
+  // Seat dots (inside the rotation transform)
   _seSeats.forEach((s,i)=>{
     const px=s.x*W, py=s.y*H, isYou=i===0;
     ctx.beginPath(); ctx.arc(px,py,22,0,Math.PI*2);
     ctx.fillStyle=isYou?'rgba(0,210,255,0.25)':'rgba(255,184,0,0.15)'; ctx.fill();
     ctx.strokeStyle=isYou?'#00D2FF':'rgba(255,184,0,0.7)'; ctx.lineWidth=2; ctx.stroke();
     ctx.fillStyle=isYou?'#00D2FF':'rgba(255,184,0,0.95)';
-    ctx.font=`bold 13px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(isYou?'◈':String(i+1),px,py);
-    // Seat label below dot
     ctx.fillStyle='rgba(224,234,248,0.4)'; ctx.font='9px monospace';
     ctx.fillText(isYou?'YOU':`S${i+1}`,px,py+32);
   });
+
+  ctx.restore();
 }
 
 function _seatHitIdx(clientX,clientY){
-  const rect=_seCanvas.getBoundingClientRect();
-  const sx=SE_W/rect.width, sy=SE_H/rect.height;
-  const cx=(clientX-rect.left)*sx, cy=(clientY-rect.top)*sy;
+  const {x,y}=_seInvRotate(clientX,clientY);
   return _seSeats.findIndex(s=>{
-    const dx=s.x*SE_W-cx, dy=s.y*SE_H-cy;
+    const dx=s.x*SE_W-x, dy=s.y*SE_H-y;
     return Math.hypot(dx,dy)<26;
   });
 }
@@ -1025,8 +1053,8 @@ function _seBindEvents(){
   c.onmousedown=e=>{ const i=_seatHitIdx(e.clientX,e.clientY); if(i>=0){_seDragging=i;c.style.cursor='grabbing';} };
   c.onmousemove=e=>{
     if(_seDragging===null){ c.style.cursor=_seatHitIdx(e.clientX,e.clientY)>=0?'grab':'default'; return; }
-    const r=c.getBoundingClientRect();
-    _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,(e.clientX-r.left)/r.width)), y:Math.max(.02,Math.min(.98,(e.clientY-r.top)/r.height))};
+    const {x,y}=_seInvRotate(e.clientX,e.clientY);
+    _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,x/SE_W)), y:Math.max(.02,Math.min(.98,y/SE_H))};
     _seDrawSeats();
   };
   c.onmouseup=()=>{_seDragging=null; c.style.cursor='default';};
@@ -1034,19 +1062,38 @@ function _seBindEvents(){
   c.ontouchstart=e=>{e.preventDefault();const t=e.touches[0];const i=_seatHitIdx(t.clientX,t.clientY);if(i>=0)_seDragging=i;};
   c.ontouchmove=e=>{
     e.preventDefault(); if(_seDragging===null) return;
-    const t=e.touches[0],r=c.getBoundingClientRect();
-    _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,(t.clientX-r.left)/r.width)), y:Math.max(.02,Math.min(.98,(t.clientY-r.top)/r.height))};
+    const t=e.touches[0]; const {x,y}=_seInvRotate(t.clientX,t.clientY);
+    _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,x/SE_W)), y:Math.max(.02,Math.min(.98,y/SE_H))};
     _seDrawSeats();
   };
   c.ontouchend=()=>{_seDragging=null;};
 }
 
-function resetSeats(){
+function updateSeAngle(v){
+  _seLayoutAngle=parseInt(v);
+  document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°';
+  _seDrawSeats();
+}
+
+function autoCalcSeats(){
+  if(!window._glbTableDims){ toast('Drop a GLB file in the Assets panel first','warn'); return; }
+  _seTableRx=window._glbTableDims.rx;
+  _seTableRy=window._glbTableDims.ry;
   const n=parseInt(document.getElementById('se-count').value)||6;
-  const cx=0.5,cy=0.5,rx=0.38,ry=0.30;
   _seSeats=Array.from({length:n},(_,i)=>{
     const a=(i/n)*Math.PI*2-Math.PI/2;
-    return {x:cx+rx*Math.cos(a),y:cy+ry*Math.sin(a)};
+    return {x:0.5+_seTableRx*Math.cos(a), y:0.5+_seTableRy*Math.sin(a)};
+  });
+  _seDrawSeats();
+  toast(`Seats fitted to GLB table shape (${n} seats)`,'success');
+}
+
+function resetSeats(){
+  const n=parseInt(document.getElementById('se-count').value)||6;
+  _seTableRx=0.38; _seTableRy=0.30;
+  _seSeats=Array.from({length:n},(_,i)=>{
+    const a=(i/n)*Math.PI*2-Math.PI/2;
+    return {x:0.5+_seTableRx*Math.cos(a),y:0.5+_seTableRy*Math.sin(a)};
   });
   _seDrawSeats(); toast('Reset to default positions','info');
 }
