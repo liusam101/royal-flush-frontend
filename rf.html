@@ -10885,15 +10885,18 @@ function confirmBuyin(){
   const token = localStorage.getItem('rf_token');
   const backendId = _buyinBackendId || tier.backendId || 'midnight-velvet';
 
-  // Always pre-populate SEATS so the table renders instantly
-  _populateDemoSeats(tier, val, playerName);
-
   if(token && !(_mode === 'gold')){
-    // Logged-in user — show game view immediately, then join backend table
+    // Logged-in: show only player's own seat (server provides real table state)
+    const navAv = document.getElementById('nav-av');
+    const playerCol = (navAv?.style.background || '#4A2A6A').trim();
+    SEATS.length = 0;
+    SEATS.push({ name: playerName, stack: val, you: true, folded: false, act: false, bet: 0, col: playerCol, avatarUrl: window._myAvatarDataUrl || null });
+    _btnIdx = 0;
     showView('vg');
     backendJoinTable(backendId, playerName, val);
   } else {
-    // Not logged in or gold chips — pure demo mode
+    // Not logged in or gold chips — demo mode with bots
+    _populateDemoSeats(tier, val, playerName);
     showView('vg');
     setTimeout(()=>startHand(), 400);
   }
