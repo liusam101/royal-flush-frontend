@@ -13449,7 +13449,7 @@ socket.on('sngTableReady', ({ tournId, tableId, state }) => {
   if(state?.blinds) addNotif('game','🏆','gold','SNG started — Blinds '+state.blinds.sb+'/'+state.blinds.bb);
 });
 
-socket.on('sngBlindUp', ({ sngId, level, sb, bb }) => {
+socket.on('tournBlindUp', ({ tournId, level, sb, bb }) => {
   showToast('⬆ Blinds up: '+sb+'/'+bb);
   addNotif('game','⬆','gold','Blind level '+(level+1)+' — '+sb+'/'+bb);
   BB_AMT=bb; SB_AMT=sb;
