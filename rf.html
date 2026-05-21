@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0E1520">
-<title>Royal Flush — Interactive Preview</title>
+<title>RF Poker — Interactive Preview</title>
 <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1938,7 +1938,7 @@ body:not(.in-lobby) .rf-qmenu { display: none; }
 
 
 /* ══════════════════════════════════════════════════
-   ROYAL FLUSH — LUXURY REDESIGN LAYER
+   RF POKER — LUXURY REDESIGN LAYER
    Applied on top of existing styles
    ══════════════════════════════════════════════════ */
 
@@ -2716,7 +2716,7 @@ applyTweaks(TWEAK_DEFAULTS);
 <!-- ── USERNAME MODAL ─────────────────────────────────────────────── -->
 <div id="username-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
   <div style="background:#0E1520;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:40px;width:340px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.8)">
-    <div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:#FFB800;margin-bottom:8px">Royal Flush</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:#FFB800;margin-bottom:8px">RF Poker</div>
     <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:28px">Choose your player name</div>
     <input id="username-input" type="text" maxlength="16" placeholder="Enter username..."
       style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.25);border-radius:4px;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;padding:12px 16px;outline:none;text-align:center;margin-bottom:16px"
@@ -2802,7 +2802,7 @@ function confirmUsername() {
   });
   const pun = document.getElementById('profile-uname');
   if (pun) pun.textContent = val;
-  console.log('[Royal Flush] Username set:', val);
+  console.log('[RF Poker] Username set:', val);
 }
 
 // Show modal if no username saved yet
@@ -3496,7 +3496,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
       <div class="rf-ch-divider rf-reveal rf-d2"></div>
       <div class="rf-ch-body rf-reveal rf-d3">
         <p>There are places that don't merely host a game; they define it. Beneath the felt, every player arrives equal: no pedigree, no advantage, no purchase required. Only the cards, the read, and the nerve to act.</p>
-        <p>Royal Flush was built on that idea. A platform where <strong>sweepstakes law meets serious poker</strong>. The daily free chip claim is not a gimmick. It's a promise. The felt is always open.</p>
+        <p>RF Poker was built on that idea. A platform where <strong>sweepstakes law meets serious poker</strong>. The daily free chip claim is not a gimmick. It's a promise. The felt is always open.</p>
       </div>
     </div>
     <div class="rf-ch-visual">
@@ -3588,7 +3588,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
   </div>
 </section>
 
-<!-- WHY ROYAL FLUSH (original markup, restyled) -->
+<!-- WHY RF POKER (original markup, restyled) -->
 <section class="lp-section">
   <div class="lp-section-inner">
     <div class="lp-section-label rf-reveal">The Standard</div>
@@ -3682,7 +3682,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
         <div class="lp-footer-badge">18+</div>
         <div class="lp-footer-badge">RG Tools</div>
       </div>
-      <div class="lp-footer-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · License No. RGL-2024-0847<br>Gambling can be addictive. Please play responsibly. <span class="lp-footer-rg" onclick="goRG()">Get help →</span></div>
+      <div class="lp-footer-copy">© 2026 RF Poker Ltd · Registered in Gibraltar · License No. RGL-2024-0847<br>Gambling can be addictive. Please play responsibly. <span class="lp-footer-rg" onclick="goRG()">Get help →</span></div>
     </div>
   </div>
 </footer>
@@ -3757,7 +3757,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
       <p class="trust-lead">Anti-Money Laundering, Counter-Terrorism Financing & Financial Crime Policy</p>
     </div>
     <div id="aml-body"></div>
-    <div class="trust-footer">Royal Flush Ltd · Suite 4, 50 Town Range, Gibraltar · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f1929e9c819d98909f9294b1839e88909d979d848299df989e">[email&#160;protected]</a></div>
+    <div class="trust-footer">RF Poker Ltd · Suite 4, 50 Town Range, Gibraltar · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f1929e9c819d98909f9294b1839e88909d979d848299df989e">[email&#160;protected]</a></div>
   </div>
 </div>
 
@@ -3853,7 +3853,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
       <div class="trust-card">
         <div class="trust-card-icon">3️⃣</div>
         <div class="trust-card-title">Step 3: Independent ADR</div>
-        <p class="trust-card-body">If the dispute remains unresolved, you may refer it to eCOGRA (ecogra.org) as our approved Alternative Dispute Resolution provider, free of charge. Their decision is binding on Royal Flush Ltd.</p>
+        <p class="trust-card-body">If the dispute remains unresolved, you may refer it to eCOGRA (ecogra.org) as our approved Alternative Dispute Resolution provider, free of charge. Their decision is binding on RF Poker Ltd.</p>
       </div>
       <div class="trust-card">
         <div class="trust-card-icon">⚖️</div>
@@ -4912,7 +4912,7 @@ window._showVerifyBanner = function(user){
     <div class="trust-hero">
       <div class="trust-hero-icon">⚖️</div>
       <h1 class="trust-h1">Official Sweepstakes Rules</h1>
-      <p class="trust-lead">Royal Flush Sweepstakes: No Purchase Necessary</p>
+      <p class="trust-lead">RF Poker Sweepstakes: No Purchase Necessary</p>
     </div>
     <!-- Odds quick-reference banner -->
     <div style="background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.2);border-radius:6px;padding:18px 22px;margin-bottom:8px;text-align:center">
@@ -4925,7 +4925,7 @@ window._showVerifyBanner = function(user){
       <div style="font-size:9px;color:var(--txd);margin-top:8px">See Section 7 below for full per-tournament odds breakdown</div>
     </div>
     <div id="rules-body"></div>
-    <div class="trust-footer">Royal Flush Ltd · PO Box 8472, Wilmington, DE 19801 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="85f6f0f5f5eaf7f1c5f7eafce4e9e3e9f0f6edabecea">[email&#160;protected]</a></div>
+    <div class="trust-footer">RF Poker Ltd · PO Box 8472, Wilmington, DE 19801 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="85f6f0f5f5eaf7f1c5f7eafce4e9e3e9f0f6edabecea">[email&#160;protected]</a></div>
   </div>
 </div>
 
@@ -5004,7 +5004,7 @@ window._showVerifyBanner = function(user){
       <button class="btn btn-gold" style="width:100%;padding:13px" onclick="submitRedeem()">Submit Redemption Request →</button>
     </div>
 
-    <div class="trust-footer" style="margin-top:40px">Questions? <span class="auth-link"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="96e5e3e6e6f9e4e2d6e4f9eff7faf0fae3e5feb8fff9">[email&#160;protected]</a></span> · Royal Flush Ltd · Wilmington, DE</div>
+    <div class="trust-footer" style="margin-top:40px">Questions? <span class="auth-link"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="96e5e3e6e6f9e4e2d6e4f9eff7faf0fae3e5feb8fff9">[email&#160;protected]</a></span> · RF Poker Ltd · Wilmington, DE</div>
   </div>
 </div>
 
@@ -5017,7 +5017,7 @@ window._showVerifyBanner = function(user){
     </div>
     <div class="trust-hero" style="padding-bottom:32px">
       <div class="trust-hero-icon">🎁</div>
-      <h1 class="trust-h1">Welcome to Royal Flush</h1>
+      <h1 class="trust-h1">Welcome to RF Poker</h1>
       <p class="trust-lead">Claim your first deposit bonus. The bigger your deposit, the more chips you get.</p>
     </div>
     <div class="wb-bonus-banner">
@@ -5930,7 +5930,7 @@ window._showVerifyBanner = function(user){
           <span class="tf-lk" onclick="goTerms()">Terms &amp; Conditions</span><span class="tf-sep">·</span>
           <span class="tf-lk" onclick="goPrivacy()">Privacy Policy</span>
         </div>
-        <div class="tf-copy">© 2026 Royal Flush Ltd · Registered in Gibraltar · Gambling can be addictive. Play responsibly.</div>
+        <div class="tf-copy">© 2026 RF Poker Ltd · Registered in Gibraltar · Gambling can be addictive. Play responsibly.</div>
         <div class="tf-copy" style="margin-top:3px;color:rgba(255,255,255,.08)">Royal Chips are a sweepstakes currency with no cash value until redeemed. No purchase necessary. Void where prohibited. 18+.</div>
       </div>
     </div>
@@ -6096,7 +6096,7 @@ window._showVerifyBanner = function(user){
         <!-- Cyan center glow -->
         <ellipse cx="500" cy="350" rx="320" ry="180" fill="rgba(0,242,255,0.03)"/>
         <!-- Logo -->
-        <text x="500" y="338" text-anchor="middle" font-family="Cormorant Garamond,serif" font-size="18" letter-spacing="8" fill="rgba(201,168,76,0.08)" style="user-select:none">ROYAL FLUSH</text>
+        <text x="500" y="338" text-anchor="middle" font-family="Cormorant Garamond,serif" font-size="18" letter-spacing="8" fill="rgba(201,168,76,0.08)" style="user-select:none">RF POKER</text>
         <text x="500" y="362" text-anchor="middle" font-family="serif" font-size="14" letter-spacing="6" fill="rgba(201,168,76,0.06)" style="user-select:none">♠ ♥ ♦ ♣</text>
       </svg>
       <div class="comm">
@@ -6435,7 +6435,7 @@ window._showVerifyBanner = function(user){
         <div>
           <div style="font-size:11px;font-weight:600;color:var(--tx);margin-bottom:4px">Write your request</div>
           <div style="font-size:10px;color:var(--txd);line-height:1.7">On a plain 3×5 index card or sheet of paper, write or print:<br>
-            <span style="color:var(--tx)">• Your full name<br>• Email address<br>• Royal Flush username<br>• The words <b>"Free Royal Chips Request"</b><br>• Your signature confirming you are 18+</span>
+            <span style="color:var(--tx)">• Your full name<br>• Email address<br>• RF Poker username<br>• The words <b>"Free Royal Chips Request"</b><br>• Your signature confirming you are 18+</span>
           </div>
         </div>
       </div>
@@ -6446,7 +6446,7 @@ window._showVerifyBanner = function(user){
         <div style="flex:1">
           <div style="font-size:11px;font-weight:600;color:var(--tx);margin-bottom:6px">Mail to this address</div>
           <div id="mailin-address" style="background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);border-radius:4px;padding:14px 16px;font-size:11px;line-height:2;font-family:monospace;color:var(--tx)">
-            Royal Flush Sweepstakes<br>
+            RF Poker Sweepstakes<br>
             Attn: Free Entry Request<br>
             PO Box 8472<br>
             Wilmington, DE 19801<br>
@@ -6721,7 +6721,7 @@ window._showVerifyBanner = function(user){
         <a class="trust-help-link" href="#">BeGambleAware — www.begambleaware.org</a>
       </div>
     </div>
-    <div class="trust-footer">Royal Flush Ltd · Licensed &amp; Regulated · Responsible Gambling Policy v2.1</div>
+    <div class="trust-footer">RF Poker Ltd · Licensed &amp; Regulated · Responsible Gambling Policy v2.1</div>
   </div>
 </div>
 
@@ -6735,10 +6735,10 @@ window._showVerifyBanner = function(user){
     <div class="trust-hero">
       <div class="trust-hero-icon">📋</div>
       <h1 class="trust-h1">Terms &amp; Conditions</h1>
-      <p class="trust-lead">Last updated: March 2026 · By using Royal Flush you agree to these terms.</p>
+      <p class="trust-lead">Last updated: March 2026 · By using RF Poker you agree to these terms.</p>
     </div>
     <div class="trust-doc" id="terms-doc"></div>
-    <div class="trust-footer">Royal Flush Ltd · Registered in Gibraltar · License No. RGL-2024-0847</div>
+    <div class="trust-footer">RF Poker Ltd · Registered in Gibraltar · License No. RGL-2024-0847</div>
   </div>
 </div>
 
@@ -6755,7 +6755,7 @@ window._showVerifyBanner = function(user){
       <p class="trust-lead">Last updated: March 2026 · We take your privacy seriously. Here's exactly what we collect and why.</p>
     </div>
     <div class="trust-doc" id="privacy-doc"></div>
-    <div class="trust-footer">Royal Flush Ltd · Data Controller · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5f2f2d36293e3c261f2d30263e3339332a2c37713630">[email&#160;protected]</a></div>
+    <div class="trust-footer">RF Poker Ltd · Data Controller · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5f2f2d36293e3c261f2d30263e3339332a2c37713630">[email&#160;protected]</a></div>
   </div>
 </div>
 
@@ -10346,7 +10346,7 @@ function cashierStep3(){
     </div>`;
   } else if(_cPM==='bank'){
     formHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:14px;margin-bottom:4px">
-      ${[['Account name','Royal Flush Ltd'],['Routing','021000021'],['Account','8847291034'],['Reference','RF-'+Math.floor(Math.random()*900000+100000)]].map(([k,v])=>`
+      ${[['Account name','RF Poker Ltd'],['Routing','021000021'],['Account','8847291034'],['Reference','RF-'+Math.floor(Math.random()*900000+100000)]].map(([k,v])=>`
         <div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
           <span style="color:var(--txd)">${k}</span><span style="color:var(--tx);font-family:monospace">${v}</span>
         </div>`).join('')}
@@ -10534,7 +10534,7 @@ function _notifTimeAgo(ts){
 // Add welcome notification on first login
 function _addWelcomeNotif(username){
   if(localStorage.getItem('rf_welcomed')) return;
-  addNotif('social','🎉','gold','Welcome to Royal Flush, <b>'+username+'</b>! You have $10 Royal Chips to get started.');
+  addNotif('social','🎉','gold','Welcome to RF Poker, <b>'+username+'</b>! You have $10 Royal Chips to get started.');
   localStorage.setItem('rf_welcomed','1');
 }
 
@@ -11391,7 +11391,7 @@ async function doSignup(){
     _loadFriendsSidebar();
     _loadBonusStatus();
     showView('vl');
-    setTimeout(()=>showRGConfirm('Welcome to Royal Flush, '+data.user.username+'! You have received $10 Royal Chips. Check your email to verify your account.'),400);
+    setTimeout(()=>showRGConfirm('Welcome to RF Poker, '+data.user.username+'! You have received $10 Royal Chips. Check your email to verify your account.'),400);
   } catch(e) {
     if(signupErr) signupErr.textContent = 'Server error — please try again.';
     if(btn){ btn.textContent = 'Create Account →'; btn.disabled = false; }
@@ -11478,14 +11478,14 @@ function buildRules(){
   const el=document.getElementById('rules-body');
   if(!el||el.children.length) return;
   const sections=[
-    ['1. Sponsor','Royal Flush Ltd, PO Box 8472, Wilmington, DE 19801, USA ("Sponsor"). Email: support@royalflush.io'],
+    ['1. Sponsor','RF Poker Ltd, PO Box 8472, Wilmington, DE 19801, USA ("Sponsor"). Email: support@royalflush.io'],
     ['2. No Purchase Necessary','NO PURCHASE OR PAYMENT OF ANY KIND IS NECESSARY TO ENTER OR WIN. A purchase does not improve your chances of winning. Void where prohibited by law.'],
-    ['3. Eligibility','Open to legal residents of the United States (except Idaho, Washington, and Michigan) and Canada (except Quebec), who are 18 years of age or older at the time of entry. Employees of Royal Flush Ltd and their immediate family members are not eligible.'],
-    ['4. Sweepstakes Currency — Royal Chips','Royal Chips ("RC") are the official sweepstakes currency of Royal Flush. 1 Royal Chip has a redemption value of US$1.00. Royal Chips are not real money, have no monetary value until redeemed per these rules, and cannot be transferred between accounts.'],
-    ['5. How to Obtain Royal Chips — Free Methods','(a) Daily Free Claim: Registered players may claim 1 Royal Chip free of charge once every 24 hours via the in-app daily claim button. (b) Mail-In Request: Send a handwritten 3×5 card with your name, email address, Royal Flush username, and the words "Free Royal Chips Request" to: Royal Flush Sweepstakes, Attn: Free Entry, PO Box 8472, Wilmington, DE 19801. One request per household per calendar month. Allow 7–14 days for processing.'],
+    ['3. Eligibility','Open to legal residents of the United States (except Idaho, Washington, and Michigan) and Canada (except Quebec), who are 18 years of age or older at the time of entry. Employees of RF Poker Ltd and their immediate family members are not eligible.'],
+    ['4. Sweepstakes Currency — Royal Chips','Royal Chips ("RC") are the official sweepstakes currency of RF Poker. 1 Royal Chip has a redemption value of US$1.00. Royal Chips are not real money, have no monetary value until redeemed per these rules, and cannot be transferred between accounts.'],
+    ['5. How to Obtain Royal Chips — Free Methods','(a) Daily Free Claim: Registered players may claim 1 Royal Chip free of charge once every 24 hours via the in-app daily claim button. (b) Mail-In Request: Send a handwritten 3×5 card with your name, email address, RF Poker username, and the words "Free Royal Chips Request" to: RF Poker Sweepstakes, Attn: Free Entry, PO Box 8472, Wilmington, DE 19801. One request per household per calendar month. Allow 7–14 days for processing.'],
     ['6. How to Obtain Royal Chips — Purchase','Players may optionally purchase Gold Chips packages. Each purchase includes a corresponding number of Royal Chips equal to the USD purchase price (e.g. a $25.00 purchase includes 25 Royal Chips). Purchasing does not improve the odds of winning relative to free-entry players.'],
     ['7. Odds of Winning',`
-<strong>ODDS OF WINNING VARY</strong> based on the number of eligible entries and skill of play. Royal Flush uses a certified RNG (Random Number Generator) for all card dealing, independently verified. Below are the approximate odds of winning for each prize tier based on a typical field size. Actual odds may vary per event.
+<strong>ODDS OF WINNING VARY</strong> based on the number of eligible entries and skill of play. RF Poker uses a certified RNG (Random Number Generator) for all card dealing, independently verified. Below are the approximate odds of winning for each prize tier based on a typical field size. Actual odds may vary per event.
 <br><br>
 <strong>Grand Royal Championship</strong> ($50+$5 · ~1,000 entries typical)<br>
 1st Place (30% of pool): approximately 1 in 1,000<br>
@@ -11519,7 +11519,7 @@ Any Prize: approximately 1 in 4 (top 27% of field paid)
     ['9. Prohibited States & Provinces','This sweepstakes is void in Idaho, Washington, Michigan (USA) and Quebec (Canada), and wherever else prohibited by law. Players located in these jurisdictions may not participate.'],
     ['10. General Conditions','Sponsor reserves the right to cancel or modify the sweepstakes at any time. All federal, state, and local taxes on prizes are the sole responsibility of the winner. By participating, players agree to these Official Rules and the decisions of the Sponsor, which are final and binding.'],
     ['11. Governing Law','These rules are governed by the laws of the State of Delaware, USA, without regard to conflict of law principles.'],
-    ['12. Contact','Royal Flush Ltd · PO Box 8472, Wilmington, DE 19801 · support@royalflush.io'],
+    ['12. Contact','RF Poker Ltd · PO Box 8472, Wilmington, DE 19801 · support@royalflush.io'],
   ];
   el.innerHTML=sections.map(([h,b])=>`
     <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.05)">
@@ -11694,7 +11694,7 @@ function updateRCWidget(){
 }
 
 function copyMailAddress(){
-  const addr = 'Royal Flush Sweepstakes\nAttn: Free Entry Request\nPO Box 8472\nWilmington, DE 19801\nUSA';
+  const addr = 'RF Poker Sweepstakes\nAttn: Free Entry Request\nPO Box 8472\nWilmington, DE 19801\nUSA';
   if(navigator.clipboard){ navigator.clipboard.writeText(addr); }
   showRGConfirm('Address copied to clipboard!');
 }
@@ -11807,7 +11807,7 @@ function buildAML(){
   const el=document.getElementById('aml-body');
   if(!el||el.children.length) return;
   const sections=[
-    ['1. Overview & Legal Basis','Royal Flush Ltd ("Company") is committed to full compliance with anti-money laundering (AML), counter-terrorism financing (CTF), and applicable financial crime prevention laws. This policy applies to all employees, contractors, and customers. We operate under the Proceeds of Crime Act 2015 (Gibraltar) and cooperate with the Gibraltar Financial Intelligence Unit (GFIU).'],
+    ['1. Overview & Legal Basis','RF Poker Ltd ("Company") is committed to full compliance with anti-money laundering (AML), counter-terrorism financing (CTF), and applicable financial crime prevention laws. This policy applies to all employees, contractors, and customers. We operate under the Proceeds of Crime Act 2015 (Gibraltar) and cooperate with the Gibraltar Financial Intelligence Unit (GFIU).'],
     ['2. Know Your Customer (KYC)','All players must verify their identity before making withdrawals exceeding $100 or if flagged by our risk engine. Required documents: government-issued photo ID (passport, national ID, or driving licence) and proof of address dated within 90 days. Enhanced due diligence (EDD) applies to Politically Exposed Persons (PEPs) and high-value players (cumulative deposits > $10,000/month).'],
     ['3. Transaction Monitoring','All transactions are monitored by our automated risk engine. Flags that trigger manual review include: deposits or withdrawals over $2,500 in a single transaction; cumulative transactions over $10,000 in 30 days; unusual patterns inconsistent with declared income; rapid cycling of funds (deposit → withdrawal without significant play); and geographic anomalies.'],
     ['4. Suspicious Activity Reporting','If our compliance team reasonably suspects money laundering or terrorist financing, we are legally obligated to file a Suspicious Activity Report (SAR) with the GFIU without tipping off the customer. We may freeze accounts and withhold funds pending investigation.'],
@@ -11815,7 +11815,7 @@ function buildAML(){
     ['6. Politically Exposed Persons (PEPs)','PEPs and their close associates are subject to enhanced due diligence. We screen all customers against international PEP and sanctions lists (UN, OFAC, EU) on registration and on an ongoing basis using licensed screening software.'],
     ['7. Record Keeping','We retain all KYC documents, transaction records, and SAR filings for a minimum of 7 years from the date of the transaction or account closure, whichever is later.'],
     ['8. Training & Governance','Our Money Laundering Reporting Officer (MLRO) oversees this policy. All customer-facing staff receive annual AML training. The policy is reviewed annually and updated as required by law.'],
-    ['9. Contact','For AML enquiries: compliance@royalflush.io · Royal Flush Ltd · Suite 4, 50 Town Range, Gibraltar, GX11 1AA'],
+    ['9. Contact','For AML enquiries: compliance@royalflush.io · RF Poker Ltd · Suite 4, 50 Town Range, Gibraltar, GX11 1AA'],
   ];
   el.innerHTML=sections.map(([h,b])=>`
     <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.05)">
@@ -11980,19 +11980,19 @@ function buildTermsDoc(){
   const el=document.getElementById('terms-doc');
   if(!el||el.children.length) return;
   const sections=[
-    ['1. Acceptance of Terms','By accessing or using Royal Flush ("the Service"), you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the Service.',
-     ['You must be 18 years or older to use the Service.','You must be located in a jurisdiction where online gambling is legal.','You may only hold one account with Royal Flush.','You are responsible for maintaining the confidentiality of your login credentials.']],
+    ['1. Acceptance of Terms','By accessing or using RF Poker ("the Service"), you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the Service.',
+     ['You must be 18 years or older to use the Service.','You must be located in a jurisdiction where online gambling is legal.','You may only hold one account with RF Poker.','You are responsible for maintaining the confidentiality of your login credentials.']],
     ['2. Eligibility','The Service is not available to residents of certain jurisdictions including the United States, France, Netherlands, and any other jurisdiction where online gambling is prohibited by law.',
-     ['Employees of Royal Flush Ltd and their immediate family members are not permitted to play.','You warrant that you are not a politically exposed person (PEP) or acting on behalf of one.']],
-    ['3. Account Registration','You must provide accurate and complete information when registering. Royal Flush reserves the right to verify your identity at any time.',
-     ['Accounts found to contain false information may be suspended or closed immediately.','You must notify us immediately of any unauthorised access to your account.','Royal Flush reserves the right to refuse registration at its sole discretion.']],
+     ['Employees of RF Poker Ltd and their immediate family members are not permitted to play.','You warrant that you are not a politically exposed person (PEP) or acting on behalf of one.']],
+    ['3. Account Registration','You must provide accurate and complete information when registering. RF Poker reserves the right to verify your identity at any time.',
+     ['Accounts found to contain false information may be suspended or closed immediately.','You must notify us immediately of any unauthorised access to your account.','RF Poker reserves the right to refuse registration at its sole discretion.']],
     ['4. Deposits & Withdrawals','All deposits and withdrawals are subject to our payment processing terms. Minimum deposit is $10. Minimum withdrawal is $20.',
-     ['Withdrawals may take 1–5 business days depending on payment method.','Royal Flush reserves the right to request KYC documentation before processing withdrawals.','Bonus funds are subject to play-through requirements before withdrawal.']],
+     ['Withdrawals may take 1–5 business days depending on payment method.','RF Poker reserves the right to request KYC documentation before processing withdrawals.','Bonus funds are subject to play-through requirements before withdrawal.']],
     ['5. Bonuses & Promotions','Bonuses are subject to individual terms. Unless otherwise stated, bonuses carry a 25x play-through requirement before withdrawal.',
-     ['Only one bonus may be active at a time.','Royal Flush reserves the right to amend or cancel promotions at any time.','Abuse of bonus systems will result in forfeiture and account suspension.']],
+     ['Only one bonus may be active at a time.','RF Poker reserves the right to amend or cancel promotions at any time.','Abuse of bonus systems will result in forfeiture and account suspension.']],
     ['6. Fair Use & Prohibited Conduct','You agree not to use automated software, bots, or scripts to interact with the Service.',
      ['Collusion, chip dumping, or any form of cheating is strictly prohibited.','Chargebacks or payment fraud will result in permanent account closure and legal action.','You agree not to use the Service for any unlawful purpose.']],
-    ['7. Limitation of Liability','Royal Flush is not liable for any loss or damage arising from your use of the Service beyond the amount deposited in your account in the preceding 12 months.',[]],
+    ['7. Limitation of Liability','RF Poker is not liable for any loss or damage arising from your use of the Service beyond the amount deposited in your account in the preceding 12 months.',[]],
     ['8. Governing Law','These Terms are governed by the laws of Gibraltar. Any disputes shall be subject to the exclusive jurisdiction of the courts of Gibraltar.',[]],
   ];
   el.innerHTML=sections.map(([h,p,list])=>`
@@ -12019,7 +12019,7 @@ function buildPrivacyDoc(){
      ['Right of access — request a copy of your personal data.','Right to rectification — correct inaccurate data.','Right to erasure — request deletion (subject to legal obligations).','Right to data portability — receive data in a machine-readable format.','Right to object — opt out of marketing communications at any time.']],
     ['6. Cookies','We use essential cookies to operate the Service, and optional analytics cookies to understand usage. You can manage cookie preferences in Settings.',[]],
     ['7. Security','All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We are SOC 2 Type II certified and undergo annual penetration testing.',[]],
-    ['8. Contact','For privacy enquiries: privacy@royalflush.io · Royal Flush Ltd, Suite 4, 50 Town Range, Gibraltar, GX11 1AA.',[]],
+    ['8. Contact','For privacy enquiries: privacy@royalflush.io · RF Poker Ltd, Suite 4, 50 Town Range, Gibraltar, GX11 1AA.',[]],
   ];
   el.innerHTML=sections.map(([h,p,list])=>`
     <div class="tdoc-section">
@@ -13236,9 +13236,9 @@ function _getBrowserFingerprint() {
     ctx.fillStyle = '#f60';
     ctx.fillRect(125,1,62,20);
     ctx.fillStyle = '#069';
-    ctx.fillText('Royal Flush 🂠', 2, 15);
+    ctx.fillText('RF Poker 🂠', 2, 15);
     ctx.fillStyle = 'rgba(102,204,0,0.7)';
-    ctx.fillText('Royal Flush 🂠', 4, 17);
+    ctx.fillText('RF Poker 🂠', 4, 17);
     components.push(canvas.toDataURL().slice(-50));
   } catch(_) {}
   // Simple hash
@@ -14234,7 +14234,7 @@ function showToast(msg) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
-console.log('[Royal Flush] Socket.io client ready —', BACKEND_URL);
+console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
 </script>
 
 <!-- ══ 3D TABLE RENDERER ════════════════════════════════════════════ -->
