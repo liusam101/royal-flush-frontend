@@ -6918,30 +6918,66 @@ function joinSNG(sngId){
   if (btn) { btn.textContent = 'REGISTERED ✓'; btn.disabled = true; btn.style.opacity = '0.7'; }
   const status = document.getElementById('sng-reg-status');
   if (status) status.textContent = 'Waiting for players to fill...';
+
+  // Optimistic fill — mark first open circle as "you" immediately
+  _fillSNGSeat(playerName, true);
+}
+
+function _fillSNGSeat(playerName, isYou) {
+  // Fill the first empty seat circle
+  for (let i = 0; i < 9; i++) {
+    const dot = document.getElementById('sng-seat-' + i);
+    if (dot && dot.classList.contains('open')) {
+      dot.classList.remove('open');
+      dot.classList.add('taken');
+      dot.style.background = isYou ? 'rgba(201,168,76,0.35)' : 'rgba(201,168,76,0.18)';
+      dot.style.border = isYou ? '2px solid rgba(201,168,76,0.9)' : '1px solid rgba(201,168,76,0.5)';
+      dot.style.color = 'var(--gold)';
+      dot.style.fontWeight = '600';
+      dot.textContent = playerName.slice(0,2).toUpperCase();
+      break;
+    }
+  }
 }
 
 function _updateSNGRegModal(state){
   if (!state) return;
-  // Update seat dots
-  const players = state.registered || [];
-  state.registeredPlayers?.forEach((p, i) => {
-    const dot = document.getElementById('sng-seat-'+i);
-    if (dot) {
-      dot.style.background = 'rgba(201,168,76,0.15)';
-      dot.style.border = '1px solid rgba(201,168,76,0.4)';
-      dot.style.color = 'var(--gold)';
-      dot.textContent = p.name.slice(0,2).toUpperCase();
-    }
+
+  // Reset all circles to open first, then re-fill from server state
+  const seats = document.querySelectorAll('[id^="sng-seat-"]');
+  seats.forEach(dot => {
+    dot.classList.add('open');
+    dot.classList.remove('taken');
+    dot.style.background = 'rgba(255,255,255,.04)';
+    dot.style.border = '1px dashed rgba(255,255,255,.15)';
+    dot.style.color = 'var(--txd)';
+    dot.style.fontWeight = '';
+    dot.textContent = '•';
   });
+
+  const myName = getMyName();
+  (state.registeredPlayers || []).forEach((p, i) => {
+    const dot = document.getElementById('sng-seat-' + i);
+    if (!dot) return;
+    const isYou = p.name === myName;
+    dot.classList.remove('open');
+    dot.classList.add('taken');
+    dot.style.background = isYou ? 'rgba(201,168,76,0.35)' : 'rgba(201,168,76,0.18)';
+    dot.style.border = isYou ? '2px solid rgba(201,168,76,0.9)' : '1px solid rgba(201,168,76,0.5)';
+    dot.style.color = 'var(--gold)';
+    dot.style.fontWeight = '600';
+    dot.textContent = p.name.slice(0,2).toUpperCase();
+  });
+
   const status = document.getElementById('sng-reg-status');
   if (status) {
     const reg = state.registered || 0;
     const max = state.maxPlayers || 6;
     if (reg >= max) {
-      status.textContent = 'Starting in 5 seconds...';
-      status.style.color = 'var(--green)';
+      status.textContent = 'Table full — starting in 5 seconds...';
+      status.style.color = 'var(--ok)';
     } else {
-      status.textContent = `${reg}/${max} players registered. Waiting for more...`;
+      status.textContent = `${reg}/${max} players · Waiting for more...`;
     }
   }
 }
@@ -13402,9 +13438,8 @@ socket.on('handResult', (result) => {
 // ── SNG socket events ─────────────────────────────────────────────
 socket.on('sngRegistered', ({ tournId, registered, max }) => {
   _activeSNGTournId = tournId;
-  const status = document.getElementById('sng-reg-status');
-  if (status) status.textContent = `${registered}/${max} players registered...`;
   showToast(`Registered! ${registered}/${max} players`);
+  // sngLobbyUpdate with player names follows immediately — it handles the dots
 });
 
 socket.on('sngLobbyUpdate', (state) => {
