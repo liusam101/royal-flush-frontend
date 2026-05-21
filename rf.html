@@ -5709,11 +5709,42 @@ window._showVerifyBanner = function(user){
 .fchip[data-stakes="high"].on  { color: oklch(88% 0.20 76);  border-color: rgba(255,155,0,.55);  background: rgba(255,155,0,.07);  }
 .fchip[data-stakes="nose"].on  { color: oklch(72% 0.14 32);  border-color: rgba(225,100,80,.50); background: rgba(225,100,80,.06); }
 
+/* ── MOBILE TAB BAR (only shown when sidebar is hidden) ── */
+.l-mob-tabs {
+  display: none; /* hidden by default; shown only at mobile */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-s);
+  border-bottom: 1px solid rgba(255,184,0,.1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.l-mob-tabs::-webkit-scrollbar { display: none; }
+.l-mob-tab {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(107,101,128,.7);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.l-mob-tab:hover { color: rgba(242,237,230,.6); }
+.l-mob-tab.on { color: var(--tx); border-bottom-color: var(--gold); font-style: italic; }
+
 /* ── RESPONSIVE ── */
 @media(max-width:640px) {
   /* Sidebar collapses; main fills viewport */
-  #vl #lobby-shell { grid-template-columns: 1fr; }
-  #vl .l-sb { display: none; }
+  #vl #lobby-shell { grid-template-columns: 1fr !important; }
+  #vl .l-sb { display: none !important; }
+  .l-mob-tabs { display: flex; }
 
   /* Cash table: drop players + buy-in columns, keep name/blinds/seats */
   .t-cols,
@@ -5857,6 +5888,14 @@ window._showVerifyBanner = function(user){
 
   <!-- ══ MAIN CONTENT ══ -->
   <main class="l-main">
+
+    <!-- MOBILE TAB BAR (hidden on desktop where sidebar handles nav) -->
+    <nav class="l-mob-tabs" aria-label="Lobby navigation" id="l-mob-tabs">
+      <button class="l-mob-tab on" onclick="switchTab('cash')" id="mob-ni-cash">♠ Cash</button>
+      <button class="l-mob-tab" onclick="switchTab('sng')" id="mob-ni-sng">♣ Sit &amp; Go</button>
+      <button class="l-mob-tab" onclick="switchTab('mtt')" id="mob-ni-mtt">♦ Tournaments</button>
+      <button class="l-mob-tab" onclick="switchTab('filters')" id="mob-ni-filters">♥ Filters</button>
+    </nav>
 
     <!-- CASH TABLES PANEL -->
     <div id="panel-cash" class="l-panel on">
@@ -12090,8 +12129,10 @@ function switchTab(t){
   _tab=t;
   ['cash','sng','mtt','filters'].forEach(id=>{
     const ni=document.getElementById('ni-'+id);
+    const mob=document.getElementById('mob-ni-'+id);
     const panel=document.getElementById('panel-'+id);
     if(ni){ ni.classList.toggle('on',id===t); ni.setAttribute('aria-current',id===t?'page':'false'); }
+    if(mob) mob.classList.toggle('on',id===t);
     if(panel) panel.classList.toggle('on',id===t);
   });
   const lm=document.querySelector('.l-main');
