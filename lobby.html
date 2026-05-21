@@ -228,8 +228,6 @@ body::after {
 }
 .sni:hover:not(.on) { color: rgba(242,237,230,.6); background: rgba(255,184,0,.02); }
 .sni.on { font-style: italic; color: var(--tx); border-right-color: var(--gold); background: rgba(255,184,0,.04); }
-.sb-nav-hr { height: 1px; background: rgba(255,255,255,.04); margin: 6px 20px; }
-.sb-nav-tools { display: block; font-size: var(--tx-xs); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(107,101,128,.4); padding: 8px 20px 4px; }
 
 /* SECTION LABEL */
 .shd {
@@ -420,11 +418,11 @@ body::after {
   padding: 13px 0;
   border-bottom: 1px solid rgba(255,255,255,.04);
   cursor: pointer;
-  transition: background .12s, padding-left .12s;
+  transition: background .12s, transform .15s cubic-bezier(.16,1,.3,1);
   border-radius: 2px;
 }
 .mtr:last-child { border-bottom: none; }
-.mtr:hover { background: rgba(255,184,0,.03); padding-left: 8px; }
+.mtr:hover { background: rgba(255,184,0,.03); transform: translateX(5px); }
 .mtr.feat {
   border: 1px solid rgba(155,77,255,.2);
   border-radius: 2px;
@@ -432,7 +430,7 @@ body::after {
   margin-bottom: 10px;
   background: rgba(155,77,255,.025);
 }
-.mtr.feat:hover { background: rgba(155,77,255,.05); padding-left: 14px; }
+.mtr.feat:hover { background: rgba(155,77,255,.05); transform: none; }
 .mtr-name { font-family: 'Cormorant Garamond', serif; font-size: var(--tx-lg); font-weight: 600; color: var(--tx); line-height: 1.1; }
 .mtr-meta { font-size: var(--tx-xs); font-weight: 400; letter-spacing: 0; color: var(--txm); margin-top: 3px; }
 .mtr-prize { font-family: 'Cormorant Garamond', serif; font-size: var(--tx-xl); font-weight: 300; color: var(--gold); line-height: 1; font-variant-numeric: tabular-nums; }
@@ -586,6 +584,33 @@ body::after {
 
   /* Trust footer */
   .tfoot { padding: 20px 16px; margin: 32px -16px -20px; }
+
+  /* Touch targets — filter chips */
+  .fchip { padding: 9px 12px; }
+  .fbar-clear { padding: 8px 12px; }
+}
+
+/* ── FOCUS INDICATORS ── */
+.sni:focus-visible, .mni:focus-visible {
+  outline: 2px solid rgba(255,184,0,.55);
+  outline-offset: -2px;
+}
+.tr:focus-visible, .snr:focus-visible, .mtr:focus-visible {
+  outline: 2px solid rgba(255,184,0,.35);
+  outline-offset: -2px;
+  background: rgba(255,184,0,.03);
+}
+.btn:focus-visible, .fchip:focus-visible {
+  outline: 2px solid rgba(255,184,0,.55);
+  outline-offset: 2px;
+}
+
+/* ── REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
 }
 
 /* ── TRUST FOOTER ── */
@@ -772,7 +797,7 @@ body::after {
       <!-- NOSEBLEED -->
       <div class="tier nose">
         <div class="tier-hd"><span class="tier-nm">Nosebleed</span><div class="tier-ln"></div><span class="tier-ct">1 table</span></div>
-        <div class="tr" onclick="alert('Buy-in dialog')">
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')">
           <div><div class="tn">Phantom Room</div><div class="tg">No Limit Hold'em · 9-max</div></div>
           <div class="ts">$25 / $50</div>
           <div class="tpl">8 / 9</div>
@@ -785,15 +810,15 @@ body::after {
       <div class="tier">
         <div class="tier-hd"><span class="tier-nm">High Stakes</span><div class="tier-ln"></div><span class="tier-ct">3 tables</span></div>
         <div class="t-cols"><div class="t-col">Table</div><div class="t-col">Blinds</div><div class="t-col c">Players</div><div class="t-col r">Avg Pot</div><div class="t-col c">Seats</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')">
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')">
           <div><div class="tn">Sapphire</div><div class="tg">No Limit Hold'em · 6-max</div></div>
           <div class="ts">$5 / $10</div><div class="tpl">5 / 6</div><div class="tp">$4,800</div><div class="tseat open">1 open</div>
         </div>
-        <div class="tr" onclick="alert('Buy-in dialog')">
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')">
           <div><div class="tn">Obsidian</div><div class="tg">No Limit Hold'em · 9-max</div></div>
           <div class="ts">$10 / $20</div><div class="tpl">9 / 9</div><div class="tp">$9,200</div><div class="tseat full">Full</div>
         </div>
-        <div class="tr" onclick="alert('Buy-in dialog')">
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')">
           <div><div class="tn">Ivory</div><div class="tg">Pot Limit Omaha · 6-max</div></div>
           <div class="ts">$5 / $10</div><div class="tpl">4 / 6</div><div class="tp">$3,100</div><div class="tseat open">2 open</div>
         </div>
@@ -803,32 +828,32 @@ body::after {
       <div class="tier">
         <div class="tier-hd"><span class="tier-nm">Mid Stakes</span><div class="tier-ln"></div><span class="tier-ct">4 tables</span></div>
         <div class="t-cols"><div class="t-col">Table</div><div class="t-col">Blinds</div><div class="t-col c">Players</div><div class="t-col r">Avg Pot</div><div class="t-col c">Seats</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Velvet</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$2 / $4</div><div class="tpl">6 / 6</div><div class="tp">$820</div><div class="tseat full">Full</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Eclipse</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$2 / $4</div><div class="tpl">7 / 9</div><div class="tp">$640</div><div class="tseat open">2 open</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Onyx</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$1 / $2</div><div class="tpl">5 / 6</div><div class="tp">$310</div><div class="tseat open">1 open</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Aurum</div><div class="tg">Pot Limit Omaha · 6-max</div></div><div class="ts">$1 / $2</div><div class="tpl">4 / 6</div><div class="tp">$280</div><div class="tseat open">2 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Velvet</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$2 / $4</div><div class="tpl">6 / 6</div><div class="tp">$820</div><div class="tseat full">Full</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Eclipse</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$2 / $4</div><div class="tpl">7 / 9</div><div class="tp">$640</div><div class="tseat open">2 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Onyx</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$1 / $2</div><div class="tpl">5 / 6</div><div class="tp">$310</div><div class="tseat open">1 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Aurum</div><div class="tg">Pot Limit Omaha · 6-max</div></div><div class="ts">$1 / $2</div><div class="tpl">4 / 6</div><div class="tp">$280</div><div class="tseat open">2 open</div></div>
       </div>
 
       <!-- LOW STAKES -->
       <div class="tier">
         <div class="tier-hd"><span class="tier-nm">Low Stakes</span><div class="tier-ln"></div><span class="tier-ct">5 tables</span></div>
         <div class="t-cols"><div class="t-col">Table</div><div class="t-col">Blinds</div><div class="t-col c">Players</div><div class="t-col r">Avg Pot</div><div class="t-col c">Seats</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Midnight</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.50 / $1</div><div class="tpl">6 / 6</div><div class="tp">$120</div><div class="tseat full">Full</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Sterling</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.50 / $1</div><div class="tpl">7 / 9</div><div class="tp">$95</div><div class="tseat open">2 open</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Ember</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.25 / $0.50</div><div class="tpl">5 / 6</div><div class="tp">$58</div><div class="tseat open">1 open</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Carbon</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.25 / $0.50</div><div class="tpl">6 / 6</div><div class="tp">$72</div><div class="tseat full">Full</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Slate</div><div class="tg">Pot Limit Omaha · 6-max</div></div><div class="ts">$0.50 / $1</div><div class="tpl">4 / 6</div><div class="tp">$88</div><div class="tseat open">2 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Midnight</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.50 / $1</div><div class="tpl">6 / 6</div><div class="tp">$120</div><div class="tseat full">Full</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Sterling</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.50 / $1</div><div class="tpl">7 / 9</div><div class="tp">$95</div><div class="tseat open">2 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Ember</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.25 / $0.50</div><div class="tpl">5 / 6</div><div class="tp">$58</div><div class="tseat open">1 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Carbon</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.25 / $0.50</div><div class="tpl">6 / 6</div><div class="tp">$72</div><div class="tseat full">Full</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Slate</div><div class="tg">Pot Limit Omaha · 6-max</div></div><div class="ts">$0.50 / $1</div><div class="tpl">4 / 6</div><div class="tp">$88</div><div class="tseat open">2 open</div></div>
       </div>
 
       <!-- MICRO -->
       <div class="tier" style="margin-bottom:0">
         <div class="tier-hd"><span class="tier-nm">Micro Stakes</span><div class="tier-ln"></div><span class="tier-ct">8 tables</span></div>
         <div class="t-cols"><div class="t-col">Table</div><div class="t-col">Blinds</div><div class="t-col c">Players</div><div class="t-col r">Avg Pot</div><div class="t-col c">Seats</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Copper</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.05 / $0.10</div><div class="tpl">8 / 9</div><div class="tp">$4.20</div><div class="tseat open">1 open</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Pebble</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.05 / $0.10</div><div class="tpl">5 / 6</div><div class="tp">$3.80</div><div class="tseat open">1 open</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Flint</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.02 / $0.05</div><div class="tpl">7 / 9</div><div class="tp">$1.90</div><div class="tseat open">2 open</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Grain</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.02 / $0.05</div><div class="tpl">6 / 6</div><div class="tp">$2.10</div><div class="tseat full">Full</div></div>
-        <div class="tr" onclick="alert('Buy-in dialog')"><div><div class="tn">Dust</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.01 / $0.02</div><div class="tpl">9 / 9</div><div class="tp">$0.85</div><div class="tseat full">Full</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Copper</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.05 / $0.10</div><div class="tpl">8 / 9</div><div class="tp">$4.20</div><div class="tseat open">1 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Pebble</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.05 / $0.10</div><div class="tpl">5 / 6</div><div class="tp">$3.80</div><div class="tseat open">1 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Flint</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.02 / $0.05</div><div class="tpl">7 / 9</div><div class="tp">$1.90</div><div class="tseat open">2 open</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Grain</div><div class="tg">No Limit Hold'em · 6-max</div></div><div class="ts">$0.02 / $0.05</div><div class="tpl">6 / 6</div><div class="tp">$2.10</div><div class="tseat full">Full</div></div>
+        <div class="tr" tabindex="0" onclick="alert('Buy-in dialog')"><div><div class="tn">Dust</div><div class="tg">No Limit Hold'em · 9-max</div></div><div class="ts">$0.01 / $0.02</div><div class="tpl">9 / 9</div><div class="tp">$0.85</div><div class="tseat full">Full</div></div>
       </div>
 
       <div class="tfoot">
@@ -864,42 +889,42 @@ body::after {
         <div class="sng-col r">Action</div>
       </div>
 
-      <div class="snr">
+      <div class="snr" tabindex="0">
         <div><div class="snr-name">Micro SNG</div><div class="snr-meta">9-Max · NLHE</div></div>
         <div class="snr-buyin">$5</div>
         <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">4 / 9</div></div>
         <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
       </div>
 
-      <div class="snr">
+      <div class="snr" tabindex="0">
         <div><div class="snr-name">Low SNG</div><div class="snr-meta">9-Max · NLHE</div></div>
         <div class="snr-buyin">$25</div>
         <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div></div><div class="snr-ct">8 / 9</div></div>
         <div class="snr-act"><span class="pill soon">Last Seat</span><button class="btn btn-g btn-sm">Join</button></div>
       </div>
 
-      <div class="snr">
+      <div class="snr" tabindex="0">
         <div><div class="snr-name">Mid SNG</div><div class="snr-meta">9-Max · NLHE</div></div>
         <div class="snr-buyin">$100</div>
         <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">2 / 9</div></div>
         <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
       </div>
 
-      <div class="snr">
+      <div class="snr" tabindex="0">
         <div><div class="snr-name">High Roller</div><div class="snr-meta">9-Max · NLHE</div></div>
         <div class="snr-buyin">$500</div>
         <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">1 / 9</div></div>
         <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
       </div>
 
-      <div class="snr">
+      <div class="snr" tabindex="0">
         <div><div class="snr-name">Turbo SNG</div><div class="snr-meta">9-Max · Turbo · NLHE</div></div>
         <div class="snr-buyin">$10</div>
         <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">6 / 9</div></div>
         <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
       </div>
 
-      <div class="snr">
+      <div class="snr" tabindex="0">
         <div><div class="snr-name">PLO SNG</div><div class="snr-meta">6-Max · PLO</div></div>
         <div class="snr-buyin">$50</div>
         <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">2 / 6</div></div>
@@ -918,7 +943,7 @@ body::after {
 
       <div style="margin-bottom:32px">
         <div class="shd">Featured</div>
-        <div class="mtr feat">
+        <div class="mtr feat" tabindex="0">
           <div><div class="mtr-name">Sunday Royal Championship</div><div class="mtr-meta">No Limit Hold'em · $500 buy-in · Re-entry allowed</div></div>
           <div><div class="mtr-prize">$500,000</div><div class="mtr-prize-l">Guaranteed</div></div>
           <div><div class="mtr-time">Sun 8:00 PM</div><div class="mtr-time-l">Starts in 3d 7h</div></div>
@@ -929,19 +954,19 @@ body::after {
       <div style="margin-bottom:32px">
         <div class="shd">Tonight</div>
         <div class="mtt-cols"><div class="mtt-col">Tournament</div><div class="mtt-col">Prize Pool</div><div class="mtt-col">Start Time</div><div class="mtt-col r">Status</div></div>
-        <div class="mtr">
+        <div class="mtr" tabindex="0">
           <div><div class="mtr-name">Thursday Elite</div><div class="mtr-meta">No Limit Hold'em · $100 buy-in · Turbo</div></div>
           <div><div class="mtr-prize">$50,000</div><div class="mtr-prize-l">Guaranteed</div></div>
           <div><div class="mtr-time">Thu 7:00 PM</div><div class="mtr-time-l">Tonight</div></div>
           <div class="mtr-st"><span class="pill soon">Upcoming</span></div>
         </div>
-        <div class="mtr">
+        <div class="mtr" tabindex="0">
           <div><div class="mtr-name">Nightly Micro</div><div class="mtr-meta">No Limit Hold'em · $10 buy-in</div></div>
           <div><div class="mtr-prize">$5,000</div><div class="mtr-prize-l">Guaranteed</div></div>
           <div><div class="mtr-time">Thu 9:00 PM</div><div class="mtr-time-l">Tonight</div></div>
           <div class="mtr-st"><span class="pill reg">Registering</span><div class="mtr-reg">87 registered</div></div>
         </div>
-        <div class="mtr">
+        <div class="mtr" tabindex="0">
           <div><div class="mtr-name">Late Night Special</div><div class="mtr-meta">No Limit Hold'em · $25 buy-in · Hyper-Turbo</div></div>
           <div><div class="mtr-prize">$8,000</div><div class="mtr-prize-l">Guaranteed</div></div>
           <div><div class="mtr-time">Thu 11:30 PM</div><div class="mtr-time-l">Tonight</div></div>
@@ -952,13 +977,13 @@ body::after {
       <div>
         <div class="shd">Running Now</div>
         <div class="mtt-cols"><div class="mtt-col">Tournament</div><div class="mtt-col">Prize Pool</div><div class="mtt-col">Progress</div><div class="mtt-col r">Status</div></div>
-        <div class="mtr">
+        <div class="mtr" tabindex="0">
           <div><div class="mtr-name">Satellite — Sunday Royal</div><div class="mtr-meta">No Limit Hold'em · $50 buy-in · 1 seat GTD</div></div>
           <div><div class="mtr-prize" style="font-size:0.9375rem;color:var(--pur)">Seat</div><div class="mtr-prize-l">to Sunday Royal</div></div>
           <div><div class="mtr-time" style="color:var(--gold)">Live</div><div class="mtr-time-l">34 players left</div></div>
           <div class="mtr-st"><span class="pill run">Running</span><div class="mtr-reg">Late reg closed</div></div>
         </div>
-        <div class="mtr">
+        <div class="mtr" tabindex="0">
           <div><div class="mtr-name">Wednesday Grinders</div><div class="mtr-meta">No Limit Hold'em · $20 buy-in · Re-entry</div></div>
           <div><div class="mtr-prize">$12,000</div><div class="mtr-prize-l">Guaranteed</div></div>
           <div><div class="mtr-time" style="color:var(--gold)">Live</div><div class="mtr-time-l">112 players left</div></div>
