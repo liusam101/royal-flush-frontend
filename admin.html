@@ -383,8 +383,8 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
             <div style="font-family:var(--mono);font-size:10px;color:rgba(224,234,248,0.3);margin-top:4px">Replaces the SVG table for all players in-game</div>
           </div>
           <input type="file" id="glb-input" accept=".glb,.gltf" style="display:none" onchange="handleAssetFile(this.files[0],'glb')">
-          <div id="glb-preview" style="display:none;margin-bottom:12px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
-            <canvas id="glb-preview-canvas" style="width:100%;height:220px;display:block"></canvas>
+          <div id="glb-preview" style="display:none;margin-bottom:12px;border-radius:4px;overflow:hidden;border:1px solid var(--border);height:220px;background:#0c1020">
+            <div id="glb-preview-inner" style="width:100%;height:100%"></div>
           </div>
           <div id="glb-status" style="font-family:var(--mono);font-size:11px;color:var(--txd);margin-bottom:12px;min-height:16px"></div>
           <button class="btn btn-cyan" id="glb-push-btn" onclick="pushAsset('glb')" disabled style="opacity:0.4">▶ PUSH TO ALL PLAYERS</button>
@@ -811,12 +811,12 @@ document.addEventListener('input', e=>{
 document.getElementById('admin-key')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 
 // ── GLB Preview ───────────────────────────────────────────────────
-let _prevRenderer=null, _prevAnimId=null, _prevControls=null;
+let _prevObjectUrl = null;
 
 function _destroyPreview(){
-  if(_prevAnimId){ cancelAnimationFrame(_prevAnimId); _prevAnimId=null; }
-  if(_prevRenderer){ _prevRenderer.dispose(); _prevRenderer=null; }
-  _prevControls=null;
+  if(_prevObjectUrl){ URL.revokeObjectURL(_prevObjectUrl); _prevObjectUrl=null; }
+  const inner=document.getElementById('glb-preview-inner');
+  if(inner) inner.innerHTML='';
 }
 
 function _loadScript(src){
@@ -830,58 +830,34 @@ function _loadScript(src){
 
 async function showGLBPreview(dataUrl){
   _destroyPreview();
+  if(!dataUrl || dataUrl.length < 50) return;
   const wrap=document.getElementById('glb-preview');
-  const canvas=document.getElementById('glb-preview-canvas');
-  if(!wrap||!canvas) return;
+  const inner=document.getElementById('glb-preview-inner');
+  if(!wrap||!inner) return;
+
+  // Convert base64 dataUrl → blob URL (model-viewer needs a real URL)
+  try{
+    const b64=dataUrl.split(',')[1]||'';
+    if(!b64) return;
+    const bin=atob(b64);
+    const buf=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+    _prevObjectUrl=URL.createObjectURL(new Blob([buf],{type:'model/gltf-binary'}));
+  } catch(e){ return; }
+
   wrap.style.display='block';
+  inner.innerHTML=`<model-viewer
+    src="${_prevObjectUrl}"
+    auto-rotate camera-controls shadow-intensity="1"
+    style="width:100%;height:220px;background:#0c1020;--poster-color:#0c1020"
+  ></model-viewer>`;
 
-  try {
-    await _loadScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js');
-    await _loadScript('https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/loaders/GLTFLoader.js');
-    await _loadScript('https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/controls/OrbitControls.js');
-  } catch(e){ wrap.style.display='none'; return; }
+  // Set a default poker-table aspect ratio for seat auto-calc
+  // (elongated ellipse: ~2:1 width:depth)
+  if(!window._glbTableDims) window._glbTableDims={rx:0.38,ry:0.22};
 
-  const THREE=window.THREE;
-  const W=canvas.offsetWidth||600, H=220;
-  _prevRenderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
-  _prevRenderer.setSize(W,H,false);
-  _prevRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  try{ _prevRenderer.outputEncoding=THREE.sRGBEncoding; }catch(_){}
-
-  const scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x0C1020);
-  const cam=new THREE.PerspectiveCamera(40,W/H,0.01,300);
-  cam.position.set(0,4,7);
-  scene.add(new THREE.AmbientLight(0xfff5e0,0.9));
-  const sun=new THREE.DirectionalLight(0xffffff,1.4); sun.position.set(2,8,4); scene.add(sun);
-  scene.add(Object.assign(new THREE.PointLight(0xFFB800,0.5,30),{position:{x:0,y:6,z:0}}));
-
-  _prevControls=new THREE.OrbitControls(cam,canvas);
-  _prevControls.enableDamping=true; _prevControls.dampingFactor=0.06;
-  _prevControls.autoRotate=true; _prevControls.autoRotateSpeed=1.5;
-  _prevControls.minDistance=2; _prevControls.maxDistance=14;
-  _prevControls.maxPolarAngle=Math.PI*0.55;
-
-  new THREE.GLTFLoader().load(dataUrl, gltf=>{
-    const model=gltf.scene;
-    model.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
-    const box=new THREE.Box3().setFromObject(model);
-    const sz=box.getSize(new THREE.Vector3());
-    const ctr=box.getCenter(new THREE.Vector3());
-    const sc=3.5/Math.max(sz.x,sz.y,sz.z);
-    model.scale.setScalar(sc);
-    model.position.sub(ctr.multiplyScalar(sc));
-    scene.add(model);
-    // Store table XZ proportions for seat auto-calculate
-    // X = table width, Z = table depth (Y is vertical height)
-    const maxXZ=Math.max(sz.x,sz.z)||1;
-    window._glbTableDims={
-      rx: (sz.x/maxXZ)*0.38,
-      ry: (sz.z/maxXZ)*0.30
-    };
-  }, undefined, ()=>{ wrap.style.display='none'; _destroyPreview(); });
-
-  (function tick(){ _prevAnimId=requestAnimationFrame(tick); _prevControls?.update(); _prevRenderer?.render(scene,cam); })();
+  _loadScript('https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js')
+    .catch(()=>{ wrap.style.display='none'; _destroyPreview(); });
 }
 
 // ── Asset drop-in ─────────────────────────────────────────────────
@@ -906,7 +882,7 @@ function handleAssetFile(file, type) {
   }
   const statusEl = document.getElementById(type+'-status');
   const btnEl    = document.getElementById(type+'-push-btn');
-  const _fmtSz = b => b>=1048576 ? (b/1048576).toFixed(1)+'MB' : Math.round(b/1024)+'KB';
+  const _fmtSz = b => b>=1048576 ? (b/1048576).toFixed(1)+'MB' : b>=1024 ? Math.round(b/1024)+'KB' : b+'B';
   statusEl.textContent = `Reading ${file.name} (${_fmtSz(file.size)})…`;
   statusEl.style.color = 'var(--txd)';
   const reader = new FileReader();
