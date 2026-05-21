@@ -186,6 +186,8 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <div class="nav-item" onclick="nav('broadcast',this)"><span class="nav-icon">◎</span>Broadcast</div>
       <div class="nav-item" onclick="nav('anticheat',this)"><span class="nav-icon">⚑</span>Anti-Cheat</div>
       <div class="nav-item" onclick="nav('log',this)"><span class="nav-icon">≡</span>Event Log</div>
+      <div class="nav-section">Assets</div>
+      <div class="nav-item" onclick="nav('assets',this)"><span class="nav-icon">◧</span>Table Assets</div>
     </nav>
     <main>
       <!-- Dashboard -->
@@ -363,6 +365,46 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Assets -->
+      <div class="panel" id="panel-assets">
+        <div class="card">
+          <div class="card-title">3D Table Model (GLB)</div>
+          <div id="glb-drop" style="border:2px dashed rgba(0,210,255,0.25);border-radius:4px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px"
+            ondragover="event.preventDefault();this.style.borderColor='var(--cyan)';this.style.background='rgba(0,210,255,0.06)'"
+            ondragleave="this.style.borderColor='rgba(0,210,255,0.25)';this.style.background=''"
+            ondrop="handleAssetDrop(event,'glb')"
+            onclick="document.getElementById('glb-input').click()">
+            <div style="font-family:var(--mono);font-size:22px;color:var(--cyan);margin-bottom:8px">◧</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--txd)">Drop <b style="color:var(--tx)">.glb</b> file here or click to browse</div>
+            <div style="font-family:var(--mono);font-size:10px;color:rgba(224,234,248,0.3);margin-top:4px">Replaces the SVG table for all players in-game</div>
+          </div>
+          <input type="file" id="glb-input" accept=".glb,.gltf" style="display:none" onchange="handleAssetFile(this.files[0],'glb')">
+          <div id="glb-status" style="font-family:var(--mono);font-size:11px;color:var(--txd);margin-bottom:12px;min-height:16px"></div>
+          <button class="btn btn-cyan" id="glb-push-btn" onclick="pushAsset('glb')" disabled style="opacity:0.4">▶ PUSH TO ALL PLAYERS</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Table Background Image (PNG / JPG)</div>
+          <div id="bg-drop" style="border:2px dashed rgba(0,210,255,0.25);border-radius:4px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px"
+            ondragover="event.preventDefault();this.style.borderColor='var(--gold)';this.style.background='rgba(255,184,0,0.06)'"
+            ondragleave="this.style.borderColor='rgba(0,210,255,0.25)';this.style.background=''"
+            ondrop="handleAssetDrop(event,'bg')"
+            onclick="document.getElementById('bg-input').click()">
+            <div style="font-family:var(--mono);font-size:22px;color:var(--gold);margin-bottom:8px">⬚</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--txd)">Drop <b style="color:var(--tx)">PNG / JPG</b> here or click to browse</div>
+            <div style="font-family:var(--mono);font-size:10px;color:rgba(224,234,248,0.3);margin-top:4px">Sets the garena background behind the table</div>
+          </div>
+          <input type="file" id="bg-input" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="handleAssetFile(this.files[0],'bg')">
+          <div id="bg-status" style="font-family:var(--mono);font-size:11px;color:var(--txd);margin-bottom:12px;min-height:16px"></div>
+          <button class="btn btn-gold" id="bg-push-btn" onclick="pushAsset('bg')" disabled style="opacity:0.4">▶ PUSH BACKGROUND</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Active Assets</div>
+          <div id="asset-active" style="font-family:var(--mono);font-size:12px;color:var(--txd)">No assets pushed this session</div>
         </div>
       </div>
 
@@ -728,6 +770,93 @@ document.addEventListener('input', e=>{
 
 // Enter key on login
 document.getElementById('admin-key')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// ── Asset drop-in ─────────────────────────────────────────────────
+const _pendingAssets = {};
+
+function handleAssetDrop(e, type) {
+  e.preventDefault();
+  const dropEl = document.getElementById(type+'-drop');
+  dropEl.style.borderColor = 'rgba(0,210,255,0.25)';
+  dropEl.style.background = '';
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  handleAssetFile(file, type);
+}
+
+function handleAssetFile(file, type) {
+  if (!file) return;
+  const maxMB = type === 'glb' ? 50 : 10;
+  if (file.size > maxMB * 1024 * 1024) {
+    toast(`File too large — max ${maxMB}MB`, 'error');
+    return;
+  }
+  const statusEl = document.getElementById(type+'-status');
+  const btnEl    = document.getElementById(type+'-push-btn');
+  statusEl.textContent = `Reading ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)…`;
+  statusEl.style.color = 'var(--txd)';
+  const reader = new FileReader();
+  reader.onload = e => {
+    _pendingAssets[type] = { dataUrl: e.target.result, name: file.name, size: file.size };
+    statusEl.textContent = `✓ ${file.name} — ${(file.size/1024/1024).toFixed(1)}MB ready`;
+    statusEl.style.color = 'var(--green)';
+    btnEl.disabled = false;
+    btnEl.style.opacity = '1';
+    // Show preview for bg
+    if (type === 'bg') {
+      const dropEl = document.getElementById('bg-drop');
+      dropEl.style.backgroundImage = `url(${e.target.result})`;
+      dropEl.style.backgroundSize  = 'cover';
+      dropEl.style.backgroundPosition = 'center';
+      dropEl.style.opacity = '0.7';
+    }
+  };
+  reader.onerror = () => { statusEl.textContent = 'Read failed'; statusEl.style.color = 'var(--red)'; };
+  reader.readAsDataURL(file);
+}
+
+function pushAsset(type) {
+  const asset = _pendingAssets[type];
+  if (!asset || !socket) { toast('No asset loaded or not connected', 'error'); return; }
+  const btnEl = document.getElementById(type+'-push-btn');
+  btnEl.textContent = 'PUSHING…';
+  btnEl.disabled = true;
+  const pushedAt = new Date().toISOString();
+  socket.emit('adminPushAsset', {
+    secret: adminKey,
+    type,
+    name: asset.name,
+    pushedAt,
+    dataUrl: asset.dataUrl,
+  });
+  socket.once('adminAssetPushed', d => {
+    if (d.type !== type) return;
+    toast(`${type.toUpperCase()} pushed to ${d.tables} client(s)`, 'success');
+    log(`Asset push: ${type} "${asset.name}" → ${d.tables} clients`, 'success');
+    btnEl.textContent = type === 'glb' ? '▶ PUSH TO ALL PLAYERS' : '▶ PUSH BACKGROUND';
+    btnEl.disabled = false;
+    renderActiveAssets();
+  });
+  setTimeout(() => {
+    if (btnEl.textContent === 'PUSHING…') {
+      btnEl.textContent = type === 'glb' ? '▶ PUSH TO ALL PLAYERS' : '▶ PUSH BACKGROUND';
+      btnEl.disabled = false;
+    }
+  }, 8000);
+}
+
+function renderActiveAssets() {
+  const el = document.getElementById('asset-active');
+  if (!el) return;
+  const entries = Object.values(_pendingAssets);
+  if (!entries.length) { el.textContent = 'No assets pushed this session'; return; }
+  el.innerHTML = entries.map(a => `
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--cyan)">${a.type?.toUpperCase()}</span>
+      <span>${a.name}</span>
+      <span style="color:var(--txd)">${(a.size/1024/1024).toFixed(1)}MB</span>
+    </div>`).join('');
+}
 
 // ── Anti-Cheat ────────────────────────────────────────────────────────
 let _acData = { recentAlerts:[],suspicionLeaderboard:[],bannedIPs:[],bannedNames:[],criticalAlerts:0,highAlerts:0,flaggedPlayers:0,totalPlayers:0 };
