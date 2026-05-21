@@ -400,9 +400,9 @@ body.royal-mode nav{
 .filter-section{display:flex;flex-direction:column;gap:10px}
 .filter-section-title{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);font-weight:600}
 .filter-chips{display:flex;gap:6px;flex-wrap:wrap}
-.fchip{font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);color:var(--txd);cursor:pointer;transition:color .18s,border-color .18s,background .18s;white-space:nowrap;font-family:'Montserrat',sans-serif}
-.fchip:hover{border-color:rgba(201,168,76,.3);color:var(--tx)}
-.fchip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
+.filter-panel .fchip{font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);color:var(--txd);cursor:pointer;transition:color .18s,border-color .18s,background .18s;white-space:nowrap;font-family:'Montserrat',sans-serif}
+.filter-panel .fchip:hover{border-color:rgba(201,168,76,.3);color:var(--tx)}
+.filter-panel .fchip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
 .filter-seats-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .filter-seats-input-wrap{display:flex;flex-direction:column;gap:4px}
 .filter-seats-label{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd)}
@@ -1562,7 +1562,7 @@ body.royal-mode nav{
 .rf-live-headline { font-family: 'Cormorant Garamond', serif; font-size: clamp(20px, 3vw, 28px); font-weight: 300; color: #EDE8DF; margin-bottom: 14px; letter-spacing: 0.5px; }
 .rf-live-headline em { font-style: italic; color: #D4AF37; }
 .rf-live-sub { font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,0.4); margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; }
-.rf-live-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: linear-gradient(135deg, #A07A14, #D4AF37 50%, #F0CC5A); color: #08080A; border: none; border-radius: 4px; font-family: var(--rf-font-body); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(212,175,55,0.3); transition: box-shadow 0.2s, transform 0.2s; }
+.rf-live-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: linear-gradient(135deg, var(--rf-gold-dk), var(--rf-gold) 50%, var(--rf-gold-lt)); color: #08080A; border: none; border-radius: 4px; font-family: var(--rf-font-body); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(255,184,0,0.3); transition: box-shadow 0.2s, transform 0.2s; }
 .rf-live-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(212,175,55,0.5); }
 .rf-live-ministats { display: flex; justify-content: center; gap: 32px; margin-top: 36px; padding-top: 28px; border-top: 1px solid rgba(212,175,55,0.1); flex-wrap: wrap; }
 .rf-live-mini { text-align: center; }
@@ -1587,7 +1587,7 @@ body.royal-mode nav{
 .rf-mega-link-sub { display: block; font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0; margin-top: 2px; }
 
 /* ── STICKY CTA (top-right) ───────────────────────────── */
-.rf-sticky-cta { position: fixed; top: 14px; right: 22px; z-index: 250; display: none; align-items: center; gap: 6px; padding: 11px 22px; background: linear-gradient(135deg, #A07A14, #D4AF37 50%, #F0CC5A); color: #08080A; border: none; border-radius: 4px; font-family: var(--rf-font-body); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 24px rgba(212,175,55,0.4); animation: rfStickyIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); transition: transform 0.2s, box-shadow 0.2s; }
+.rf-sticky-cta { position: fixed; top: 14px; right: 22px; z-index: 250; display: none; align-items: center; gap: 6px; padding: 11px 22px; background: linear-gradient(135deg, var(--rf-gold-dk), var(--rf-gold) 50%, var(--rf-gold-lt)); color: #08080A; border: none; border-radius: 4px; font-family: var(--rf-font-body); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 24px rgba(255,184,0,0.4); animation: rfStickyIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); transition: transform 0.2s, box-shadow 0.2s; }
 .rf-sticky-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 32px rgba(212,175,55,0.6); }
 /* Sticky CTA removed — was covering nav controls */
 .rf-sticky-cta, .rf-sticky-cta.show { display: none !important; visibility: hidden !important; pointer-events: none !important; }
@@ -2420,9 +2420,7 @@ nav:not(.lp-nav)::after {
 .filt-lbl { font-size: 8px !important; font-weight: 600 !important; letter-spacing: 2.5px !important; text-transform: uppercase !important; color: var(--gold) !important; display: flex !important; align-items: center !important; gap: 10px !important; margin-bottom: 12px !important; }
 .filt-lbl::after { content: '' !important; flex: 1 !important; height: 1px !important; background: rgba(255,184,0,.08) !important; }
 .fchips { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
-.fchip { padding: 6px 14px !important; font-size: 10px !important; font-weight: 500 !important; color: var(--txm) !important; border: 1px solid rgba(255,255,255,.07) !important; border-radius: 2px !important; cursor: pointer !important; transition: color .14s, border-color .14s, background .14s !important; background: transparent !important; user-select: none !important; }
-.fchip:hover { border-color: rgba(255,184,0,.3) !important; color: var(--tx) !important; }
-.fchip.on { border-color: rgba(255,184,0,.55) !important; color: var(--gold) !important; background: rgba(255,184,0,.07) !important; }
+/* .fchip canonical rule lives in the #vl style block; no duplication here */
 
 /* ── TRUST FOOTER ── */
 .tfoot {
@@ -4183,7 +4181,7 @@ body.in-auth > nav { display: none !important; }
 .nauth-btn-primary {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #A07A14, #D4AF37 50%, #F0CC5A);
+  background: linear-gradient(135deg, var(--rf-gold-dk,#7A6000), var(--rf-gold,#FFB800) 50%, var(--rf-gold-lt,#FFD95A));
   border: none;
   border-radius: 4px;
   color: #08080A;
