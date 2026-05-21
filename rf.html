@@ -5813,7 +5813,7 @@ window._showVerifyBanner = function(user){
     </div>
 
     <!-- Navigation -->
-    <nav class="sb-nav-wrap" aria-label="Lobby navigation">
+    <div class="sb-nav-wrap" role="navigation" aria-label="Lobby navigation">
       <span class="sb-nav-cap">Game Rooms</span>
       <div class="sni on" id="ni-cash" onclick="switchTab('cash')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('cash')}" role="button" tabindex="0" aria-current="page">♠ Cash Tables</div>
       <div class="sni" id="ni-sng" onclick="switchTab('sng')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('sng')}" role="button" tabindex="0" aria-current="false">♣ Sit &amp; Go</div>
@@ -5821,7 +5821,7 @@ window._showVerifyBanner = function(user){
       <div class="sb-nav-hr" role="separator"></div>
       <span class="sb-nav-tools">Tools</span>
       <div class="sni" id="ni-filters" onclick="switchTab('filters')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('filters')}" role="button" tabindex="0" aria-current="false">♥ Filters <span id="filter-dot" style="display:none;color:#FFB800;font-size:11px;line-height:1;vertical-align:middle" aria-hidden="true">●</span></div>
-    </nav>
+    </div>
 
     <!-- Live Stats -->
     <div class="sb-block">
@@ -5890,12 +5890,12 @@ window._showVerifyBanner = function(user){
   <main class="l-main">
 
     <!-- MOBILE TAB BAR (hidden on desktop where sidebar handles nav) -->
-    <nav class="l-mob-tabs" aria-label="Lobby navigation" id="l-mob-tabs">
+    <div class="l-mob-tabs" role="navigation" aria-label="Lobby navigation" id="l-mob-tabs">
       <button class="l-mob-tab on" onclick="switchTab('cash')" id="mob-ni-cash">♠ Cash</button>
       <button class="l-mob-tab" onclick="switchTab('sng')" id="mob-ni-sng">♣ Sit &amp; Go</button>
       <button class="l-mob-tab" onclick="switchTab('mtt')" id="mob-ni-mtt">♦ Tournaments</button>
       <button class="l-mob-tab" onclick="switchTab('filters')" id="mob-ni-filters">♥ Filters</button>
-    </nav>
+    </div>
 
     <!-- CASH TABLES PANEL -->
     <div id="panel-cash" class="l-panel on">
