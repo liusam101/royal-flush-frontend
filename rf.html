@@ -514,7 +514,7 @@ body.royal-mode nav{
 .sng-list{display:flex;flex-direction:column;gap:10px}
 .sng-card{background:var(--sf);border:1px solid rgba(201,168,76,.09);border-radius:4px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:transform .25s,box-shadow .25s,border-color .25s}
 .sng-card:hover{border-color:rgba(201,168,76,.28);transform:translateX(3px)}
-.sng-card.running{border-color:rgba(93,200,150,.18)}
+.sng-card.running{border-color:rgba(93,200,150,.30)}
 .sng-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--tx)}
 .sng-meta{font-size:9px;color:var(--txd);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 .sng-buyin{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);font-weight:600}
@@ -2344,7 +2344,7 @@ nav:not(.lp-nav)::after {
 .tpl { font-size: 10px !important; font-weight: 500 !important; color: var(--txm) !important; text-align: center !important; }
 .tseat { font-size: 8px !important; font-weight: 600 !important; text-align: center !important; letter-spacing: .5px !important; }
 .tseat.open { color: var(--ok) !important; }
-.tseat.full { color: rgba(255,255,255,.2) !important; }
+.tseat.full { color: rgba(220,85,85,.58) !important; }
 .tseat.wait { color: var(--txm) !important; }
 
 /* ── STATUS PILLS ── */
@@ -5383,8 +5383,8 @@ window._showVerifyBanner = function(user){
 .sb-mode-badge {
   display: inline-block;
   font-size: 7px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
-  color: rgba(255,184,0,.45);
-  border: 1px solid rgba(255,184,0,.14);
+  color: rgba(255,184,0,.78);
+  border: 1px solid rgba(255,184,0,.24);
   border-radius: 2px;
   padding: 3px 8px;
 }
@@ -5409,8 +5409,8 @@ window._showVerifyBanner = function(user){
   user-select: none;
   line-height: 1.3;
 }
-.sni:hover:not(.on) { color: rgba(242,237,230,.6); background: rgba(255,184,0,.02); }
-.sni.on { font-style: italic; color: var(--tx); border-right-color: var(--gold); background: rgba(255,184,0,.04); }
+.sni:hover:not(.on) { color: rgba(242,237,230,.6); background: rgba(255,184,0,.025); }
+.sni.on { font-style: italic; color: var(--tx); border-right-color: var(--gold); background: rgba(255,184,0,.07); }
 .sb-nav-hr { height: 1px; background: rgba(255,255,255,.04); margin: 6px 20px; }
 .sb-nav-tools { display: block; font-size: 7px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: rgba(107,101,128,.35); padding: 8px 20px 4px; }
 
@@ -5428,13 +5428,17 @@ window._showVerifyBanner = function(user){
 .sb-stat:first-of-type { border-top: none; }
 .sb-stat-n { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 300; color: var(--tx); opacity: .58; }
 .sb-stat-l { font-size: 8px; font-weight: 500; color: var(--txm); }
+/* role-coded: live activity = mint, financial = gold, neutral = dimmed text */
+#ls-users { color: var(--ok); opacity: 1; }
+#ls-hands { color: var(--tx); opacity: .82; }
+#ls-chips { color: var(--gold); opacity: 1; }
 
 /* bonus */
 .bonus-frame {
-  border: 1px solid rgba(255,184,0,.18);
+  border: 1px solid rgba(255,184,0,.20);
   border-radius: 2px;
   padding: 14px;
-  background: rgba(255,184,0,.015);
+  background: rgba(255,184,0,.028);
 }
 .bonus-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 300; color: var(--tx); margin-bottom: 2px; }
 .bonus-sub { font-size: 8px; font-weight: 500; letter-spacing: .4px; color: var(--txm); margin-bottom: 10px; }
@@ -5557,7 +5561,7 @@ window._showVerifyBanner = function(user){
 .tpl { font-size: 10px; font-weight: 500; color: var(--txm); text-align: center; }
 .tseat { font-size: 8px; font-weight: 600; text-align: center; letter-spacing: .5px; }
 .tseat.open { color: var(--ok); }
-.tseat.full { color: rgba(255,255,255,.2); }
+.tseat.full { color: rgba(220,85,85,.58); }
 .tseat.wait { color: var(--txm); }
 
 /* ── STATUS PILLS ── */
@@ -5611,13 +5615,13 @@ window._showVerifyBanner = function(user){
 .mtr:last-child { border-bottom: none; }
 .mtr:hover { background: rgba(255,184,0,.03); padding-left: 8px; }
 .mtr.feat {
-  border: 1px solid rgba(155,77,255,.2);
+  border: 1px solid rgba(155,77,255,.32);
   border-radius: 2px;
   padding: 16px 14px;
   margin-bottom: 10px;
-  background: rgba(155,77,255,.025);
+  background: rgba(155,77,255,.04);
 }
-.mtr.feat:hover { background: rgba(155,77,255,.05); padding-left: 14px; }
+.mtr.feat:hover { background: rgba(155,77,255,.08); padding-left: 14px; }
 .mtr-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--tx); line-height: 1.1; }
 .mtr-meta { font-size: 8px; font-weight: 500; letter-spacing: .4px; color: var(--txm); margin-top: 3px; }
 .mtr-prize { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 300; color: var(--gold); line-height: 1; }
@@ -5686,6 +5690,24 @@ window._showVerifyBanner = function(user){
 .sb-more-btn.open .sb-more-caret { transform: rotate(180deg); }
 .sb-more-wrap { display: none; flex-shrink: 0; }
 .sb-more-wrap.open { display: block; }
+
+/* ── COLORIZE: tier stakes intensity ── */
+/* Micro: green-gold tint — small stakes, fresh felt */
+.tier-micro .ts { color: oklch(74% 0.10 148); }
+.tier-micro .tier-ln { background: rgba(70,190,110,.14); }
+
+/* Low: standard gold (baseline) */
+.tier-low .tier-ln { background: rgba(255,184,0,.10); }
+
+/* High: brighter warm gold — elevated stakes, higher tension */
+.tier-high .ts { color: oklch(88% 0.20 76); }
+.tier-high .tier-ln { background: rgba(255,140,0,.22); }
+.tier-high .tier-nm { color: oklch(86% 0.19 78); }
+
+/* ── COLORIZE: stakes filter chips ── */
+.fchip[data-stakes="micro"].on { color: oklch(76% 0.12 150); border-color: rgba(70,190,110,.45); background: rgba(70,190,110,.06); }
+.fchip[data-stakes="high"].on  { color: oklch(88% 0.20 76);  border-color: rgba(255,155,0,.55);  background: rgba(255,155,0,.07);  }
+.fchip[data-stakes="nose"].on  { color: oklch(72% 0.14 32);  border-color: rgba(225,100,80,.50); background: rgba(225,100,80,.06); }
 
 /* ── RESPONSIVE ── */
 @media(max-width:640px) {
@@ -5848,12 +5870,12 @@ window._showVerifyBanner = function(user){
       <div class="inline-filt">
         <span class="inline-filt-lbl">Stakes</span>
         <div class="fchips" id="inline-stakes">
-          <div class="fchip on" onclick="setStakesFilter(this,'all')">All</div>
-          <div class="fchip" onclick="setStakesFilter(this,'micro')">Micro</div>
-          <div class="fchip" onclick="setStakesFilter(this,'low')">Low</div>
-          <div class="fchip" onclick="setStakesFilter(this,'mid')">Mid</div>
-          <div class="fchip" onclick="setStakesFilter(this,'high')">High</div>
-          <div class="fchip" onclick="setStakesFilter(this,'nose')">Nosebleed</div>
+          <div class="fchip on" data-stakes="all" onclick="setStakesFilter(this,'all')">All</div>
+          <div class="fchip" data-stakes="micro" onclick="setStakesFilter(this,'micro')">Micro</div>
+          <div class="fchip" data-stakes="low" onclick="setStakesFilter(this,'low')">Low</div>
+          <div class="fchip" data-stakes="mid" onclick="setStakesFilter(this,'mid')">Mid</div>
+          <div class="fchip" data-stakes="high" onclick="setStakesFilter(this,'high')">High</div>
+          <div class="fchip" data-stakes="nose" onclick="setStakesFilter(this,'nose')">Nosebleed</div>
         </div>
       </div>
       <div id="tgrid"></div>
@@ -5910,12 +5932,12 @@ window._showVerifyBanner = function(user){
         <div class="filt-sec">
           <div class="filt-lbl">Stakes</div>
           <div class="fchips" id="filt-stakes">
-            <div class="fchip on" onclick="toggleFilter('stakes',this,'all')">All</div>
-            <div class="fchip" onclick="toggleFilter('stakes',this,'micro')">Micro</div>
-            <div class="fchip" onclick="toggleFilter('stakes',this,'low')">Low</div>
-            <div class="fchip" onclick="toggleFilter('stakes',this,'mid')">Mid</div>
-            <div class="fchip" onclick="toggleFilter('stakes',this,'high')">High</div>
-            <div class="fchip" onclick="toggleFilter('stakes',this,'nose')">Nosebleed</div>
+            <div class="fchip on" data-stakes="all" onclick="toggleFilter('stakes',this,'all')">All</div>
+            <div class="fchip" data-stakes="micro" onclick="toggleFilter('stakes',this,'micro')">Micro</div>
+            <div class="fchip" data-stakes="low" onclick="toggleFilter('stakes',this,'low')">Low</div>
+            <div class="fchip" data-stakes="mid" onclick="toggleFilter('stakes',this,'mid')">Mid</div>
+            <div class="fchip" data-stakes="high" onclick="toggleFilter('stakes',this,'high')">High</div>
+            <div class="fchip" data-stakes="nose" onclick="toggleFilter('stakes',this,'nose')">Nosebleed</div>
           </div>
         </div>
         <div class="filt-sec">
@@ -9433,7 +9455,7 @@ function renderTiers(){
     const isNose=t.id==='nose';
     const cols=isNose?'':
       `<div class="t-cols"><div class="t-col">Table</div><div class="t-col">Blinds</div><div class="t-col c">Players</div><div class="t-col r">Buy-in</div><div class="t-col c">Seats</div></div>`;
-    return`<div class="tier${isNose?' nose':''}">
+    return`<div class="tier${isNose?' nose':''} tier-${t.id}">
       <div class="tier-hd"><span class="tier-nm">${t.name}</span><div class="tier-ln"></div><span class="tier-ct">${t.tables.length} table${t.tables.length!==1?'s':''}</span></div>
       ${cols}${rows}
     </div>`;
@@ -10617,7 +10639,7 @@ function renderTiersFiltered(tiers){
     const isNose=t.id==='nose';
     const cols=isNose?'':
       `<div class="t-cols"><div class="t-col">Table</div><div class="t-col">Blinds</div><div class="t-col c">Players</div><div class="t-col r">Buy-in</div><div class="t-col c">Seats</div></div>`;
-    return`<div class="tier${isNose?' nose':''}">
+    return`<div class="tier${isNose?' nose':''} tier-${t.id}">
       <div class="tier-hd"><span class="tier-nm">${t.name}</span><div class="tier-ln"></div><span class="tier-ct">${t.tables.length} table${t.tables.length!==1?'s':''}</span></div>
       ${cols}${rows}
     </div>`;
