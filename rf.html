@@ -11152,12 +11152,8 @@ var _sittingOut = false;
 
 function goLobbyFromTable(){
   if (!_backendActive || !_connectedTableId) { goLobby(); return; }
-  // Put player in sit-out mode — keep seat, go to lobby
-  _sittingOut = true;
-  socket.emit('sitOut', { tableId: _connectedTableId });
+  backendLeaveTable();  // emits leaveTable → server sends chipsReturned to sync balance
   showView('vl');
-  // Show return-to-table banner
-  _showReturnBanner();
 }
 
 function returnToTable(){
@@ -13982,8 +13978,12 @@ window.demoAct = function(action, amount) {
 // On full leave (goLobby) → disconnect from backend and clear sit-out
 const _origGoLobby = window.goLobby;
 window.goLobby = function() {
-  if (_backendActive && !_sittingOut) {
-    backendLeaveTable();
+  if (_backendActive) {
+    backendLeaveTable();  // always leave if still connected; chipsReturned will sync balance
+    // Remove vg active before _origGoLobby runs so its addBal(you.stack) check is skipped
+    // (chipsReturned is the authoritative balance update for backend games)
+    const vgEl = document.getElementById('vg');
+    if (vgEl) vgEl.classList.remove('active');
   }
   _sittingOut = false;
   _hideReturnBanner();
