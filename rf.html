@@ -13298,6 +13298,13 @@ function backendLeaveTable() {
 
 // ══ INCOMING EVENTS ═══════════════════════════════════════════════════
 
+socket.on('chipsReturned', ({ balance }) => {
+  _balRoyal = balance;
+  _bal = _mode === 'gold' ? _balGold : _balRoyal;
+  updBal();
+  showToast('Balance updated — $' + balance.toFixed(2));
+});
+
 // Seat confirmed
 // When a new overflow table is created, refresh the lobby
 socket.on('tableListUpdated', () => {
