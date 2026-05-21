@@ -432,12 +432,12 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
           </div>
           <!-- Angle slider -->
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:10px 14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)">
-            <span style="font-family:var(--mono);font-size:11px;color:var(--txd);white-space:nowrap">Table Angle</span>
-            <input type="range" id="se-angle" min="0" max="359" value="0" step="1"
+            <span style="font-family:var(--mono);font-size:11px;color:var(--txd);white-space:nowrap">Table Tilt</span>
+            <input type="range" id="se-angle" min="10" max="90" value="55" step="1"
               oninput="updateSeAngle(this.value)"
               style="flex:1;accent-color:var(--gold);cursor:pointer">
-            <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:32px;text-align:right">0°</span>
-            <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=0;updateSeAngle(0)" style="border-color:var(--border);color:var(--txd);font-size:10px">↺</button>
+            <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:32px;text-align:right">55°</span>
+            <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=55;updateSeAngle(55)" style="border-color:var(--border);color:var(--txd);font-size:10px">↺</button>
           </div>
           <canvas id="seat-canvas" style="width:100%;max-width:700px;display:block;margin:0 auto;border-radius:4px;border:1px solid var(--border);cursor:default"></canvas>
           <div style="font-family:var(--mono);font-size:10px;color:var(--txd);margin-top:10px;text-align:center">
@@ -836,9 +836,9 @@ async function showGLBPreview(dataUrl){
   wrap.style.display='block';
 
   try {
-    await _loadScript('https://unpkg.com/three@0.160.0/build/three.min.js');
-    await _loadScript('https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js');
-    await _loadScript('https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js');
+    await _loadScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js');
+    await _loadScript('https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/loaders/GLTFLoader.js');
+    await _loadScript('https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/controls/OrbitControls.js');
   } catch(e){ wrap.style.display='none'; return; }
 
   const THREE=window.THREE;
@@ -906,12 +906,13 @@ function handleAssetFile(file, type) {
   }
   const statusEl = document.getElementById(type+'-status');
   const btnEl    = document.getElementById(type+'-push-btn');
-  statusEl.textContent = `Reading ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)…`;
+  const _fmtSz = b => b>=1048576 ? (b/1048576).toFixed(1)+'MB' : Math.round(b/1024)+'KB';
+  statusEl.textContent = `Reading ${file.name} (${_fmtSz(file.size)})…`;
   statusEl.style.color = 'var(--txd)';
   const reader = new FileReader();
   reader.onload = e => {
     _pendingAssets[type] = { dataUrl: e.target.result, name: file.name, size: file.size };
-    statusEl.textContent = `✓ ${file.name} — ${(file.size/1024/1024).toFixed(1)}MB ready`;
+    statusEl.textContent = `✓ ${file.name} — ${_fmtSz(file.size)} ready`;
     statusEl.style.color = 'var(--green)';
     btnEl.disabled = false;
     btnEl.style.opacity = '1';
@@ -963,16 +964,16 @@ function pushAsset(type) {
 // ── Seat Editor ───────────────────────────────────────────────────
 const SE_W=700, SE_H=420;
 let _seSeats=[], _seDragging=null, _seCanvas=null, _seCtx=null;
-let _seTableRx=0.38, _seTableRy=0.30, _seLayoutAngle=0;
+let _seTableRx=0.38, _seTableRy=0.30, _seLayoutAngle=55;
 
-function _seInvRotate(clientX, clientY){
+// Convert screen coords to logical (un-tilted) Y
+function _seScreenToLogical(clientX, clientY){
   const rect=_seCanvas.getBoundingClientRect();
-  let px=(clientX-rect.left)*(SE_W/rect.width);
-  let py=(clientY-rect.top)*(SE_H/rect.height);
-  const rad=-_seLayoutAngle*Math.PI/180;
-  const cos=Math.cos(rad), sin=Math.sin(rad);
-  const dx=px-SE_W/2, dy=py-SE_H/2;
-  return { x:dx*cos-dy*sin+SE_W/2, y:dx*sin+dy*cos+SE_H/2 };
+  const px=(clientX-rect.left)*(SE_W/rect.width);
+  const py=(clientY-rect.top)*(SE_H/rect.height);
+  const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
+  const logY=tilt>0.001 ? SE_H/2+(py-SE_H/2)/tilt : SE_H/2;
+  return {x:px, y:logY};
 }
 
 function seatEditorInit(){
@@ -993,7 +994,7 @@ function seatEditorInit(){
   } catch(_){}
 
   const angleEl=document.getElementById('se-angle');
-  if(angleEl){ _seLayoutAngle=parseInt(angleEl.value)||0; document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°'; }
+  if(angleEl){ _seLayoutAngle=parseInt(angleEl.value)||55; document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°'; }
 
   _seDrawSeats();
   _seBindEvents();
@@ -1003,30 +1004,33 @@ function _seDrawSeats(){
   if(!_seCtx) return;
   const ctx=_seCtx, W=SE_W, H=SE_H;
   const cx=W/2, cy=H/2;
-  const rx=W*_seTableRx, ry=H*_seTableRy;
+  const rx=W*_seTableRx;
+  // tilt compresses Y: 90°=top-down (full ry), lower angles=more edge-on
+  const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
+  const ry=H*_seTableRy*tilt;
   ctx.clearRect(0,0,W,H);
 
-  ctx.save();
-  ctx.translate(cx,cy); ctx.rotate(_seLayoutAngle*Math.PI/180); ctx.translate(-cx,-cy);
-
   // Rail
-  ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,ry+10,0,0,Math.PI*2);
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,Math.max(4,ry+10),0,0,Math.PI*2);
   ctx.fillStyle='#3a2200'; ctx.fill();
   // Felt
-  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,Math.max(2,ry),0,0,Math.PI*2);
   ctx.fillStyle='#0d3318'; ctx.fill();
   ctx.strokeStyle='rgba(255,184,0,0.35)'; ctx.lineWidth=3; ctx.stroke();
   // Inner line
-  ctx.beginPath(); ctx.ellipse(cx,cy,rx-14,ry-12,0,0,Math.PI*2);
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx-14,Math.max(1,ry-12),0,0,Math.PI*2);
   ctx.strokeStyle='rgba(255,184,0,0.1)'; ctx.lineWidth=1; ctx.stroke();
   // Pot label
-  ctx.beginPath(); ctx.ellipse(cx,cy,42,28,0,0,Math.PI*2);
+  ctx.beginPath(); ctx.ellipse(cx,cy,42,Math.max(1,28*tilt),0,0,Math.PI*2);
   ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
   ctx.fillStyle='rgba(255,184,0,0.5)'; ctx.font='bold 11px monospace';
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('POT',cx,cy);
-  // Seat dots (inside the rotation transform)
+
+  // Seats — Y position compressed by tilt
   _seSeats.forEach((s,i)=>{
-    const px=s.x*W, py=s.y*H, isYou=i===0;
+    const px=s.x*W;
+    const py=cy+(s.y*H-cy)*tilt;
+    const isYou=i===0;
     ctx.beginPath(); ctx.arc(px,py,22,0,Math.PI*2);
     ctx.fillStyle=isYou?'rgba(0,210,255,0.25)':'rgba(255,184,0,0.15)'; ctx.fill();
     ctx.strokeStyle=isYou?'#00D2FF':'rgba(255,184,0,0.7)'; ctx.lineWidth=2; ctx.stroke();
@@ -1036,12 +1040,10 @@ function _seDrawSeats(){
     ctx.fillStyle='rgba(224,234,248,0.4)'; ctx.font='9px monospace';
     ctx.fillText(isYou?'YOU':`S${i+1}`,px,py+32);
   });
-
-  ctx.restore();
 }
 
 function _seatHitIdx(clientX,clientY){
-  const {x,y}=_seInvRotate(clientX,clientY);
+  const {x,y}=_seScreenToLogical(clientX,clientY);
   return _seSeats.findIndex(s=>{
     const dx=s.x*SE_W-x, dy=s.y*SE_H-y;
     return Math.hypot(dx,dy)<26;
@@ -1053,7 +1055,7 @@ function _seBindEvents(){
   c.onmousedown=e=>{ const i=_seatHitIdx(e.clientX,e.clientY); if(i>=0){_seDragging=i;c.style.cursor='grabbing';} };
   c.onmousemove=e=>{
     if(_seDragging===null){ c.style.cursor=_seatHitIdx(e.clientX,e.clientY)>=0?'grab':'default'; return; }
-    const {x,y}=_seInvRotate(e.clientX,e.clientY);
+    const {x,y}=_seScreenToLogical(e.clientX,e.clientY);
     _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,x/SE_W)), y:Math.max(.02,Math.min(.98,y/SE_H))};
     _seDrawSeats();
   };
@@ -1062,7 +1064,7 @@ function _seBindEvents(){
   c.ontouchstart=e=>{e.preventDefault();const t=e.touches[0];const i=_seatHitIdx(t.clientX,t.clientY);if(i>=0)_seDragging=i;};
   c.ontouchmove=e=>{
     e.preventDefault(); if(_seDragging===null) return;
-    const t=e.touches[0]; const {x,y}=_seInvRotate(t.clientX,t.clientY);
+    const t=e.touches[0]; const {x,y}=_seScreenToLogical(t.clientX,t.clientY);
     _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,x/SE_W)), y:Math.max(.02,Math.min(.98,y/SE_H))};
     _seDrawSeats();
   };
