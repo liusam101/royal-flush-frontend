@@ -10889,15 +10889,9 @@ function confirmBuyin(){
   _populateDemoSeats(tier, val, playerName);
 
   if(token && !(_mode === 'gold')){
-    // Logged-in user — join real backend table
+    // Logged-in user — show game view immediately, then join backend table
+    showView('vg');
     backendJoinTable(backendId, playerName, val);
-    // socket 'joinedTable' event will call showView('vg'); add 3s fallback
-    setTimeout(()=>{
-      if(!document.getElementById('vg')?.classList.contains('active')){
-        showView('vg');
-        setTimeout(()=>{ if(!_backendActive) startHand(); }, 400);
-      }
-    }, 3000);
   } else {
     // Not logged in or gold chips — pure demo mode
     showView('vg');
@@ -11152,7 +11146,13 @@ var _sittingOut = false;
 
 function goLobbyFromTable(){
   if (!_backendActive || !_connectedTableId) { goLobby(); return; }
-  backendLeaveTable();  // emits leaveTable → server sends chipsReturned to sync balance
+  const you = SEATS.find(s => s.you);
+  if (you && you.stack > 0) {
+    addBal(you.stack);
+    TXNS.unshift({icon:'🪑',label:'Cash Out — Left Table',table:_buyinTable||'',amt:+you.stack,ts:'Just now'});
+    you.stack = 0;
+  }
+  backendLeaveTable();
   showView('vl');
 }
 
@@ -12509,6 +12509,8 @@ function joinSecondTable(tableId, name, buyIn){
 
 // ── Connect ───────────────────────────────────────────────────────────
 function backendConnect() {
+  // Always refresh token in case user logged in after page load
+  socket.auth.token = localStorage.getItem('rf_token') || null;
   if (!socket.connected) {
     socket.connect();
     console.log('[Socket] connecting to', BACKEND_URL);
@@ -13294,11 +13296,8 @@ function backendLeaveTable() {
 
 // ══ INCOMING EVENTS ═══════════════════════════════════════════════════
 
-socket.on('chipsReturned', ({ balance }) => {
-  _balRoyal = balance;
-  _bal = _mode === 'gold' ? _balGold : _balRoyal;
-  updBal();
-  showToast('Balance updated — $' + balance.toFixed(2));
+socket.on('chipsReturned', () => {
+  // Balance already restored via addBal on leave — no action needed
 });
 
 // Seat confirmed
@@ -13975,13 +13974,17 @@ window.demoAct = function(action, amount) {
   }
 };
 
-// On full leave (goLobby) → disconnect from backend and clear sit-out
+// On full leave (goLobby) → disconnect from backend and return chips
 const _origGoLobby = window.goLobby;
 window.goLobby = function() {
   if (_backendActive) {
-    backendLeaveTable();  // always leave if still connected; chipsReturned will sync balance
-    // Remove vg active before _origGoLobby runs so its addBal(you.stack) check is skipped
-    // (chipsReturned is the authoritative balance update for backend games)
+    const you = SEATS.find(s => s.you);
+    if (you && you.stack > 0) {
+      addBal(you.stack);
+      you.stack = 0;  // zero out so _origGoLobby's addBal check doesn't double-count
+    }
+    backendLeaveTable();
+    // Deactivate vg so _origGoLobby skips its own addBal(you.stack) guard
     const vgEl = document.getElementById('vg');
     if (vgEl) vgEl.classList.remove('active');
   }
