@@ -3244,6 +3244,54 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
 }
 .lp-feature-body{font-family:'Montserrat',sans-serif!important;font-size:.78rem!important;line-height:1.78!important;color:#6B6478!important}
 
+/* Hero feature: spans 2 of 3 columns */
+.lp-feature-hero{
+  grid-column:span 2!important;
+  display:flex!important;align-items:center!important;gap:40px!important;
+  padding:52px 40px!important;
+}
+.lp-feature-hero-text{flex:1!important}
+.lp-feature-hero-title{
+  font-family:'Cormorant Garamond',serif!important;
+  font-size:2rem!important;font-weight:300!important;
+  letter-spacing:-.015em!important;line-height:1.15!important;
+  color:#EDE8DF!important;margin-bottom:14px!important;
+}
+.lp-feature-hero .lp-feature-body{
+  font-size:.84rem!important;color:rgba(107,100,120,.9)!important;
+}
+.lp-feature-hero-accent{
+  font-family:'Cormorant Garamond',serif!important;
+  font-size:7rem!important;color:#FFB800!important;
+  opacity:.07!important;line-height:1!important;
+  flex-shrink:0!important;user-select:none!important;
+}
+
+/* Strip feature: spans all 3 columns */
+.lp-feature-strip{
+  grid-column:1/-1!important;
+  display:flex!important;align-items:center!important;gap:48px!important;
+  padding:28px 40px!important;
+}
+.lp-feature-strip-left{
+  display:flex!important;align-items:center!important;gap:14px!important;
+  flex-shrink:0!important;
+}
+.lp-feature-strip .lp-feature-icon{margin-bottom:0!important}
+.lp-feature-strip .lp-feature-title{margin-bottom:0!important;white-space:nowrap!important}
+.lp-feature-strip .lp-feature-body{margin:0!important}
+
+@media(max-width:900px){
+  .lp-feature-hero{grid-column:1/-1!important;gap:24px!important;padding:40px 28px!important}
+  .lp-feature-strip{flex-direction:column!important;align-items:flex-start!important;gap:12px!important;padding:28px 28px!important}
+  .lp-feature-strip .lp-feature-title{white-space:normal!important}
+}
+@media(max-width:600px){
+  .lp-feature-hero{flex-direction:column!important;align-items:flex-start!important;gap:16px!important}
+  .lp-feature-hero-accent{display:none!important}
+  .lp-feature-hero-title{font-size:1.5rem!important}
+}
+
 /* ── TESTIMONIALS restyle ── */
 .lp-section-alt .lp-section-label{
   font-family:'Montserrat',sans-serif!important;font-size:.6rem!important;
@@ -3546,12 +3594,24 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="lp-section-label rf-reveal">The Standard</div>
     <h2 class="lp-h2 rf-reveal rf-d1">What Sets Us Apart</h2>
     <div class="lp-features-grid">
-      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Free to Enter, Real to Win</div><p class="lp-feature-body">No purchase necessary, ever. Claim your free Royal Chip by mail-in request, or buy Gold Chips to play more hands. Every player competes on equal terms.</p></div>
+      <div class="lp-feature lp-feature-hero rf-reveal">
+        <div class="lp-feature-hero-text">
+          <div class="lp-feature-hero-title">Free to Enter, Real to Win</div>
+          <p class="lp-feature-body">No purchase necessary, ever. Claim your free Royal Chip by mail-in request, or buy Gold Chips to play more hands. Every player competes on equal terms.</p>
+        </div>
+        <div class="lp-feature-hero-accent" aria-hidden="true">♠</div>
+      </div>
       <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Fast Redemptions</div><p class="lp-feature-body">Convert your Royal Chips to real prizes in minutes. Bank transfer, PayPal, or gift card: whichever you prefer. Fast, secure, and hassle-free.</p></div>
       <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">♦</div><div class="lp-feature-title">Provably Fair</div><p class="lp-feature-body">Every hand is cryptographically verifiable. You can independently confirm that no card was predetermined and the deck was never manipulated.</p></div>
       <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♣</div><div class="lp-feature-title">Responsible by Design</div><p class="lp-feature-body">Deposit limits, session reminders, cool-off periods, and self-exclusion tools built into every account, not hidden in a footer.</p></div>
       <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Daily Bonuses &amp; VIP Rewards</div><p class="lp-feature-body">Log in every day for your free chip streak bonus. Climb from Rookie to Whale as you play; higher tiers earn bigger daily bonuses and exclusive perks.</p></div>
-      <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Transparent Game Fee</div><p class="lp-feature-body">Cash games: 4% game fee, $3 cap. Tournaments &amp; Sit &amp; Go's: flat entry, 5–8% game fee from the prize pool at payout, lower at higher stakes.</p></div>
+      <div class="lp-feature lp-feature-strip rf-reveal rf-d2">
+        <div class="lp-feature-strip-left">
+          <div class="lp-feature-icon">♥</div>
+          <div class="lp-feature-title">Transparent Game Fee</div>
+        </div>
+        <p class="lp-feature-body">Cash games: 4% game fee, $3 cap. Tournaments &amp; Sit &amp; Go's: flat entry, 5–8% game fee from the prize pool at payout, lower at higher stakes.</p>
+      </div>
     </div>
   </div>
 </section>
