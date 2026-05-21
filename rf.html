@@ -9267,7 +9267,7 @@ function sendEmote(emoji){
 // ══ POT AWARD ══════════════════════════════════════════════════════
 // ══ PLAYER PROFILE ═════════════════════════════════════════════════
 function openPlayerProfile(name){
-  const s=PLAYER_STATS[name]; if(!s) return;
+  const s=PLAYER_STATS[name]; if(!s){ showToast('Player profiles available during live games'); return; }
   document.getElementById('player-av').style.background=s.col;
   document.getElementById('player-av').textContent=name.slice(0,2).toUpperCase();
   document.getElementById('player-name').textContent=name;
@@ -9502,7 +9502,7 @@ function renderTiers(){
 }
 
 async function renderLeaderboard(){
-  const ranks=['g','s','b'];
+  const ranks=['g1','g2','g3'];
   const ldr = document.getElementById('ldr');
   if(!ldr) return;
 
@@ -10592,7 +10592,7 @@ function demoSidePots(){
 function clearSidePots(){renderSidePots([]);}
 
 // ══ FILTERS ════════════════════════════════════════════════════════
-let _filters={stakes:'all',speed:'all',avail:'all'};
+let _filters={stakes:'all',speed:'all',avail:'all',game:'all',size:'all'};
 
 function toggleFilter(group, el, val){
   _filters[group]=val;
@@ -10622,7 +10622,7 @@ function clearSeatsInput(){
 }
 
 function resetFilters(){
-  _filters={stakes:'all',speed:'all',avail:'all'};
+  _filters={stakes:'all',speed:'all',avail:'all',game:'all',size:'all'};
   document.querySelectorAll('#panel-filters .fchips .fchip').forEach(c=>{
     const txt=c.textContent.trim();
     c.classList.toggle('on', txt==='All'||txt==='Any');
@@ -10645,12 +10645,15 @@ function applyFilters(){
   const speedMap={micro:'turbo',low:'normal',mid:'normal',high:'hyper',nose:'hyper'};
   const minS=parseInt(document.getElementById('filt-seats-min')?.value)||0;
   const maxS=parseInt(document.getElementById('filt-seats-max')?.value)||99;
+  const sizeMap={hu:1,'6max':6,'9max':9};
   const filtered=TIERS.filter(t=>{
     if(_filters.stakes!=='all'&&t.id!==_filters.stakes) return false;
     if(_filters.speed!=='all'&&speedMap[t.id]!==_filters.speed) return false;
     if(t.seats<minS||t.seats>maxS) return false;
     if(_filters.avail==='open'&&!t.tables.some(tb=>Math.round(tb.fill*t.seats)<t.seats)) return false;
     if(_filters.avail==='full'&&t.tables.some(tb=>Math.round(tb.fill*t.seats)<t.seats)) return false;
+    if(_filters.game!=='all'&&_filters.game!=='nlhe') return false;
+    if(_filters.size!=='all'&&sizeMap[_filters.size]&&t.seats!==sizeMap[_filters.size]) return false;
     return true;
   });
   renderTiersFiltered(filtered);
