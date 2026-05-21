@@ -188,6 +188,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <div class="nav-item" onclick="nav('log',this)"><span class="nav-icon">≡</span>Event Log</div>
       <div class="nav-section">Assets</div>
       <div class="nav-item" onclick="nav('assets',this)"><span class="nav-icon">◧</span>Table Assets</div>
+      <div class="nav-item" onclick="nav('seat-editor',this)"><span class="nav-icon">⊙</span>Seat Editor</div>
     </nav>
     <main>
       <!-- Dashboard -->
@@ -382,6 +383,9 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
             <div style="font-family:var(--mono);font-size:10px;color:rgba(224,234,248,0.3);margin-top:4px">Replaces the SVG table for all players in-game</div>
           </div>
           <input type="file" id="glb-input" accept=".glb,.gltf" style="display:none" onchange="handleAssetFile(this.files[0],'glb')">
+          <div id="glb-preview" style="display:none;margin-bottom:12px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
+            <canvas id="glb-preview-canvas" style="width:100%;height:220px;display:block"></canvas>
+          </div>
           <div id="glb-status" style="font-family:var(--mono);font-size:11px;color:var(--txd);margin-bottom:12px;min-height:16px"></div>
           <button class="btn btn-cyan" id="glb-push-btn" onclick="pushAsset('glb')" disabled style="opacity:0.4">▶ PUSH TO ALL PLAYERS</button>
         </div>
@@ -405,6 +409,30 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
         <div class="card">
           <div class="card-title">Active Assets</div>
           <div id="asset-active" style="font-family:var(--mono);font-size:12px;color:var(--txd)">No assets pushed this session</div>
+        </div>
+      </div>
+
+      <!-- Seat Editor -->
+      <div class="panel" id="panel-seat-editor">
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+            <div class="card-title" style="margin:0">Seat Arrangement</div>
+            <div class="field" style="flex:0;min-width:120px">
+              <label>Table Size</label>
+              <select id="se-count" onchange="seatEditorInit()" style="background:var(--bg3);border:1px solid var(--border);color:var(--tx);padding:6px 10px;border-radius:3px;font-size:12px">
+                <option value="2">2-Max (Heads Up)</option>
+                <option value="6" selected>6-Max</option>
+                <option value="9">9-Max</option>
+              </select>
+            </div>
+            <div style="flex:1"></div>
+            <button class="btn" onclick="resetSeats()" style="border-color:var(--border);color:var(--txd)">↺ Reset</button>
+            <button class="btn btn-green" onclick="pushSeats()">▶ Push to Players</button>
+          </div>
+          <canvas id="seat-canvas" style="width:100%;max-width:700px;display:block;margin:0 auto;border-radius:4px;border:1px solid var(--border);cursor:default"></canvas>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--txd);margin-top:10px;text-align:center">
+            Drag seat markers to reposition · <span style="color:var(--cyan)">◈ Seat 1</span> = "You" (local player) · Other seats distribute clockwise
+          </div>
         </div>
       </div>
 
@@ -527,6 +555,7 @@ function nav(id, el) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
   if (id === 'anticheat') fetchACData();
+  if (id === 'seat-editor') seatEditorInit();
   refresh();
 }
 
@@ -771,6 +800,73 @@ document.addEventListener('input', e=>{
 // Enter key on login
 document.getElementById('admin-key')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 
+// ── GLB Preview ───────────────────────────────────────────────────
+let _prevRenderer=null, _prevAnimId=null, _prevControls=null;
+
+function _destroyPreview(){
+  if(_prevAnimId){ cancelAnimationFrame(_prevAnimId); _prevAnimId=null; }
+  if(_prevRenderer){ _prevRenderer.dispose(); _prevRenderer=null; }
+  _prevControls=null;
+}
+
+function _loadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector(`script[src="${src}"]`)){ res(); return; }
+    const s=document.createElement('script'); s.src=src;
+    s.onload=res; s.onerror=()=>rej(new Error('Failed: '+src));
+    document.head.appendChild(s);
+  });
+}
+
+async function showGLBPreview(dataUrl){
+  _destroyPreview();
+  const wrap=document.getElementById('glb-preview');
+  const canvas=document.getElementById('glb-preview-canvas');
+  if(!wrap||!canvas) return;
+  wrap.style.display='block';
+
+  try {
+    await _loadScript('https://unpkg.com/three@0.160.0/build/three.min.js');
+    await _loadScript('https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js');
+    await _loadScript('https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js');
+  } catch(e){ wrap.style.display='none'; return; }
+
+  const THREE=window.THREE;
+  const W=canvas.offsetWidth||600, H=220;
+  _prevRenderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+  _prevRenderer.setSize(W,H,false);
+  _prevRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  try{ _prevRenderer.outputEncoding=THREE.sRGBEncoding; }catch(_){}
+
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x0C1020);
+  const cam=new THREE.PerspectiveCamera(40,W/H,0.01,300);
+  cam.position.set(0,4,7);
+  scene.add(new THREE.AmbientLight(0xfff5e0,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,1.4); sun.position.set(2,8,4); scene.add(sun);
+  scene.add(Object.assign(new THREE.PointLight(0xFFB800,0.5,30),{position:{x:0,y:6,z:0}}));
+
+  _prevControls=new THREE.OrbitControls(cam,canvas);
+  _prevControls.enableDamping=true; _prevControls.dampingFactor=0.06;
+  _prevControls.autoRotate=true; _prevControls.autoRotateSpeed=1.5;
+  _prevControls.minDistance=2; _prevControls.maxDistance=14;
+  _prevControls.maxPolarAngle=Math.PI*0.55;
+
+  new THREE.GLTFLoader().load(dataUrl, gltf=>{
+    const model=gltf.scene;
+    model.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+    const box=new THREE.Box3().setFromObject(model);
+    const sz=box.getSize(new THREE.Vector3());
+    const ctr=box.getCenter(new THREE.Vector3());
+    const sc=3.5/Math.max(sz.x,sz.y,sz.z);
+    model.scale.setScalar(sc);
+    model.position.sub(ctr.multiplyScalar(sc));
+    scene.add(model);
+  }, undefined, ()=>{ wrap.style.display='none'; _destroyPreview(); });
+
+  (function tick(){ _prevAnimId=requestAnimationFrame(tick); _prevControls?.update(); _prevRenderer?.render(scene,cam); })();
+}
+
 // ── Asset drop-in ─────────────────────────────────────────────────
 const _pendingAssets = {};
 
@@ -802,7 +898,9 @@ function handleAssetFile(file, type) {
     statusEl.style.color = 'var(--green)';
     btnEl.disabled = false;
     btnEl.style.opacity = '1';
-    // Show preview for bg
+    if (type === 'glb') {
+      showGLBPreview(e.target.result);
+    }
     if (type === 'bg') {
       const dropEl = document.getElementById('bg-drop');
       dropEl.style.backgroundImage = `url(${e.target.result})`;
@@ -843,6 +941,127 @@ function pushAsset(type) {
       btnEl.disabled = false;
     }
   }, 8000);
+}
+
+// ── Seat Editor ───────────────────────────────────────────────────
+const SE_W=700, SE_H=420;
+let _seSeats=[], _seDragging=null, _seCanvas=null, _seCtx=null;
+
+function seatEditorInit(){
+  _seCanvas=document.getElementById('seat-canvas');
+  if(!_seCanvas) return;
+  _seCanvas.width=SE_W; _seCanvas.height=SE_H;
+  _seCtx=_seCanvas.getContext('2d');
+  const n=parseInt(document.getElementById('se-count').value)||6;
+
+  // Default: evenly spaced on ellipse rim
+  const cx=0.5,cy=0.5,rx=0.38,ry=0.30;
+  _seSeats=Array.from({length:n},(_,i)=>{
+    const a=(i/n)*Math.PI*2 - Math.PI/2;
+    return {x:cx+rx*Math.cos(a), y:cy+ry*Math.sin(a)};
+  });
+
+  // Load saved positions if they match current n
+  try {
+    const raw=localStorage.getItem('rf_admin_seat_positions');
+    if(raw){ const d=JSON.parse(raw); if(d.seats?.length===n) _seSeats=d.seats.map(s=>({x:s.x,y:s.y})); }
+  } catch(_){}
+
+  _seDrawSeats();
+  _seBindEvents();
+}
+
+function _seDrawSeats(){
+  if(!_seCtx) return;
+  const ctx=_seCtx, W=SE_W, H=SE_H, cx=W/2, cy=H/2, rx=W*0.38, ry=H*0.30;
+  ctx.clearRect(0,0,W,H);
+
+  // Rail
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,ry+10,0,0,Math.PI*2);
+  ctx.fillStyle='#3a2200'; ctx.fill();
+
+  // Felt
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+  ctx.fillStyle='#0d3318'; ctx.fill();
+  ctx.strokeStyle='rgba(255,184,0,0.35)'; ctx.lineWidth=3; ctx.stroke();
+
+  // Inner felt line
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx-14,ry-12,0,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,184,0,0.1)'; ctx.lineWidth=1; ctx.stroke();
+
+  // Pot label
+  ctx.beginPath(); ctx.ellipse(cx,cy,42,28,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
+  ctx.fillStyle='rgba(255,184,0,0.5)'; ctx.font='bold 11px monospace';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('POT',cx,cy);
+
+  // Seats
+  _seSeats.forEach((s,i)=>{
+    const px=s.x*W, py=s.y*H, isYou=i===0;
+    ctx.beginPath(); ctx.arc(px,py,22,0,Math.PI*2);
+    ctx.fillStyle=isYou?'rgba(0,210,255,0.25)':'rgba(255,184,0,0.15)'; ctx.fill();
+    ctx.strokeStyle=isYou?'#00D2FF':'rgba(255,184,0,0.7)'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=isYou?'#00D2FF':'rgba(255,184,0,0.95)';
+    ctx.font=`bold 13px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(isYou?'◈':String(i+1),px,py);
+    // Seat label below dot
+    ctx.fillStyle='rgba(224,234,248,0.4)'; ctx.font='9px monospace';
+    ctx.fillText(isYou?'YOU':`S${i+1}`,px,py+32);
+  });
+}
+
+function _seatHitIdx(clientX,clientY){
+  const rect=_seCanvas.getBoundingClientRect();
+  const sx=SE_W/rect.width, sy=SE_H/rect.height;
+  const cx=(clientX-rect.left)*sx, cy=(clientY-rect.top)*sy;
+  return _seSeats.findIndex(s=>{
+    const dx=s.x*SE_W-cx, dy=s.y*SE_H-cy;
+    return Math.hypot(dx,dy)<26;
+  });
+}
+
+function _seBindEvents(){
+  const c=_seCanvas;
+  c.onmousedown=e=>{ const i=_seatHitIdx(e.clientX,e.clientY); if(i>=0){_seDragging=i;c.style.cursor='grabbing';} };
+  c.onmousemove=e=>{
+    if(_seDragging===null){ c.style.cursor=_seatHitIdx(e.clientX,e.clientY)>=0?'grab':'default'; return; }
+    const r=c.getBoundingClientRect();
+    _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,(e.clientX-r.left)/r.width)), y:Math.max(.02,Math.min(.98,(e.clientY-r.top)/r.height))};
+    _seDrawSeats();
+  };
+  c.onmouseup=()=>{_seDragging=null; c.style.cursor='default';};
+  c.onmouseleave=()=>{_seDragging=null;};
+  c.ontouchstart=e=>{e.preventDefault();const t=e.touches[0];const i=_seatHitIdx(t.clientX,t.clientY);if(i>=0)_seDragging=i;};
+  c.ontouchmove=e=>{
+    e.preventDefault(); if(_seDragging===null) return;
+    const t=e.touches[0],r=c.getBoundingClientRect();
+    _seSeats[_seDragging]={x:Math.max(.02,Math.min(.98,(t.clientX-r.left)/r.width)), y:Math.max(.02,Math.min(.98,(t.clientY-r.top)/r.height))};
+    _seDrawSeats();
+  };
+  c.ontouchend=()=>{_seDragging=null;};
+}
+
+function resetSeats(){
+  const n=parseInt(document.getElementById('se-count').value)||6;
+  const cx=0.5,cy=0.5,rx=0.38,ry=0.30;
+  _seSeats=Array.from({length:n},(_,i)=>{
+    const a=(i/n)*Math.PI*2-Math.PI/2;
+    return {x:cx+rx*Math.cos(a),y:cy+ry*Math.sin(a)};
+  });
+  _seDrawSeats(); toast('Reset to default positions','info');
+}
+
+function pushSeats(){
+  if(!_seSeats.length){toast('Open the Seat Editor first','error');return;}
+  const data={seats:_seSeats,canvasW:SE_W,canvasH:SE_H,pushedAt:new Date().toISOString()};
+  localStorage.setItem('rf_admin_seat_positions',JSON.stringify(data));
+  if(socket){
+    socket.emit('adminPushAsset',{secret:adminKey,type:'seats',name:`${_seSeats.length}-seat layout`,pushedAt:data.pushedAt});
+    toast(`Seat layout (${_seSeats.length} seats) pushed to all players`,'success');
+    log(`Seat positions pushed: ${_seSeats.length} seats`,'success');
+  } else {
+    toast('Not connected — saved locally only','warn');
+  }
 }
 
 function renderActiveAssets() {
