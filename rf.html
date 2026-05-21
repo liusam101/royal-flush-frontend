@@ -32,6 +32,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .btn-ghost:hover{border-color:var(--gold);background:rgba(201,168,76,.06)}
 .btn-gold{background:linear-gradient(135deg,#CC8800,#FFB800,#FFD95A);color:#08080A;box-shadow:0 0 16px rgba(255,184,0,.25),0 4px 20px rgba(0,0,0,.5);font-weight:800;letter-spacing:1px}
 .btn-gold:hover{box-shadow:0 0 28px rgba(255,184,0,.45),0 0 8px rgba(255,184,0,.8),0 6px 24px rgba(0,0,0,.6);transform:translateY(-2px)}
+.btn:focus-visible,.rf-live-cta:focus-visible,.rf-mega-link:focus-visible,.sb-more-btn:focus-visible{outline:2px solid rgba(255,184,0,.7);outline-offset:3px;}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
 .btn-sm{padding:6px 14px;font-size:9px}
 .view{display:none}.view.active{display:block}
 #vg.active{display:flex}
@@ -2907,12 +2909,12 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- Mode context banner (shows briefly when switching) -->
 <div class="mode-banner gold-banner" id="mode-banner-gold">
   <span class="mode-banner-pill">Free Play</span>
-  🟡 <b>Gold Chips</b> — play for fun, no cash value. Switch to Royal mode to play for prizes.
+  🟡 <b>Gold Chips</b>: play for fun, no cash value. Switch to Royal mode to play for prizes.
   <span class="mode-banner-dismiss" onclick="this.parentElement.classList.remove('visible')">✕</span>
 </div>
 <div class="mode-banner royal-banner" id="mode-banner-royal">
   <span class="mode-banner-pill">Sweepstakes</span>
-  ♦ <b>Royal Chips</b> — redeemable for prizes. No purchase necessary to play or win.
+  ♦ <b>Royal Chips</b>: redeemable for prizes. No purchase necessary to play or win.
   <span class="mode-banner-dismiss" onclick="this.parentElement.classList.remove('visible')">✕</span>
 </div>
 
@@ -3404,7 +3406,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
   <div class="lp-hero-inner">
     <div class="rf-hero-line"></div>
     <h1 class="lp-h1">Sweepstakes Poker.<br><em>Play Free. Win Real.</em></h1>
-    <p class="lp-hero-sub">Free-to-play sweepstakes poker with real prizes. No purchase necessary — claim your free chips daily and compete for Royal Chips redeemable for cash.</p>
+    <p class="lp-hero-sub">Free-to-play sweepstakes poker with real prizes. No purchase necessary: claim your free chips daily and compete for Royal Chips redeemable for cash.</p>
     <div class="lp-hero-ctas">
       <button class="btn btn-gold lp-cta-main" onclick="goSignup()">Play Free Now →</button>
     </div>
@@ -3430,7 +3432,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="rf-live-label"><span class="rf-live-dot"></span>Live Right Now</div>
     <div class="rf-live-number" id="rf-live-big">0</div>
     <div class="rf-live-headline">Players at the <em>felt</em> right now</div>
-    <p class="rf-live-sub">Join the action — cash tables run 24/7, tournaments fill every hour, and your first hand is one click away.</p>
+    <p class="rf-live-sub">Join the action. Cash tables run 24/7, tournaments fill every hour, and your first hand is one click away.</p>
     <button class="rf-live-cta" onclick="goSignup()">Take a Seat →</button>
   </div>
 </section>
@@ -3447,8 +3449,8 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
       <p class="rf-ch-sub rf-reveal rf-d2">The Felt That Levels All</p>
       <div class="rf-ch-divider rf-reveal rf-d2"></div>
       <div class="rf-ch-body rf-reveal rf-d3">
-        <p>There are places that don't merely host a game — they define it. Beneath the felt, every player arrives equal: no pedigree, no advantage, no purchase required. Only the cards, the read, and the nerve to act.</p>
-        <p>Royal Flush was built on that idea. A platform where <strong>sweepstakes law meets serious poker</strong> — the daily free chip claim is not a gimmick. It's a promise. The felt is always open.</p>
+        <p>There are places that don't merely host a game; they define it. Beneath the felt, every player arrives equal: no pedigree, no advantage, no purchase required. Only the cards, the read, and the nerve to act.</p>
+        <p>Royal Flush was built on that idea. A platform where <strong>sweepstakes law meets serious poker</strong>. The daily free chip claim is not a gimmick. It's a promise. The felt is always open.</p>
       </div>
     </div>
     <div class="rf-ch-visual">
@@ -3468,11 +3470,11 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="rf-ch-text">
       <div class="rf-ch-num rf-reveal">Chapter II</div>
       <h2 class="rf-ch-heading rf-reveal rf-d1">The <em>Currency</em><br>of Real Prizes</h2>
-      <p class="rf-ch-sub rf-reveal rf-d2">Royal Chips — Redeemable for Cash</p>
+      <p class="rf-ch-sub rf-reveal rf-d2">Royal Chips: Redeemable for Cash</p>
       <div class="rf-ch-divider rf-reveal rf-d2"></div>
       <div class="rf-ch-body rf-reveal rf-d3">
         <p>Gold Chips are the currency of play. <strong>Royal Chips are the currency of winning.</strong> Earn them at the tables and convert them to real cash, bank transfer, PayPal, or gift card in minutes.</p>
-        <p>One Royal Chip equals one dollar. Claim yours free every day — or by mail-in request. The table doesn't ask how you got here. <strong>Only what you're willing to do next.</strong></p>
+        <p>One Royal Chip equals one dollar. Claim yours free every day, or by mail-in request. The table doesn't ask how you got here. <strong>Only what you're willing to do next.</strong></p>
       </div>
     </div>
     <div class="rf-ch-visual">
@@ -3506,7 +3508,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
       <p class="rf-ch-sub rf-reveal rf-d2">Cryptographic Integrity on Every Hand</p>
       <div class="rf-ch-divider rf-reveal rf-d2"></div>
       <div class="rf-ch-body rf-reveal rf-d3">
-        <p>Before each hand is dealt, our server generates a seed hash and publishes it. After the hand ends, the seed is revealed — any player can verify the deck was fixed before action began.</p>
+        <p>Before each hand is dealt, our server generates a seed hash and publishes it. After the hand ends, the seed is revealed; any player can verify the deck was fixed before action began.</p>
         <p>Certified by iTech Labs (ITL-2024-001847) to NIST SP 800-22 standards. We don't just say we're fair. <strong>We prove it, hand by hand.</strong> <span class="auth-link" style="color:rgba(212,175,55,.6);cursor:pointer" onclick="goFair()">Verify a hand →</span></p>
       </div>
     </div>
@@ -3531,7 +3533,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="lp-steps">
       <div class="lp-step rf-reveal"><div class="lp-step-num">01</div><div class="lp-step-title">Create Your Account</div><p class="lp-step-body">Sign up in under 60 seconds. No credit card required to start. Browse the lobby and watch live tables for free.</p></div>
       <div class="lp-step-arrow rf-reveal">→</div>
-      <div class="lp-step rf-reveal rf-d1"><div class="lp-step-num">02</div><div class="lp-step-title">Get Your Chips</div><p class="lp-step-body">Claim 1 free Royal Chip every day — no purchase needed. Or grab a Gold Chips pack to play more hands. Either way, you compete equally.</p></div>
+      <div class="lp-step rf-reveal rf-d1"><div class="lp-step-num">02</div><div class="lp-step-title">Get Your Chips</div><p class="lp-step-body">Claim 1 free Royal Chip every day, no purchase needed. Or grab a Gold Chips pack to play more hands. Either way, you compete equally.</p></div>
       <div class="lp-step-arrow rf-reveal">→</div>
       <div class="lp-step rf-reveal rf-d2"><div class="lp-step-num">03</div><div class="lp-step-title">Sit Down &amp; Play</div><p class="lp-step-body">Choose your stakes from Micro to Nosebleed. Cash games run 24/7. Sit &amp; Go's fill in minutes. Tournaments every hour.</p></div>
       <div class="lp-step-arrow rf-reveal">→</div>
@@ -3546,12 +3548,12 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="lp-section-label rf-reveal">The Standard</div>
     <h2 class="lp-h2 rf-reveal rf-d1">What Sets Us Apart</h2>
     <div class="lp-features-grid">
-      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Free to Enter, Real to Win</div><p class="lp-feature-body">No purchase necessary — ever. Claim your free Royal Chip by mail-in request, or buy Gold Chips to play more hands. Every player competes on equal terms.</p></div>
-      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Fast Redemptions</div><p class="lp-feature-body">Convert your Royal Chips to real prizes in minutes. Bank transfer, PayPal, or gift card — whichever you prefer. Fast, secure, and hassle-free.</p></div>
+      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Free to Enter, Real to Win</div><p class="lp-feature-body">No purchase necessary, ever. Claim your free Royal Chip by mail-in request, or buy Gold Chips to play more hands. Every player competes on equal terms.</p></div>
+      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Fast Redemptions</div><p class="lp-feature-body">Convert your Royal Chips to real prizes in minutes. Bank transfer, PayPal, or gift card: whichever you prefer. Fast, secure, and hassle-free.</p></div>
       <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">♦</div><div class="lp-feature-title">Provably Fair</div><p class="lp-feature-body">Every hand is cryptographically verifiable. You can independently confirm that no card was predetermined and the deck was never manipulated.</p></div>
-      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♣</div><div class="lp-feature-title">Responsible by Design</div><p class="lp-feature-body">Deposit limits, session reminders, cool-off periods, and self-exclusion tools built into every account — not hidden in a footer.</p></div>
-      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Daily Bonuses &amp; VIP Rewards</div><p class="lp-feature-body">Log in every day for your free chip streak bonus. Climb from Rookie to Whale as you play — higher tiers earn bigger daily bonuses and exclusive perks.</p></div>
-      <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Transparent Game Fee</div><p class="lp-feature-body">Cash games: 4% game fee, $3 cap. Tournaments &amp; Sit &amp; Go's: flat entry, 5–8% game fee from the prize pool at payout — lower at higher stakes.</p></div>
+      <div class="lp-feature rf-reveal"><div class="lp-feature-icon">♣</div><div class="lp-feature-title">Responsible by Design</div><p class="lp-feature-body">Deposit limits, session reminders, cool-off periods, and self-exclusion tools built into every account, not hidden in a footer.</p></div>
+      <div class="lp-feature rf-reveal rf-d1"><div class="lp-feature-icon">♠</div><div class="lp-feature-title">Daily Bonuses &amp; VIP Rewards</div><p class="lp-feature-body">Log in every day for your free chip streak bonus. Climb from Rookie to Whale as you play; higher tiers earn bigger daily bonuses and exclusive perks.</p></div>
+      <div class="lp-feature rf-reveal rf-d2"><div class="lp-feature-icon">♥</div><div class="lp-feature-title">Transparent Game Fee</div><p class="lp-feature-body">Cash games: 4% game fee, $3 cap. Tournaments &amp; Sit &amp; Go's: flat entry, 5–8% game fee from the prize pool at payout, lower at higher stakes.</p></div>
     </div>
   </div>
 </section>
@@ -3564,7 +3566,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="lp-testimonials">
       <div class="lp-testi rf-reveal"><div class="lp-testi-stars">★★★★★</div><p class="lp-testi-body">"I claimed my free daily chip, built my stack up over two weeks, and cashed out $240 without ever depositing a cent. This is the real deal."</p><div class="lp-testi-name">Verified Player · Gold Tier</div></div>
       <div class="lp-testi rf-reveal rf-d1"><div class="lp-testi-stars">★★★★★</div><p class="lp-testi-body">"I love that I can play for real prizes without feeling pressured to deposit. The free daily chip keeps me coming back and the tables are genuinely fun."</p><div class="lp-testi-name">Verified Player · Regular</div></div>
-      <div class="lp-testi rf-reveal rf-d2"><div class="lp-testi-stars">★★★★☆</div><p class="lp-testi-body">"Responsible gambling tools are actually prominent and work properly — not just compliance theatre. Rare to see a site that genuinely cares."</p><div class="lp-testi-name">Verified Player · Micro Stakes</div></div>
+      <div class="lp-testi rf-reveal rf-d2"><div class="lp-testi-stars">★★★★☆</div><p class="lp-testi-body">"Responsible gambling tools are actually prominent and work properly, not just compliance theatre. Rare to see a site that genuinely cares."</p><div class="lp-testi-name">Verified Player · Micro Stakes</div></div>
     </div>
   </div>
 </section>
@@ -3573,7 +3575,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
 <section class="lp-cta-section">
   <div class="lp-section-inner" style="text-align:center">
     <h2 class="lp-h2 rf-reveal" style="font-size:clamp(28px,5vw,52px);margin-bottom:16px">Start Playing <em>Free Today</em></h2>
-    <p style="font-size:13px;color:var(--txd);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.8;font-family:'Montserrat',sans-serif" class="rf-reveal rf-d1">Join thousands of players competing for real Royal Chip prizes. No purchase necessary — your first free chip is waiting.</p>
+    <p style="font-size:13px;color:var(--txd);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.8;font-family:'Montserrat',sans-serif" class="rf-reveal rf-d1">Join thousands of players competing for real Royal Chip prizes. No purchase necessary: your first free chip is waiting.</p>
     <div class="rf-reveal rf-d2">
       <button class="btn btn-gold" style="padding:18px 52px;font-size:12px;letter-spacing:2px" onclick="goSignup()">Create Free Account →</button>
     </div>
@@ -3739,7 +3741,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
       <div class="trust-card">
         <div class="trust-card-icon">🔗</div>
         <div class="trust-card-title">How Provably Fair Works</div>
-        <p class="trust-card-body">Before each hand, the server generates a seed hash and publishes it. After the hand, the seed is revealed so you can independently verify that the deck order was fixed before any action was taken — proving no manipulation was possible.</p>
+        <p class="trust-card-body">Before each hand, the server generates a seed hash and publishes it. After the hand, the seed is revealed so you can independently verify that the deck order was fixed before any action was taken, proving no manipulation was possible.</p>
       </div>
     </div>
     <div style="background:rgba(255,255,255,.02);border:1px solid rgba(201,168,76,.12);border-radius:6px;padding:28px;margin-bottom:32px">
@@ -3782,17 +3784,17 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
     <div class="trust-grid" style="margin-bottom:36px">
       <div class="trust-card">
         <div class="trust-card-icon">1️⃣</div>
-        <div class="trust-card-title">Step 1 — Contact Support</div>
+        <div class="trust-card-title">Step 1: Contact Support</div>
         <p class="trust-card-body">Email <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="85f6f0f5f5eaf7f1c5f7eafce4e9e3e9f0f6edabecea">[email&#160;protected]</a> with your account username, the hand or transaction ID, and a description of the issue. We respond within 24 hours and resolve most disputes within 5 business days.</p>
       </div>
       <div class="trust-card">
         <div class="trust-card-icon">2️⃣</div>
-        <div class="trust-card-title">Step 2 — Escalate to Management</div>
+        <div class="trust-card-title">Step 2: Escalate to Management</div>
         <p class="trust-card-body">If unsatisfied with the initial response, email <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="42212d2f322e232b2c363102302d3b232e242e37312a6c2b2d">[email&#160;protected]</a> to escalate to senior management. We will issue a final decision within 14 days. All hand logs and RNG data are preserved for review.</p>
       </div>
       <div class="trust-card">
         <div class="trust-card-icon">3️⃣</div>
-        <div class="trust-card-title">Step 3 — Independent ADR</div>
+        <div class="trust-card-title">Step 3: Independent ADR</div>
         <p class="trust-card-body">If the dispute remains unresolved, you may refer it to eCOGRA (ecogra.org) as our approved Alternative Dispute Resolution provider, free of charge. Their decision is binding on Royal Flush Ltd.</p>
       </div>
       <div class="trust-card">
@@ -4071,8 +4073,8 @@ body.in-auth > nav { display: none !important; }
   transition: border-color 0.2s, background 0.2s;
 }
 .nauth-input:focus {
-  border-color: rgba(212,175,55,0.4);
-  background: rgba(212,175,55,0.03);
+  border-color: rgba(255,184,0,0.4);
+  background: rgba(255,184,0,0.03);
 }
 .nauth-input::placeholder { color: rgba(255,255,255,0.2); }
 .nauth-input.nauth-input-pw { padding-right: 46px; }
@@ -4309,7 +4311,7 @@ body.in-auth > nav { display: none !important; }
         <div class="nauth-suit">♣</div>
       </div>
       <div class="nauth-tagline">Play for free.<br><em>Win for real.</em></div>
-      <div class="nauth-desc">Sweepstakes poker with real prizes. No purchase necessary — claim your free chips daily and compete at any stakes.</div>
+      <div class="nauth-desc">Sweepstakes poker with real prizes. No purchase necessary: claim your free chips daily and compete at any stakes.</div>
       <div class="nauth-stats">
         <div><span class="nauth-stat-n" id="nauth-live">0</span><span class="nauth-stat-l">Live Now</span></div>
         <div><span class="nauth-stat-n">$4.8M</span><span class="nauth-stat-l">Redeemed</span></div>
@@ -4474,7 +4476,7 @@ body.in-auth > nav { display: none !important; }
           </div>
           <div class="nauth-field" style="background:rgba(212,175,55,0.04);border:1px solid rgba(212,175,55,0.1);border-radius:4px;padding:14px 16px;gap:8px;display:flex;flex-direction:column">
             <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.3px;line-height:1.7">
-              🆓 <b style="color:#EDE8DF">No purchase necessary</b> — get Royal Chips free daily<br>
+              🆓 <b style="color:#EDE8DF">No purchase necessary</b>: get Royal Chips free daily<br>
               ♦ Royal Chips are redeemable for real prizes<br>
               🔒 Your data is encrypted and never sold<br>
               🛡️ You must be 18+ to play
@@ -4695,7 +4697,7 @@ function nauthCheckRef(val){
   if(!val){ el.textContent=''; return; }
   // Check against legacy function if available
   if(val.toUpperCase().startsWith('RF-') && val.length>=6){
-    el.className='nauth-ref-ok'; el.textContent='✓ Valid referral code — bonus chips applied!';
+    el.className='nauth-ref-ok'; el.textContent='✓ Valid referral code: bonus chips applied!';
   } else {
     el.className='nauth-ref-bad'; el.textContent='Invalid code format';
   }
@@ -4850,7 +4852,7 @@ window._showVerifyBanner = function(user){
     <div class="trust-hero">
       <div class="trust-hero-icon">⚖️</div>
       <h1 class="trust-h1">Official Sweepstakes Rules</h1>
-      <p class="trust-lead">Royal Flush Sweepstakes — No Purchase Necessary</p>
+      <p class="trust-lead">Royal Flush Sweepstakes: No Purchase Necessary</p>
     </div>
     <!-- Odds quick-reference banner -->
     <div style="background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.2);border-radius:6px;padding:18px 22px;margin-bottom:8px;text-align:center">
@@ -4997,7 +4999,7 @@ window._showVerifyBanner = function(user){
     <div style="max-width:380px;margin:0 auto">
       <button class="btn btn-gold" style="width:100%;padding:15px;font-size:12px;letter-spacing:2px;margin-bottom:12px" id="wb-claim-btn" onclick="claimWelcomeBonus()">Claim Bonus & Deposit $100 →</button>
       <div style="font-size:9px;text-align:center;color:var(--txd);margin-top:8px;letter-spacing:.3px">🆓 <b style="color:var(--tx)">No purchase necessary.</b> Obtain Royal Chips free via daily claim or <span style="color:var(--gold);cursor:pointer" onclick="goRules()">mail-in request</span>.</div>
-      <button class="btn btn-ghost" style="width:100%;padding:12px" onclick="goLobby()">Skip — I'll deposit later</button>
+      <button class="btn btn-ghost" style="width:100%;padding:12px" onclick="goLobby()">Skip (I'll deposit later)</button>
     </div>
     <div class="trust-footer" style="margin-top:40px">New players only · 18+ · Gamble responsibly</div>
   </div>
@@ -5056,7 +5058,7 @@ window._showVerifyBanner = function(user){
       </div>
       <div class="ref-history">
         <div class="shd" style="margin:24px 0 12px">Referral History</div>
-        <div class="ref-hist-empty" style="color:var(--txd);font-size:12px;text-align:center;padding:20px 0">No referrals yet — share your link to earn chips</div>
+        <div class="ref-hist-empty" style="color:var(--txd);font-size:12px;text-align:center;padding:20px 0">No referrals yet. Share your link to earn chips.</div>
       </div>
     </div>
     <div class="trust-footer">Referral chips credited within 24 hrs of friend's first deposit · No cap on referrals</div>
@@ -5088,7 +5090,7 @@ window._showVerifyBanner = function(user){
       <div class="trust-card">
         <div class="trust-card-icon">💸</div>
         <div class="trust-card-title">Revenue Share</div>
-        <p class="trust-card-body">Earn a percentage of the net revenue generated by every player you refer. Tiers increase with volume — the more players, the higher your rate.</p>
+        <p class="trust-card-body">Earn a percentage of the net revenue generated by every player you refer. Tiers increase with volume: the more players, the higher your rate.</p>
         <div style="margin-top:12px">
           ${[['1–10 players','25% rev share'],['11–50 players','30% rev share'],['51–200 players','35% rev share'],['200+ players','40% rev share']].map(([t,v])=>`
           <div style="display:flex;justify-content:space-between;font-size:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
@@ -6080,7 +6082,7 @@ window._showVerifyBanner = function(user){
           📷 UPLOAD PHOTO
           <input type="file" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
         </label>
-        <div style="font-size:9px;color:var(--txd)">JPG, PNG — max 40KB</div>
+        <div style="font-size:9px;color:var(--txd)">JPG, PNG (max 40KB)</div>
       </div>
       <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">OR CHOOSE COLOUR</div>
       <div class="avatar-grid" id="avatar-grid"></div>
@@ -6460,7 +6462,7 @@ window._showVerifyBanner = function(user){
     <div class="trust-hero">
       <div class="trust-hero-icon">🛡️</div>
       <h1 class="trust-h1">Responsible Gambling</h1>
-      <p class="trust-lead">We're committed to keeping gambling safe, fun, and in control. These tools are always available — no questions asked.</p>
+      <p class="trust-lead">We're committed to keeping gambling safe, fun, and in control. These tools are always available, no questions asked.</p>
     </div>
     <div class="trust-grid">
       <div class="trust-card">
@@ -6720,7 +6722,7 @@ function _showSNGRegModal(t){
         ${Array(t.max).fill(0).map((_,i)=>`<div class="seat-chip open" id="sng-seat-${i}" style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--txd)">•</div>`).join('')}
       </div>
       <div id="sng-reg-status" style="font-size:12px;color:var(--txd);margin-bottom:20px">Waiting for players...</div>
-      <button id="sng-reg-btn" onclick="joinSNG('${t.id}')" style="background:linear-gradient(135deg,#B8942E,#FFB800);border:none;border-radius:4px;color:#000;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:12px 32px;cursor:pointer;width:100%;margin-bottom:10px">JOIN — ${chip(t.buyIn)}</button>
+      <button id="sng-reg-btn" onclick="joinSNG('${t.id}')" style="background:linear-gradient(135deg,#B8942E,#FFB800);border:none;border-radius:4px;color:#000;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;padding:12px 32px;cursor:pointer;width:100%;margin-bottom:10px">JOIN ${chip(t.buyIn)}</button>
       <button onclick="closeSNGRegModal()" style="background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:4px;color:var(--txd);font-size:11px;padding:10px 24px;cursor:pointer;width:100%">Cancel</button>
     </div>`;
   document.body.appendChild(overlay);
@@ -6778,7 +6780,7 @@ function _updateSNGRegModal(state){
       status.textContent = 'Starting in 5 seconds...';
       status.style.color = 'var(--green)';
     } else {
-      status.textContent = `${reg}/${max} players registered — waiting for more...`;
+      status.textContent = `${reg}/${max} players registered. Waiting for more...`;
     }
   }
 }
