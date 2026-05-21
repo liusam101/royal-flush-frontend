@@ -205,25 +205,6 @@ body::after {
 }
 .sb-block:last-child { border-bottom: none; }
 
-/* mode nameplate */
-.sb-mode-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: var(--tx-2xl);
-  font-weight: 300;
-  letter-spacing: 1px;
-  color: var(--tx);
-  line-height: 1.05;
-  margin-bottom: 4px;
-}
-.sb-mode-sub { font-size: var(--tx-xs); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(255,184,0,.35); margin-bottom: 10px; }
-.sb-mode-badge {
-  display: inline-block;
-  font-size: var(--tx-xs); font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
-  color: rgba(255,184,0,.5);
-  border: 1px solid rgba(255,184,0,.16);
-  border-radius: 2px;
-  padding: 3px 8px;
-}
 
 /* navigation */
 .sb-nav-wrap { padding: 12px 0 12px; }
@@ -409,25 +390,23 @@ body::after {
 .pill.soon  { background: rgba(255,184,0,.07); color: rgba(255,184,0,.7); border: 1px solid rgba(255,184,0,.15); }
 .pill.late  { background: rgba(255,184,0,.14); color: var(--gold); border: 1px solid rgba(255,184,0,.25); }
 
-/* ── SNG ── */
-.sng-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px,1fr)); gap: 12px; }
-.sng-card {
-  background: linear-gradient(160deg, var(--bg-e), var(--bg-s));
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 2px;
-  padding: 20px;
-  cursor: pointer;
-  transition: border-color .2s, transform .2s cubic-bezier(.16,1,.3,1);
-}
-.sng-card:hover { border-color: rgba(255,184,0,.28); transform: translateY(-2px); }
-.sng-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.sng-name { font-family: 'Cormorant Garamond', serif; font-size: var(--tx-xl); font-weight: 600; color: var(--tx); line-height: 1.1; }
-.sng-meta { font-size: var(--tx-xs); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--txm); margin-top: 2px; }
-.sng-buyin { font-family: 'Cormorant Garamond', serif; font-size: var(--tx-2xl); font-weight: 300; color: var(--gold); line-height: 1; font-variant-numeric: tabular-nums; }
-.sng-seats { display: flex; gap: 3px; margin-bottom: 14px; }
-.ss { width: 20px; height: 4px; border-radius: 1px; background: rgba(0,229,160,.22); border: 1px solid rgba(0,229,160,.38); }
+/* ── SNG rows ── */
+.ss { width: 18px; height: 3px; border-radius: 1px; background: rgba(0,229,160,.22); border: 1px solid rgba(0,229,160,.38); flex-shrink: 0; }
 .ss.e { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
-.sng-ft { display: flex; justify-content: space-between; align-items: center; }
+.sng-cols { display: grid; grid-template-columns: 1fr 72px 120px 160px; padding: 0 10px 7px; border-bottom: 1px solid rgba(255,255,255,.04); margin-bottom: 2px; }
+.sng-col { font-size: var(--tx-xs); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(107,101,128,.5); }
+.sng-col.c { text-align: center; }
+.sng-col.r { text-align: right; }
+.snr { display: grid; grid-template-columns: 1fr 72px 120px 160px; align-items: center; padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,.03); cursor: pointer; transition: background .12s; border-radius: 2px; }
+.snr:last-child { border-bottom: none; }
+.snr:hover { background: rgba(255,184,0,.03); }
+.snr-name { font-family: 'Cormorant Garamond', serif; font-size: 0.9375rem; font-weight: 600; color: var(--tx); line-height: 1.2; }
+.snr-meta { font-size: var(--tx-xs); font-weight: 400; color: var(--txm); margin-top: 2px; }
+.snr-buyin { font-family: 'Cormorant Garamond', serif; font-size: var(--tx-lg); font-weight: 300; color: var(--gold); text-align: right; font-variant-numeric: tabular-nums; line-height: 1; }
+.snr-seats { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.snr-dots { display: flex; gap: 3px; align-items: center; }
+.snr-ct { font-size: var(--tx-xs); font-weight: 500; color: var(--txm); }
+.snr-act { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 
 /* ── MTT ── */
 .mtt-cols { display: grid; grid-template-columns: 1fr 130px 110px 90px; padding: 0 0 7px; border-bottom: 1px solid rgba(255,255,255,.04); margin-bottom: 2px; }
@@ -572,13 +551,6 @@ body::after {
 
     <!-- sticky zone: always visible regardless of scroll position -->
     <div class="l-sb-top">
-
-      <!-- Mode nameplate -->
-      <div class="sb-block" style="padding-top:24px">
-        <div class="sb-mode-title">Royal Chips</div>
-        <div class="sb-mode-sub">Real Stakes · Cash &amp; Tournaments</div>
-        <div class="sb-mode-badge">Royal Mode</div>
-      </div>
 
       <!-- Navigation -->
       <div class="sb-nav-wrap">
@@ -796,44 +768,53 @@ body::after {
         </div>
         <button class="btn btn-o btn-sm">+ Create SNG</button>
       </div>
-      <div class="sng-grid">
+      <div class="sng-cols">
+        <div class="sng-col">Tournament</div>
+        <div class="sng-col r">Buy-in</div>
+        <div class="sng-col c">Seats</div>
+        <div class="sng-col r">Action</div>
+      </div>
 
-        <div class="sng-card">
-          <div class="sng-hd"><div><div class="sng-name">Micro SNG</div><div class="sng-meta">9-Max · NLHE</div></div><div class="sng-buyin">$5</div></div>
-          <div class="sng-seats"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div>
-          <div class="sng-ft"><span class="pill wait">4 / 9 Seated</span><button class="btn btn-o btn-sm">Take Seat</button></div>
-        </div>
+      <div class="snr">
+        <div><div class="snr-name">Micro SNG</div><div class="snr-meta">9-Max · NLHE</div></div>
+        <div class="snr-buyin">$5</div>
+        <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">4 / 9</div></div>
+        <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
+      </div>
 
-        <div class="sng-card">
-          <div class="sng-hd"><div><div class="sng-name">Low SNG</div><div class="sng-meta">9-Max · NLHE</div></div><div class="sng-buyin">$25</div></div>
-          <div class="sng-seats"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div></div>
-          <div class="sng-ft"><span class="pill soon">8/9 · Starting Soon</span><button class="btn btn-g btn-sm">Last Seat</button></div>
-        </div>
+      <div class="snr">
+        <div><div class="snr-name">Low SNG</div><div class="snr-meta">9-Max · NLHE</div></div>
+        <div class="snr-buyin">$25</div>
+        <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div></div><div class="snr-ct">8 / 9</div></div>
+        <div class="snr-act"><span class="pill soon">Last Seat</span><button class="btn btn-g btn-sm">Join</button></div>
+      </div>
 
-        <div class="sng-card">
-          <div class="sng-hd"><div><div class="sng-name">Mid SNG</div><div class="sng-meta">9-Max · NLHE</div></div><div class="sng-buyin">$100</div></div>
-          <div class="sng-seats"><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div>
-          <div class="sng-ft"><span class="pill wait">2 / 9 Seated</span><button class="btn btn-o btn-sm">Take Seat</button></div>
-        </div>
+      <div class="snr">
+        <div><div class="snr-name">Mid SNG</div><div class="snr-meta">9-Max · NLHE</div></div>
+        <div class="snr-buyin">$100</div>
+        <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">2 / 9</div></div>
+        <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
+      </div>
 
-        <div class="sng-card">
-          <div class="sng-hd"><div><div class="sng-name">High Roller</div><div class="sng-meta">9-Max · NLHE</div></div><div class="sng-buyin">$500</div></div>
-          <div class="sng-seats"><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div>
-          <div class="sng-ft"><span class="pill wait">1 / 9 Seated</span><button class="btn btn-o btn-sm">Take Seat</button></div>
-        </div>
+      <div class="snr">
+        <div><div class="snr-name">High Roller</div><div class="snr-meta">9-Max · NLHE</div></div>
+        <div class="snr-buyin">$500</div>
+        <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">1 / 9</div></div>
+        <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
+      </div>
 
-        <div class="sng-card">
-          <div class="sng-hd"><div><div class="sng-name">Turbo SNG</div><div class="sng-meta">9-Max · Turbo · NLHE</div></div><div class="sng-buyin">$10</div></div>
-          <div class="sng-seats"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div>
-          <div class="sng-ft"><span class="pill wait">6 / 9 Seated</span><button class="btn btn-o btn-sm">Take Seat</button></div>
-        </div>
+      <div class="snr">
+        <div><div class="snr-name">Turbo SNG</div><div class="snr-meta">9-Max · Turbo · NLHE</div></div>
+        <div class="snr-buyin">$10</div>
+        <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">6 / 9</div></div>
+        <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
+      </div>
 
-        <div class="sng-card">
-          <div class="sng-hd"><div><div class="sng-name">PLO SNG</div><div class="sng-meta">6-Max · Pot Limit Omaha</div></div><div class="sng-buyin">$50</div></div>
-          <div class="sng-seats"><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div>
-          <div class="sng-ft"><span class="pill wait">2 / 6 Seated</span><button class="btn btn-o btn-sm">Take Seat</button></div>
-        </div>
-
+      <div class="snr">
+        <div><div class="snr-name">PLO SNG</div><div class="snr-meta">6-Max · PLO</div></div>
+        <div class="snr-buyin">$50</div>
+        <div class="snr-seats"><div class="snr-dots"><div class="ss"></div><div class="ss"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div><div class="ss e"></div></div><div class="snr-ct">2 / 6</div></div>
+        <div class="snr-act"><button class="btn btn-o btn-sm">Take Seat</button></div>
       </div>
     </div>
 
