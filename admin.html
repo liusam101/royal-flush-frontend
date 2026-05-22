@@ -1037,7 +1037,7 @@ function _seEvenAngles(n){
   return Array.from({length:n},(_,k)=>{
     const target=((startArc+k*seg)%total+total)%total;
     let lo=0,hi=STEPS;
-    while(hi-lo>1){const m=lo+hi>>1;(arc[m]<=target?lo:hi)=m;}
+    while(hi-lo>1){const m=(lo+hi)>>1; if(arc[m]<=target) lo=m; else hi=m;}
     const frac=(arc[lo+1]-arc[lo])>0?(target-arc[lo])/(arc[lo+1]-arc[lo]):0;
     return (lo+frac)*dt;
   });
