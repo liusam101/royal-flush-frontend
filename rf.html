@@ -14470,27 +14470,21 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     if(typeof socket === 'undefined' || !socket) return;
     socket.on('assetUpdate', data => {
       console.log('[RF] Asset update from admin:', data.type, data.name || '');
-      // Server relays the full dataUrl — save it locally so _getAsset can read it
+      // Persist so late-joining players get current assets
       if (data.dataUrl) {
         const key = data.type === 'glb' ? GLB_KEY : BG_KEY;
         _saveAsset(key, { dataUrl: data.dataUrl, name: data.name, pushedAt: data.pushedAt });
       }
-      if(data.type === 'bg'){
-        _getAsset(BG_KEY, bgData => {
-          if(bgData?.dataUrl) applyBackground(bgData.dataUrl);
-        });
+      // Use data directly from socket — don't read back from IndexedDB (race condition)
+      if(data.type === 'bg' && data.dataUrl){
+        applyBackground(data.dataUrl);
       }
-      if(data.type === 'glb'){
-        // Only hot-swap if currently in the game view
-        if(document.getElementById('vg')?.classList.contains('active')){
-          _getAsset(GLB_KEY, glbData => {
-            if(!glbData?.dataUrl) return;
-            _getAsset(BG_KEY, bgData => {
-              applyGLBTable(glbData, bgData?.dataUrl||null)
-                .catch(e=>console.warn('[RF] Hot-swap failed:',e));
-            });
-          });
-        }
+      if(data.type === 'glb' && data.dataUrl){
+        // Hot-swap regardless of view — player may be in vg or just joined
+        _getAsset(BG_KEY, bgData => {
+          applyGLBTable({dataUrl: data.dataUrl, name: data.name}, bgData?.dataUrl||null)
+            .catch(e=>console.warn('[RF] Hot-swap failed:',e));
+        });
       }
     });
     console.log('[RF] Asset socket listener registered');
@@ -14516,23 +14510,19 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       if(!glbData) return;
       if(glbData.pushedAt !== _lastGlbPush){
         _lastGlbPush = glbData.pushedAt;
-        if(document.getElementById('vg')?.classList.contains('active')){
-          console.log('[RF] GLB poll update detected, hot-swapping table');
-          _getAsset(BG_KEY, bgData => {
-            applyGLBTable(glbData, bgData?.dataUrl||null)
-              .catch(e=>console.warn('[RF] Poll hot-swap failed:',e));
-          });
-        }
+        console.log('[RF] GLB poll update detected, hot-swapping table');
+        _getAsset(BG_KEY, bgData => {
+          applyGLBTable(glbData, bgData?.dataUrl||null)
+            .catch(e=>console.warn('[RF] Poll hot-swap failed:',e));
+        });
       }
     });
     _getAsset(BG_KEY, bgData => {
       if(!bgData) return;
       if(bgData.pushedAt !== _lastBgPush){
         _lastBgPush = bgData.pushedAt;
-        if(document.getElementById('vg')?.classList.contains('active')){
-          console.log('[RF] Background poll update detected');
-          if(bgData.dataUrl) applyBackground(bgData.dataUrl);
-        }
+        console.log('[RF] Background poll update detected');
+        if(bgData.dataUrl) applyBackground(bgData.dataUrl);
       }
     });
   }, 30000);
