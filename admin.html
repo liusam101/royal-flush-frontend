@@ -934,7 +934,7 @@ function handleAssetFile(file, type) {
   statusEl.style.color = 'var(--txd)';
   const reader = new FileReader();
   reader.onload = e => {
-    _pendingAssets[type] = { dataUrl: e.target.result, name: file.name, size: file.size };
+    _pendingAssets[type] = { type, dataUrl: e.target.result, name: file.name, size: file.size };
     statusEl.textContent = `✓ ${file.name} — ${_fmtSz(file.size)} ready`;
     statusEl.style.color = 'var(--green)';
     btnEl.disabled = false;
