@@ -835,6 +835,16 @@ async function showGLBPreview(dataUrl){
   const inner=document.getElementById('glb-preview-inner');
   if(!wrap||!inner) return;
 
+  // Load model-viewer script first — injecting the element before the custom
+  // element is defined causes the browser to render slot content as plain text,
+  // making the error slot immediately visible regardless of file validity.
+  try{
+    await _loadScript('https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js');
+    if(!customElements.get('model-viewer')){
+      await customElements.whenDefined('model-viewer');
+    }
+  } catch(e){ wrap.style.display='none'; return; }
+
   // Convert base64 dataUrl → blob URL (model-viewer needs a real URL)
   try{
     const b64=dataUrl.split(',')[1]||'';
@@ -854,12 +864,7 @@ async function showGLBPreview(dataUrl){
     Failed to load — file may be corrupted or not a valid GLB
   </div></model-viewer>`;
 
-  // Set a default poker-table aspect ratio for seat auto-calc
-  // (elongated ellipse: ~2:1 width:depth)
   if(!window._glbTableDims) window._glbTableDims={rx:0.38,ry:0.22};
-
-  _loadScript('https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js')
-    .catch(()=>{ wrap.style.display='none'; _destroyPreview(); });
 }
 
 // ── Asset drop-in ─────────────────────────────────────────────────
