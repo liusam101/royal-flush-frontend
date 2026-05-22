@@ -995,7 +995,8 @@ function _seScreenToLogical(clientX, clientY){
   const px=(clientX-rect.left)*(SE_W/rect.width);
   const py=(clientY-rect.top)*(SE_H/rect.height);
   const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
-  const logY=tilt>0.001 ? SE_H/2+(py-SE_H/2)/tilt : SE_H/2;
+  const pivotY=window._seModelCenter ? window._seModelCenter.cy*SE_H : SE_H/2;
+  const logY=tilt>0.001 ? pivotY+(py-pivotY)/tilt : pivotY;
   return {x:px, y:logY};
 }
 
@@ -1029,7 +1030,7 @@ async function _seRefreshGLB(){
   const inner=document.getElementById('se-glb-inner');
   const noGlb=document.getElementById('se-no-glb');
   if(!wrap||!inner) return;
-  if(!window._glbDataUrl){ wrap.style.display='none'; if(noGlb) noGlb.style.display='block'; return; }
+  if(!window._glbDataUrl){ wrap.style.display='none'; if(noGlb) noGlb.style.display='block'; window._seModelCenter=undefined; return; }
   if(noGlb) noGlb.style.display='none';
   wrap.style.display='block';
   if(inner.querySelector('model-viewer')) return; // already rendered
@@ -1068,18 +1069,22 @@ async function _seRefreshGLB(){
           }
           // Require at least 20% canvas coverage or bail
           if(x1<=x0||y1<=y0||(x1-x0)/cw<0.2) return;
-          // halfW/halfH as fractions of the rendered image dimensions
+          // Model center and half-extents as fractions of rendered image
+          const cx_frac=(x0+x1)/2/cw;
+          const cy_frac=(y0+y1)/2/ch;
           const halfW=(x1-x0)/2/cw;
           const halfH=(y1-y0)/2/ch;
           const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
           _seTableRx=halfW;
-          // The drawing code applies tilt to y, so un-compress to get stored ry
+          // Drawing applies tilt to y, so store un-compressed ry
           _seTableRy=halfH/tilt;
+          // Store detected model center so drawing pivots correctly
+          window._seModelCenter={cx:cx_frac, cy:cy_frac};
           window._glbTableDims={rx:_seTableRx,ry:_seTableRy};
           const n=parseInt(document.getElementById('se-count')?.value||'6')||6;
           _seSeats=Array.from({length:n},(_,i)=>{
             const a=(i/n)*Math.PI*2-Math.PI/2;
-            return {x:0.5+_seTableRx*Math.cos(a),y:0.5+_seTableRy*Math.sin(a)};
+            return {x:cx_frac+_seTableRx*Math.cos(a), y:cy_frac+_seTableRy*Math.sin(a)};
           });
           _seDrawSeats();
         };
@@ -1093,13 +1098,15 @@ function _seDrawSeats(){
   if(!_seCtx) return;
   const ctx=_seCtx, W=SE_W, H=SE_H;
   const cx=W/2, cy=H/2;
+  // Use detected model center as tilt pivot — falls back to H/2 when no GLB
+  const modelCy=window._seModelCenter ? window._seModelCenter.cy*H : cy;
   const rx=W*_seTableRx;
   const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
   const ry=H*_seTableRy*tilt;
   ctx.clearRect(0,0,W,H);
 
   if(!window._glbDataUrl){
-    // No GLB — draw the fallback canvas table
+    // No GLB — draw the fallback canvas table (always centered at H/2)
     ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,Math.max(4,ry+10),0,0,Math.PI*2);
     ctx.fillStyle='#3a2200'; ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx,cy,rx,Math.max(2,ry),0,0,Math.PI*2);
@@ -1113,10 +1120,10 @@ function _seDrawSeats(){
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('POT',cx,cy);
   }
 
-  // Seats — Y position compressed by tilt
+  // Seats — Y compressed by tilt, pivoting around the actual model center Y
   _seSeats.forEach((s,i)=>{
     const px=s.x*W;
-    const py=cy+(s.y*H-cy)*tilt;
+    const py=modelCy+(s.y*H-modelCy)*tilt;
     const isYou=i===0;
     ctx.beginPath(); ctx.arc(px,py,22,0,Math.PI*2);
     ctx.fillStyle=isYou?'rgba(0,210,255,0.25)':'rgba(255,184,0,0.15)'; ctx.fill();
@@ -1171,10 +1178,12 @@ function autoCalcSeats(){
   if(!window._glbTableDims){ toast('Drop a GLB file in the Assets panel first','warn'); return; }
   _seTableRx=window._glbTableDims.rx;
   _seTableRy=window._glbTableDims.ry;
+  const mcx=window._seModelCenter?.cx??0.5;
+  const mcy=window._seModelCenter?.cy??0.5;
   const n=parseInt(document.getElementById('se-count').value)||6;
   _seSeats=Array.from({length:n},(_,i)=>{
     const a=(i/n)*Math.PI*2-Math.PI/2;
-    return {x:0.5+_seTableRx*Math.cos(a), y:0.5+_seTableRy*Math.sin(a)};
+    return {x:mcx+_seTableRx*Math.cos(a), y:mcy+_seTableRy*Math.sin(a)};
   });
   _seDrawSeats();
   toast(`Seats fitted to GLB table shape (${n} seats)`,'success');
