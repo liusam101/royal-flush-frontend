@@ -1067,8 +1067,8 @@ async function _seRefreshGLB(){
       // Use larger horizontal extent as W, smaller as D (table may be rotated in asset)
       const W=Math.max(dims.x||0,dims.z||0)||1, D=Math.min(dims.x||0,dims.z||0)||1, Hm=dims.y||0;
       const R=Math.sqrt(W*W+Hm*Hm+D*D)/2;
-      _seTableRx=Math.max(0.05,Math.min(0.48, W*SE_H/(4*R*SE_W)));
-      _seTableRy=Math.max(0.05,Math.min(0.48, D/(4*R)));
+      _seTableRx=Math.max(0.05,Math.min(0.48, W*SE_H/(3*R*SE_W)));
+      _seTableRy=Math.max(0.05,Math.min(0.48, D/(3*R)));
       window._seModelCenter={cx:0.5, cy:0.5};
       window._glbTableDims={rx:_seTableRx, ry:_seTableRy};
       const n=parseInt(document.getElementById('se-count')?.value||'6')||6;
