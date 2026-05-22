@@ -439,13 +439,15 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
             <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:32px;text-align:right">55°</span>
             <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=55;updateSeAngle(55)" style="border-color:var(--border);color:var(--txd);font-size:10px">↺</button>
           </div>
-          <div id="se-glb-wrap" style="display:none;margin-bottom:12px;border-radius:4px;overflow:hidden;border:1px solid var(--border);height:200px;background:#0c1020">
-            <div id="se-glb-inner" style="width:100%;height:100%"></div>
-          </div>
           <div id="se-no-glb" style="display:none;padding:10px 14px;background:var(--bg3);border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--txd);text-align:center;margin-bottom:12px">
             No 3D table loaded — drop a <b style="color:var(--tx)">.glb</b> in <span onclick="nav('assets')" style="color:var(--cyan);cursor:pointer;text-decoration:underline">Table Assets</span> to see your model here
           </div>
-          <canvas id="seat-canvas" style="width:100%;max-width:700px;display:block;margin:0 auto;border-radius:4px;border:1px solid var(--border);cursor:default"></canvas>
+          <div id="se-canvas-wrap" style="position:relative;max-width:700px;margin:0 auto;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
+            <div id="se-glb-wrap" style="display:none;position:absolute;inset:0;background:#0c1020">
+              <div id="se-glb-inner" style="width:100%;height:100%"></div>
+            </div>
+            <canvas id="seat-canvas" style="width:100%;display:block;position:relative;z-index:1;cursor:default"></canvas>
+          </div>
           <div style="font-family:var(--mono);font-size:10px;color:var(--txd);margin-top:10px;text-align:center">
             Drag seat markers · <span style="color:var(--cyan)">◈ Seat 1</span> = "You" · Angle rotates the view · "Auto from Table" fits seats to your GLB geometry
           </div>
@@ -1035,7 +1037,9 @@ async function _seRefreshGLB(){
   try{ await _loadModelViewer(); } catch(e){ wrap.style.display='none'; return; }
   const url=_dataUrlToBlobUrl(window._glbDataUrl,'model/gltf-binary');
   if(!url){ wrap.style.display='none'; return; }
-  inner.innerHTML=`<model-viewer src="${url}" auto-rotate camera-controls shadow-intensity="1" style="width:100%;height:200px;background:#0c1020;--poster-color:#0c1020"></model-viewer>`;
+  const phi=Math.max(5,90-_seLayoutAngle);
+  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" disable-zoom shadow-intensity="1" style="width:100%;height:${SE_H}px;background:transparent;--poster-color:transparent"></model-viewer>`;
+  _seDrawSeats();
 }
 
 function _seDrawSeats(){
@@ -1043,26 +1047,24 @@ function _seDrawSeats(){
   const ctx=_seCtx, W=SE_W, H=SE_H;
   const cx=W/2, cy=H/2;
   const rx=W*_seTableRx;
-  // tilt compresses Y: 90°=top-down (full ry), lower angles=more edge-on
   const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
   const ry=H*_seTableRy*tilt;
   ctx.clearRect(0,0,W,H);
 
-  // Rail
-  ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,Math.max(4,ry+10),0,0,Math.PI*2);
-  ctx.fillStyle='#3a2200'; ctx.fill();
-  // Felt
-  ctx.beginPath(); ctx.ellipse(cx,cy,rx,Math.max(2,ry),0,0,Math.PI*2);
-  ctx.fillStyle='#0d3318'; ctx.fill();
-  ctx.strokeStyle='rgba(255,184,0,0.35)'; ctx.lineWidth=3; ctx.stroke();
-  // Inner line
-  ctx.beginPath(); ctx.ellipse(cx,cy,rx-14,Math.max(1,ry-12),0,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,184,0,0.1)'; ctx.lineWidth=1; ctx.stroke();
-  // Pot label
-  ctx.beginPath(); ctx.ellipse(cx,cy,42,Math.max(1,28*tilt),0,0,Math.PI*2);
-  ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
-  ctx.fillStyle='rgba(255,184,0,0.5)'; ctx.font='bold 11px monospace';
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('POT',cx,cy);
+  if(!window._glbDataUrl){
+    // No GLB — draw the fallback canvas table
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,Math.max(4,ry+10),0,0,Math.PI*2);
+    ctx.fillStyle='#3a2200'; ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,Math.max(2,ry),0,0,Math.PI*2);
+    ctx.fillStyle='#0d3318'; ctx.fill();
+    ctx.strokeStyle='rgba(255,184,0,0.35)'; ctx.lineWidth=3; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx-14,Math.max(1,ry-12),0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,184,0,0.1)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx,cy,42,Math.max(1,28*tilt),0,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
+    ctx.fillStyle='rgba(255,184,0,0.5)'; ctx.font='bold 11px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('POT',cx,cy);
+  }
 
   // Seats — Y position compressed by tilt
   _seSeats.forEach((s,i)=>{
@@ -1113,6 +1115,9 @@ function updateSeAngle(v){
   _seLayoutAngle=parseInt(v);
   document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°';
   _seDrawSeats();
+  // Sync model-viewer camera to match tilt
+  const mv=document.querySelector('#se-glb-inner model-viewer');
+  if(mv){ const phi=Math.max(5,90-_seLayoutAngle); mv.cameraOrbit=`0deg ${phi}deg auto`; }
 }
 
 function autoCalcSeats(){
