@@ -14244,6 +14244,33 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   const BG_KEY  = 'rf_admin_table_bg';
   let _t3Renderer=null, _t3Scene=null, _t3Camera=null, _t3Controls=null, _t3AnimId=null;
   let _t3Active = false;
+  let _mvBlobUrl = null;
+
+  const _MV_CDN = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js';
+
+  function _loadMV(){
+    return new Promise((res,rej)=>{
+      if(customElements.get('model-viewer')){ res(); return; }
+      const t=setTimeout(()=>rej(new Error('mv timeout')),15000);
+      const done=()=>{ clearTimeout(t); res(); };
+      if(document.querySelector(`script[src="${_MV_CDN}"]`)){
+        customElements.whenDefined('model-viewer').then(done).catch(rej); return;
+      }
+      const s=document.createElement('script'); s.src=_MV_CDN; s.type='module';
+      s.onload=()=>customElements.whenDefined('model-viewer').then(done).catch(rej);
+      s.onerror=()=>{ clearTimeout(t); rej(new Error('mv load failed')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function _rfGlbToBlobUrl(dataUrl){
+    const b64=dataUrl.split(',')[1]||'';
+    if(!b64) return null;
+    const bin=atob(b64);
+    const buf=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([buf],{type:'model/gltf-binary'}));
+  }
 
   // Write to IndexedDB (GLBs are too large for localStorage)
   function _saveAsset(key, data){
@@ -14299,13 +14326,16 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     }
   }
 
-  // Destroy existing Three.js session
+  // Destroy existing 3D session (Three.js canvas or model-viewer)
   function destroyT3(){
     if(_t3AnimId){ cancelAnimationFrame(_t3AnimId); _t3AnimId=null; }
     if(_t3Renderer){ _t3Renderer.dispose(); _t3Renderer=null; }
     _t3Scene=null; _t3Camera=null; _t3Controls=null; _t3Active=false;
     const old = document.getElementById('t3-canvas');
     if(old) old.remove();
+    const mv = document.getElementById('t3-mv');
+    if(mv) mv.remove();
+    if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
   }
 
   // Load Three.js scripts lazily
@@ -14329,7 +14359,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     return buf;
   }
 
-  // Main: apply 3D table
+  // Main: apply 3D table via model-viewer (same stack as admin.html preview)
   async function applyGLBTable(glbData, bgDataUrl){
     const tableWrap = document.getElementById('table-wrap');
     const svgTable  = document.getElementById('ptable');
@@ -14337,106 +14367,33 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
 
     destroyT3();
 
-    // r128 is the last Three.js release with examples/js/ (non-module builds)
-    await loadScript('https://unpkg.com/three@0.128.0/build/three.min.js');
-    await loadScript('https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js');
+    try{ await _loadMV(); }
+    catch(e){ console.warn('[RF] model-viewer load failed:', e); return; }
 
-    const THREE = window.THREE;
+    if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
+    _mvBlobUrl = _rfGlbToBlobUrl(glbData.dataUrl);
+    if(!_mvBlobUrl){ console.warn('[RF] GLB blob conversion failed'); return; }
 
-    // Create canvas overlay — pointer-events:none so game UI stays clickable
-    const canvas = document.createElement('canvas');
-    canvas.id = 't3-canvas';
-    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;pointer-events:none;z-index:1;';
+    const mv = document.createElement('model-viewer');
+    mv.id = 't3-mv';
+    mv.setAttribute('src', _mvBlobUrl);
+    // Match the SVG table's ~35° tilt (phi = 90 - 35 = 55° from zenith)
+    mv.setAttribute('camera-orbit', '0deg 55deg auto');
+    mv.setAttribute('shadow-intensity', '1');
+    mv.setAttribute('disable-zoom', '');
+    mv.setAttribute('interaction-prompt', 'none');
+    // Transparent bg so room shows through; z-index:2 to be above SVG stacking context
+    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;';
+
     tableWrap.style.position = 'relative';
-    tableWrap.insertBefore(canvas, tableWrap.firstChild);
+    tableWrap.insertBefore(mv, tableWrap.firstChild);
 
-    // Hide SVG table (keep DOM for seat positioning logic)
+    // Hide SVG table (keep in DOM — seat positioning code reads from it)
     svgTable.style.opacity = '0';
     svgTable.style.pointerEvents = 'none';
 
-    const W = tableWrap.offsetWidth || 900;
-    const H = tableWrap.offsetHeight || 540;
-
-    // Renderer
-    _t3Renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
-    _t3Renderer.setSize(W, H);
-    _t3Renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    _t3Renderer.shadowMap.enabled = true;
-    _t3Renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    try { _t3Renderer.outputEncoding = THREE.sRGBEncoding; } catch(_){}
-
-    // Scene — transparent so the room background shows through
-    _t3Scene = new THREE.Scene();
-    _t3Scene.background = null;
-
-    if(bgDataUrl && bgDataUrl.startsWith('data:image')){
-      const texLoader = new THREE.TextureLoader();
-      texLoader.load(bgDataUrl, tex=>{
-        try { tex.encoding = THREE.sRGBEncoding; } catch(_){}
-        _t3Scene.environment = tex;
-      });
-    }
-
-    // Fixed camera — slight top-down angle matching poker table perspective
-    _t3Camera = new THREE.PerspectiveCamera(40, W/H, 0.01, 300);
-    _t3Camera.position.set(0, 5, 6);
-    _t3Camera.lookAt(0, 0, 0);
-
-    // Lights
-    const ambient = new THREE.AmbientLight(0xfff5e0, 0.8);
-    _t3Scene.add(ambient);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
-    keyLight.position.set(2, 8, 4); keyLight.castShadow=true;
-    keyLight.shadow.mapSize.set(2048,2048);
-    _t3Scene.add(keyLight);
-    const fill = new THREE.DirectionalLight(0x8888cc, 0.3);
-    fill.position.set(-3, 3, -2); _t3Scene.add(fill);
-    const gold = new THREE.PointLight(0xFFB800, 0.5, 30);
-    gold.position.set(0,6,0); _t3Scene.add(gold);
-
-    // Parse GLB from ArrayBuffer — more reliable than loader.load(dataUrl)
-    const buf = _glbDataUrlToBuffer(glbData.dataUrl);
-    if(!buf){ destroyT3(); svgTable.style.opacity='1'; svgTable.style.pointerEvents=''; return; }
-
-    const loader = new THREE.GLTFLoader();
-    loader.parse(buf, '', gltf => {
-      const model = gltf.scene;
-      model.traverse(child => {
-        if(child.isMesh){ child.castShadow=true; child.receiveShadow=true; }
-      });
-      const box  = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
-      const ctr  = box.getCenter(new THREE.Vector3());
-      const maxD = Math.max(size.x, size.y, size.z);
-      const sc   = 3.5 / maxD;
-      model.scale.setScalar(sc);
-      model.position.sub(ctr.multiplyScalar(sc));
-      _t3Scene.add(model);
-      _t3Active = true;
-      console.log('[RF] 3D table loaded:', glbData.name);
-    }, err => {
-      console.warn('[RF] GLB parse failed:', err);
-      destroyT3();
-      svgTable.style.opacity = '1';
-      svgTable.style.pointerEvents = '';
-    });
-
-    // Render loop
-    function tick(){
-      _t3AnimId = requestAnimationFrame(tick);
-      _t3Renderer?.render(_t3Scene, _t3Camera);
-    }
-    tick();
-
-    // Resize observer
-    if(window.ResizeObserver){
-      new ResizeObserver(()=>{
-        if(!_t3Renderer||!_t3Camera) return;
-        const w2=tableWrap.offsetWidth, h2=tableWrap.offsetHeight;
-        _t3Camera.aspect=w2/h2; _t3Camera.updateProjectionMatrix();
-        _t3Renderer.setSize(w2,h2);
-      }).observe(tableWrap);
-    }
+    _t3Active = true;
+    console.log('[RF] 3D table mounted via model-viewer:', glbData.name);
   }
 
   // Check and apply assets when game view loads
