@@ -14318,6 +14318,17 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     });
   }
 
+  // Convert GLB data URL to ArrayBuffer for loader.parse()
+  function _glbDataUrlToBuffer(dataUrl){
+    const b64 = dataUrl.split(',')[1] || '';
+    if(!b64) return null;
+    const bin = atob(b64);
+    const buf = new ArrayBuffer(bin.length);
+    const view = new Uint8Array(buf);
+    for(let i=0;i<bin.length;i++) view[i]=bin.charCodeAt(i);
+    return buf;
+  }
+
   // Main: apply 3D table
   async function applyGLBTable(glbData, bgDataUrl){
     const tableWrap = document.getElementById('table-wrap');
@@ -14326,20 +14337,16 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
 
     destroyT3();
 
-    // Load Three.js + addons
-    await loadScript('https://unpkg.com/three@0.160.0/build/three.min.js');
-    await loadScript('https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js');
-    await loadScript('https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js');
+    // r128 is the last Three.js release with examples/js/ (non-module builds)
+    await loadScript('https://unpkg.com/three@0.128.0/build/three.min.js');
+    await loadScript('https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js');
 
     const THREE = window.THREE;
 
-    // Create canvas overlay
+    // Create canvas overlay — pointer-events:none so game UI stays clickable
     const canvas = document.createElement('canvas');
     canvas.id = 't3-canvas';
-    canvas.style.cssText = `
-      position:absolute;inset:0;width:100%;height:100%;
-      border-radius:inherit;pointer-events:none;z-index:1;
-    `;
+    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;pointer-events:none;z-index:1;';
     tableWrap.style.position = 'relative';
     tableWrap.insertBefore(canvas, tableWrap.firstChild);
 
@@ -14358,11 +14365,10 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     _t3Renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     try { _t3Renderer.outputEncoding = THREE.sRGBEncoding; } catch(_){}
 
-    // Scene
+    // Scene — transparent so the room background shows through
     _t3Scene = new THREE.Scene();
-    _t3Scene.background = null; // transparent — garena bg shows through
+    _t3Scene.background = null;
 
-    // Apply background env if provided
     if(bgDataUrl && bgDataUrl.startsWith('data:image')){
       const texLoader = new THREE.TextureLoader();
       texLoader.load(bgDataUrl, tex=>{
@@ -14371,7 +14377,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       });
     }
 
-    // Camera — top-down slight angle to match poker table feel
+    // Fixed camera — slight top-down angle matching poker table perspective
     _t3Camera = new THREE.PerspectiveCamera(40, W/H, 0.01, 300);
     _t3Camera.position.set(0, 5, 6);
     _t3Camera.lookAt(0, 0, 0);
@@ -14379,34 +14385,25 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     // Lights
     const ambient = new THREE.AmbientLight(0xfff5e0, 0.8);
     _t3Scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xffffff, 1.4);
-    key.position.set(2, 8, 4); key.castShadow=true;
-    key.shadow.mapSize.set(2048,2048);
-    _t3Scene.add(key);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    keyLight.position.set(2, 8, 4); keyLight.castShadow=true;
+    keyLight.shadow.mapSize.set(2048,2048);
+    _t3Scene.add(keyLight);
     const fill = new THREE.DirectionalLight(0x8888cc, 0.3);
     fill.position.set(-3, 3, -2); _t3Scene.add(fill);
     const gold = new THREE.PointLight(0xFFB800, 0.5, 30);
     gold.position.set(0,6,0); _t3Scene.add(gold);
 
-    // Orbit controls — limited to match poker table view
-    _t3Controls = new THREE.OrbitControls(_t3Camera, canvas);
-    canvas.style.pointerEvents = 'auto';
-    _t3Controls.enableDamping = true;
-    _t3Controls.dampingFactor = 0.06;
-    _t3Controls.minDistance = 3; _t3Controls.maxDistance = 15;
-    _t3Controls.maxPolarAngle = Math.PI * 0.5;
-    _t3Controls.minPolarAngle = Math.PI * 0.1;
-    _t3Controls.target.set(0,0,0);
+    // Parse GLB from ArrayBuffer — more reliable than loader.load(dataUrl)
+    const buf = _glbDataUrlToBuffer(glbData.dataUrl);
+    if(!buf){ destroyT3(); svgTable.style.opacity='1'; svgTable.style.pointerEvents=''; return; }
 
-    // Load GLB
     const loader = new THREE.GLTFLoader();
-    loader.load(glbData.dataUrl, gltf => {
+    loader.parse(buf, '', gltf => {
       const model = gltf.scene;
-      // Enable shadows on all meshes
       model.traverse(child => {
         if(child.isMesh){ child.castShadow=true; child.receiveShadow=true; }
       });
-      // Auto-fit
       const box  = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const ctr  = box.getCenter(new THREE.Vector3());
@@ -14415,11 +14412,10 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       model.scale.setScalar(sc);
       model.position.sub(ctr.multiplyScalar(sc));
       _t3Scene.add(model);
-      _t3Controls.update();
       _t3Active = true;
       console.log('[RF] 3D table loaded:', glbData.name);
-    }, undefined, err => {
-      console.warn('[RF] GLB load failed:', err);
+    }, err => {
+      console.warn('[RF] GLB parse failed:', err);
       destroyT3();
       svgTable.style.opacity = '1';
       svgTable.style.pointerEvents = '';
@@ -14428,7 +14424,6 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     // Render loop
     function tick(){
       _t3AnimId = requestAnimationFrame(tick);
-      _t3Controls?.update();
       _t3Renderer?.render(_t3Scene, _t3Camera);
     }
     tick();
