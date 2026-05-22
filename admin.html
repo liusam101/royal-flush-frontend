@@ -1007,10 +1007,8 @@ function seatEditorInit(){
   _seCtx=_seCanvas.getContext('2d');
   const n=parseInt(document.getElementById('se-count').value)||6;
 
-  _seSeats=Array.from({length:n},(_,i)=>{
-    const a=(i/n)*Math.PI*2 - Math.PI/2;
-    return {x:0.5+_seTableRx*Math.cos(a), y:0.5+_seTableRy*Math.sin(a)};
-  });
+  const _initAngles=_seEvenAngles(n);
+  _seSeats=_initAngles.map(a=>({x:0.5+_seTableRx*Math.cos(a), y:0.5+_seTableRy*Math.sin(a)}));
 
   try {
     const raw=localStorage.getItem('rf_admin_seat_positions');
@@ -1023,6 +1021,26 @@ function seatEditorInit(){
   _seDrawSeats();
   _seBindEvents();
   _seRefreshGLB();
+}
+
+// Returns n angles (radians) evenly spaced by arc length on the screen-space ellipse
+function _seEvenAngles(n){
+  const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
+  const a=_seTableRx*SE_W, b=_seTableRy*SE_H*Math.max(tilt,0.01);
+  if(n<1) return [];
+  const STEPS=2000, dt=(Math.PI*2)/STEPS;
+  const arc=[0];
+  for(let i=0;i<STEPS;i++) arc.push(arc[i]+Math.hypot(a*Math.sin(i*dt),b*Math.cos(i*dt))*dt);
+  const total=arc[STEPS], seg=total/n;
+  // start at top of ellipse (t = -π/2, wrapping from 3π/2 worth of arc)
+  const startArc=arc[Math.round(3*STEPS/4)];
+  return Array.from({length:n},(_,k)=>{
+    const target=((startArc+k*seg)%total+total)%total;
+    let lo=0,hi=STEPS;
+    while(hi-lo>1){const m=lo+hi>>1;(arc[m]<=target?lo:hi)=m;}
+    const frac=(arc[lo+1]-arc[lo])>0?(target-arc[lo])/(arc[lo+1]-arc[lo]):0;
+    return (lo+frac)*dt;
+  });
 }
 
 async function _seRefreshGLB(){
@@ -1046,22 +1064,17 @@ async function _seRefreshGLB(){
   mv.addEventListener('load',()=>{
     try{
       const dims=mv.getDimensions();
-      const W=dims.x||1, D=dims.z||1, Hm=dims.y||0;
-      // Bounding sphere radius (half-diagonal of bounding box)
+      // Use larger horizontal extent as W, smaller as D (table may be rotated in asset)
+      const W=Math.max(dims.x||0,dims.z||0)||1, D=Math.min(dims.x||0,dims.z||0)||1, Hm=dims.y||0;
       const R=Math.sqrt(W*W+Hm*Hm+D*D)/2;
-      // Perspective projection with vertical FOV auto-fit:
-      //   rx = W * SE_H / (4 * R * SE_W)   [table half-width as fraction of canvas width]
-      //   ry = D / (4 * R)                  [table half-depth, tilt cancels in drawing code]
-      // Bounding sphere center always projects to screen center → cx=cy=0.5
       _seTableRx=Math.max(0.05,Math.min(0.48, W*SE_H/(4*R*SE_W)));
       _seTableRy=Math.max(0.05,Math.min(0.48, D/(4*R)));
       window._seModelCenter={cx:0.5, cy:0.5};
       window._glbTableDims={rx:_seTableRx, ry:_seTableRy};
       const n=parseInt(document.getElementById('se-count')?.value||'6')||6;
-      _seSeats=Array.from({length:n},(_,i)=>{
-        const a=(i/n)*Math.PI*2-Math.PI/2;
-        return {x:0.5+_seTableRx*Math.cos(a), y:0.5+_seTableRy*Math.sin(a)};
-      });
+      const angles=_seEvenAngles(n);
+      const mcx=0.5, mcy=0.5;
+      _seSeats=angles.map(a=>({x:mcx+_seTableRx*Math.cos(a), y:mcy+_seTableRy*Math.sin(a)}));
       _seDrawSeats();
     }catch(e){}
   },{once:true});
@@ -1154,10 +1167,8 @@ function autoCalcSeats(){
   const mcx=window._seModelCenter?.cx??0.5;
   const mcy=window._seModelCenter?.cy??0.5;
   const n=parseInt(document.getElementById('se-count').value)||6;
-  _seSeats=Array.from({length:n},(_,i)=>{
-    const a=(i/n)*Math.PI*2-Math.PI/2;
-    return {x:mcx+_seTableRx*Math.cos(a), y:mcy+_seTableRy*Math.sin(a)};
-  });
+  const angles=_seEvenAngles(n);
+  _seSeats=angles.map(a=>({x:mcx+_seTableRx*Math.cos(a), y:mcy+_seTableRy*Math.sin(a)}));
   _seDrawSeats();
   toast(`Seats fitted to GLB table shape (${n} seats)`,'success');
 }
