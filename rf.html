@@ -14363,16 +14363,25 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   async function applyGLBTable(glbData, bgDataUrl){
     const tableWrap = document.getElementById('table-wrap');
     const svgTable  = document.getElementById('ptable');
-    if(!tableWrap || !svgTable) return;
+    if(!tableWrap || !svgTable){ console.warn('[RF] applyGLBTable: table-wrap or ptable not found'); return; }
 
+    if(typeof toast === 'function') toast('Loading 3D table…', 'info');
     destroyT3();
 
     try{ await _loadMV(); }
-    catch(e){ console.warn('[RF] model-viewer load failed:', e); return; }
+    catch(e){
+      console.warn('[RF] model-viewer load failed:', e);
+      if(typeof toast === 'function') toast('3D table load failed: ' + e.message, 'error');
+      return;
+    }
 
     if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
     _mvBlobUrl = _rfGlbToBlobUrl(glbData.dataUrl);
-    if(!_mvBlobUrl){ console.warn('[RF] GLB blob conversion failed'); return; }
+    if(!_mvBlobUrl){
+      console.warn('[RF] GLB blob conversion failed');
+      if(typeof toast === 'function') toast('3D table: GLB conversion failed', 'error');
+      return;
+    }
 
     const mv = document.createElement('model-viewer');
     mv.id = 't3-mv';
@@ -14394,6 +14403,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
 
     _t3Active = true;
     console.log('[RF] 3D table mounted via model-viewer:', glbData.name);
+    if(typeof toast === 'function') toast('3D table ready', 'success');
   }
 
   // Check and apply assets when game view loads
@@ -14447,16 +14457,12 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     console.log('[RF] Asset socket listener registered');
   }
 
-  // Hook socket once it's available (it's defined in a later script block)
-  setTimeout(()=>{
-    _hookSocket();
-    // Retry if socket wasn't ready
-    if(typeof socket === 'undefined' || !socket){
-      const retry = setInterval(()=>{
-        if(typeof socket !== 'undefined' && socket){ _hookSocket(); clearInterval(retry); }
-      }, 500);
-    }
-  }, 1000);
+  // Socket is defined above this block — register listener immediately
+  _hookSocket();
+  // When socket connects (player joins table), re-check IndexedDB for cached assets
+  if(typeof socket !== 'undefined' && socket){
+    socket.on('connect', () => setTimeout(checkAndApplyAssets, 300));
+  }
 
   // ── POLLING FALLBACK ──────────────────────────────────────────
   // Checks localStorage every 30s — catches pushes even without socket
