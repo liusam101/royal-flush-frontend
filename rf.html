@@ -14245,8 +14245,14 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   let _t3Renderer=null, _t3Scene=null, _t3Camera=null, _t3Controls=null, _t3AnimId=null;
   let _t3Active = false;
   let _mvBlobUrl = null;
+  let _pendingGlb = null; // in-memory — avoids IndexedDB race conditions
 
   const _MV_CDN = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js';
+
+  function _isGameViewVisible(){
+    const vg = document.getElementById('vg');
+    return vg ? getComputedStyle(vg).display !== 'none' : false;
+  }
 
   function _loadMV(){
     return new Promise((res,rej)=>{
@@ -14264,276 +14270,214 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function _rfGlbToBlobUrl(dataUrl){
-    const b64=dataUrl.split(',')[1]||'';
-    if(!b64) return null;
-    const bin=atob(b64);
-    const buf=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
-    return URL.createObjectURL(new Blob([buf],{type:'model/gltf-binary'}));
+    try{
+      const b64=dataUrl.split(',')[1]||'';
+      if(!b64) return null;
+      const bin=atob(b64);
+      const buf=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+      return URL.createObjectURL(new Blob([buf],{type:'model/gltf-binary'}));
+    }catch(e){ console.warn('[RF] GLB blob error:', e); return null; }
   }
 
-  // Write to IndexedDB (GLBs are too large for localStorage)
   function _saveAsset(key, data){
     try {
       const req = indexedDB.open('rf_assets', 1);
       req.onupgradeneeded = e => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('assets'))
-          db.createObjectStore('assets', { keyPath: 'type' });
+        if (!e.target.result.objectStoreNames.contains('assets'))
+          e.target.result.createObjectStore('assets', { keyPath: 'type' });
       };
       req.onsuccess = e => {
-        const db = e.target.result;
         const type = key === GLB_KEY ? 'glb' : 'bg';
-        db.transaction('assets','readwrite').objectStore('assets').put({ type, ...data });
+        e.target.result.transaction('assets','readwrite').objectStore('assets').put({ type, ...data });
       };
-    } catch(_) {
-      try { localStorage.setItem(key, JSON.stringify(data)); } catch(__) {}
-    }
+      req.onerror = () => { try { localStorage.setItem(key, JSON.stringify(data)); } catch(_){} };
+    } catch(_) { try { localStorage.setItem(key, JSON.stringify(data)); } catch(__){} }
   }
 
-  // Read from localStorage or IndexedDB
   function _getAsset(key, cb){
-    try {
-      const raw = localStorage.getItem(key);
-      if(raw){ cb(JSON.parse(raw)); return; }
-    } catch(_){}
-    // Try IndexedDB
+    try { const r=localStorage.getItem(key); if(r){ cb(JSON.parse(r)); return; } } catch(_){}
     try {
       const req = indexedDB.open('rf_assets',1);
       req.onsuccess = e => {
-        const db = e.target.result;
+        const db=e.target.result;
         if(!db.objectStoreNames.contains('assets')){ cb(null); return; }
-        const tx = db.transaction('assets','readonly');
-        const store = tx.objectStore('assets');
-        const type = key===GLB_KEY?'glb':'bg';
-        const get = store.get(type);
-        get.onsuccess = () => cb(get.result||null);
-        get.onerror   = () => cb(null);
+        const get=db.transaction('assets','readonly').objectStore('assets').get(key===GLB_KEY?'glb':'bg');
+        get.onsuccess=()=>cb(get.result||null);
+        get.onerror=()=>cb(null);
       };
-      req.onerror = () => cb(null);
+      req.onerror=()=>cb(null);
     } catch(_){ cb(null); }
   }
 
-  // Apply background PNG to garena
   function applyBackground(dataUrl){
-    const garena = document.getElementById('garena');
-    if(!garena) return;
-    if(dataUrl.startsWith('data:image')){
-      garena.style.backgroundImage = `url(${dataUrl})`;
-      garena.style.backgroundSize  = 'cover';
-      garena.style.backgroundPosition = 'center';
-      garena.style.backgroundRepeat = 'no-repeat';
-    }
+    const g=document.getElementById('garena');
+    if(!g||!dataUrl.startsWith('data:image')) return;
+    g.style.backgroundImage=`url(${dataUrl})`;
+    g.style.backgroundSize='cover';
+    g.style.backgroundPosition='center';
+    g.style.backgroundRepeat='no-repeat';
   }
 
-  // Destroy existing 3D session (Three.js canvas or model-viewer)
   function destroyT3(){
     if(_t3AnimId){ cancelAnimationFrame(_t3AnimId); _t3AnimId=null; }
     if(_t3Renderer){ _t3Renderer.dispose(); _t3Renderer=null; }
     _t3Scene=null; _t3Camera=null; _t3Controls=null; _t3Active=false;
-    const old = document.getElementById('t3-canvas');
-    if(old) old.remove();
-    const mv = document.getElementById('t3-mv');
-    if(mv) mv.remove();
+    const old=document.getElementById('t3-canvas'); if(old) old.remove();
+    const mv=document.getElementById('t3-mv'); if(mv) mv.remove();
     if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
   }
 
-  // Load Three.js scripts lazily
-  function loadScript(src){
-    return new Promise((res,rej)=>{
-      if(document.querySelector(`script[src="${src}"]`)){ res(); return; }
-      const s=document.createElement('script'); s.src=src;
-      s.onload=res; s.onerror=()=>rej(new Error('Script failed: '+src));
-      document.head.appendChild(s);
-    });
-  }
-
-  // Convert GLB data URL to ArrayBuffer for loader.parse()
-  function _glbDataUrlToBuffer(dataUrl){
-    const b64 = dataUrl.split(',')[1] || '';
-    if(!b64) return null;
-    const bin = atob(b64);
-    const buf = new ArrayBuffer(bin.length);
-    const view = new Uint8Array(buf);
-    for(let i=0;i<bin.length;i++) view[i]=bin.charCodeAt(i);
-    return buf;
-  }
-
-  // Main: apply 3D table via model-viewer (same stack as admin.html preview)
   async function applyGLBTable(glbData, bgDataUrl){
-    const tableWrap = document.getElementById('table-wrap');
-    const svgTable  = document.getElementById('ptable');
-    if(!tableWrap || !svgTable){ console.warn('[RF] applyGLBTable: table-wrap or ptable not found'); return; }
+    // Require game view to be visible — model-viewer WebGL needs real pixel dimensions
+    if(!_isGameViewVisible()){
+      console.log('[RF] applyGLBTable: game view hidden, deferred to showView');
+      return;
+    }
+    const tableWrap=document.getElementById('table-wrap');
+    const svgTable=document.getElementById('ptable');
+    if(!tableWrap||!svgTable){ console.warn('[RF] applyGLBTable: missing DOM elements'); return; }
 
-    if(typeof toast === 'function') toast('Loading 3D table…', 'info');
+    showToast('Loading 3D table…');
     destroyT3();
 
     try{ await _loadMV(); }
     catch(e){
       console.warn('[RF] model-viewer load failed:', e);
-      if(typeof toast === 'function') toast('3D table load failed: ' + e.message, 'error');
+      showToast('3D table error: ' + e.message);
       return;
     }
 
     if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
-    _mvBlobUrl = _rfGlbToBlobUrl(glbData.dataUrl);
-    if(!_mvBlobUrl){
-      console.warn('[RF] GLB blob conversion failed');
-      if(typeof toast === 'function') toast('3D table: GLB conversion failed', 'error');
-      return;
-    }
+    _mvBlobUrl=_rfGlbToBlobUrl(glbData.dataUrl);
+    if(!_mvBlobUrl){ console.warn('[RF] GLB blob conversion failed'); showToast('3D table: GLB invalid'); return; }
 
-    const mv = document.createElement('model-viewer');
-    mv.id = 't3-mv';
-    mv.setAttribute('src', _mvBlobUrl);
-    // Match the SVG table's ~35° tilt (phi = 90 - 35 = 55° from zenith)
-    mv.setAttribute('camera-orbit', '0deg 55deg auto');
-    mv.setAttribute('shadow-intensity', '1');
-    mv.setAttribute('disable-zoom', '');
-    mv.setAttribute('interaction-prompt', 'none');
-    // Transparent bg so room shows through; z-index:2 to be above SVG stacking context
-    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;';
+    const mv=document.createElement('model-viewer');
+    mv.id='t3-mv';
+    mv.setAttribute('src',_mvBlobUrl);
+    mv.setAttribute('camera-orbit','0deg 55deg auto');
+    mv.setAttribute('shadow-intensity','1');
+    mv.setAttribute('disable-zoom','');
+    mv.setAttribute('interaction-prompt','none');
+    mv.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;display:block;';
 
-    tableWrap.style.position = 'relative';
+    tableWrap.style.position='relative';
     tableWrap.insertBefore(mv, tableWrap.firstChild);
-
-    // Hide SVG table (keep in DOM — seat positioning code reads from it)
-    svgTable.style.opacity = '0';
-    svgTable.style.pointerEvents = 'none';
-
-    _t3Active = true;
-    console.log('[RF] 3D table mounted via model-viewer:', glbData.name);
-    if(typeof toast === 'function') toast('3D table ready', 'success');
+    svgTable.style.opacity='0';
+    svgTable.style.pointerEvents='none';
+    _t3Active=true;
+    console.log('[RF] 3D table mounted:', glbData.name);
+    showToast('3D table ready');
   }
 
-  // Check and apply assets when game view loads
   function checkAndApplyAssets(){
-    _getAsset(BG_KEY, bgData=>{
-      if(bgData?.dataUrl) applyBackground(bgData.dataUrl);
-    });
+    _getAsset(BG_KEY, bgData=>{ if(bgData?.dataUrl) applyBackground(bgData.dataUrl); });
+    // Prefer in-memory GLB (avoids IndexedDB timing issues)
+    const src = _pendingGlb;
+    if(src){
+      _getAsset(BG_KEY, bgData=>{
+        applyGLBTable(src, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
+      });
+      return;
+    }
     _getAsset(GLB_KEY, glbData=>{
       if(!glbData?.dataUrl) return;
+      _pendingGlb = glbData;
       _getAsset(BG_KEY, bgData=>{
         applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
       });
     });
   }
 
-  // Hook into showView — apply whenever entering game
-  const _origShowView = window.showView;
-  window.showView = function(id){
-    _origShowView?.call(this, id);
-    if(id === 'vg'){
-      setTimeout(checkAndApplyAssets, 200);
+  // Wrap showView to apply 3D assets when entering game view
+  const _origShowView=window.showView;
+  window.showView=function(id){
+    _origShowView?.call(this,id);
+    if(id==='vg'){
+      setTimeout(checkAndApplyAssets, 400);
     } else {
-      // Pause render when not in game
       if(_t3AnimId){ cancelAnimationFrame(_t3AnimId); _t3AnimId=null; }
     }
   };
 
-  // ── REAL-TIME SOCKET LISTENER ─────────────────────────────────
-  // Fires when admin pushes an asset — hot-swaps it live for all players
   function _hookSocket(){
-    if(typeof socket === 'undefined' || !socket) return;
-    socket.on('assetUpdate', data => {
-      console.log('[RF] Asset update from admin:', data.type, data.name || '');
-      // Persist so late-joining players get current assets
-      if (data.dataUrl) {
-        const key = data.type === 'glb' ? GLB_KEY : BG_KEY;
-        _saveAsset(key, { dataUrl: data.dataUrl, name: data.name, pushedAt: data.pushedAt });
-      }
-      // Use data directly from socket — don't read back from IndexedDB (race condition)
-      if(data.type === 'bg' && data.dataUrl){
+    if(typeof socket==='undefined'||!socket) return;
+    socket.on('assetUpdate', data=>{
+      console.log('[RF] assetUpdate received:', data.type, data.name||'', 'hasData:', !!data.dataUrl);
+      if(data.type==='bg'&&data.dataUrl){
         applyBackground(data.dataUrl);
+        _saveAsset(BG_KEY,{dataUrl:data.dataUrl,name:data.name,pushedAt:data.pushedAt});
       }
-      if(data.type === 'glb' && data.dataUrl){
-        // Hot-swap regardless of view — player may be in vg or just joined
-        _getAsset(BG_KEY, bgData => {
-          applyGLBTable({dataUrl: data.dataUrl, name: data.name}, bgData?.dataUrl||null)
-            .catch(e=>console.warn('[RF] Hot-swap failed:',e));
-        });
+      if(data.type==='glb'&&data.dataUrl){
+        _pendingGlb={dataUrl:data.dataUrl,name:data.name};
+        _saveAsset(GLB_KEY,{dataUrl:data.dataUrl,name:data.name,pushedAt:data.pushedAt});
+        if(_isGameViewVisible()){
+          _getAsset(BG_KEY, bgData=>{
+            applyGLBTable(_pendingGlb, bgData?.dataUrl||null).catch(e=>console.warn('[RF] hot-swap failed:',e));
+          });
+        } else {
+          console.log('[RF] GLB queued — game view not yet visible');
+        }
       }
     });
-    console.log('[RF] Asset socket listener registered');
+    console.log('[RF] asset socket listener registered');
   }
 
-  // Socket is defined above this block — register listener immediately
   _hookSocket();
-  // When socket connects (player joins table), re-check IndexedDB for cached assets
-  if(typeof socket !== 'undefined' && socket){
-    socket.on('connect', () => setTimeout(checkAndApplyAssets, 300));
-  }
 
   // ── POLLING FALLBACK ──────────────────────────────────────────
-  // Checks localStorage every 30s — catches pushes even without socket
-  let _lastGlbPush = null, _lastBgPush = null;
-
+  let _lastGlbPush=null, _lastBgPush=null;
   setInterval(()=>{
-    _getAsset(GLB_KEY, glbData => {
-      if(!glbData) return;
-      if(glbData.pushedAt !== _lastGlbPush){
-        _lastGlbPush = glbData.pushedAt;
-        console.log('[RF] GLB poll update detected, hot-swapping table');
-        _getAsset(BG_KEY, bgData => {
-          applyGLBTable(glbData, bgData?.dataUrl||null)
-            .catch(e=>console.warn('[RF] Poll hot-swap failed:',e));
+    _getAsset(GLB_KEY, glbData=>{
+      if(!glbData||glbData.pushedAt===_lastGlbPush) return;
+      _lastGlbPush=glbData.pushedAt;
+      if(!_pendingGlb) _pendingGlb=glbData;
+      if(_isGameViewVisible()){
+        console.log('[RF] GLB poll update, applying');
+        _getAsset(BG_KEY, bgData=>{
+          applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] poll hot-swap failed:',e));
         });
       }
     });
-    _getAsset(BG_KEY, bgData => {
-      if(!bgData) return;
-      if(bgData.pushedAt !== _lastBgPush){
-        _lastBgPush = bgData.pushedAt;
-        console.log('[RF] Background poll update detected');
-        if(bgData.dataUrl) applyBackground(bgData.dataUrl);
-      }
+    _getAsset(BG_KEY, bgData=>{
+      if(!bgData||bgData.pushedAt===_lastBgPush) return;
+      _lastBgPush=bgData.pushedAt;
+      if(bgData.dataUrl) applyBackground(bgData.dataUrl);
     });
   }, 30000);
 
   // ── SEAT POSITION SOCKET + POLL ──────────────────────────────────
-  const SEAT_POS_KEY = 'rf_admin_seat_positions';
-  let _lastSeatPush = null;
+  const SEAT_POS_KEY='rf_admin_seat_positions';
+  let _lastSeatPush=null;
 
   function _applySeatUpdate(){
-    // Invalidate rim cache so placeSeats() re-reads custom positions
-    if(typeof _invalidateRimCache === 'function') _invalidateRimCache();
+    if(typeof _invalidateRimCache==='function') _invalidateRimCache();
     if(document.getElementById('vg')?.classList.contains('active')){
-      if(typeof placeSeats === 'function') placeSeats();
-      console.log('[RF] Seat positions updated from admin');
+      if(typeof placeSeats==='function') placeSeats();
+      console.log('[RF] seat positions updated');
     }
   }
 
-  // Hook socket for real-time seat push
   function _hookSeatSocket(){
-    if(typeof socket === 'undefined' || !socket) return;
-    socket.on('assetUpdate', data => {
-      if(data.type === 'seats') _applySeatUpdate();
-    });
+    if(typeof socket==='undefined'||!socket) return;
+    socket.on('assetUpdate', data=>{ if(data.type==='seats') _applySeatUpdate(); });
   }
   setTimeout(()=>{
     _hookSeatSocket();
-    if(typeof socket === 'undefined' || !socket){
-      const retry = setInterval(()=>{
-        if(typeof socket !== 'undefined' && socket){ _hookSeatSocket(); clearInterval(retry); }
-      }, 500);
+    if(typeof socket==='undefined'||!socket){
+      const retry=setInterval(()=>{ if(typeof socket!=='undefined'&&socket){ _hookSeatSocket(); clearInterval(retry); } },500);
     }
   }, 1200);
 
-  // Poll every 30s for seat position changes
   setInterval(()=>{
-    try {
-      const raw = localStorage.getItem(SEAT_POS_KEY);
-      if(!raw) return;
-      const data = JSON.parse(raw);
-      if(data.pushedAt && data.pushedAt !== _lastSeatPush){
-        _lastSeatPush = data.pushedAt;
-        _applySeatUpdate();
-      }
-    } catch(_){}
+    try{
+      const raw=localStorage.getItem(SEAT_POS_KEY); if(!raw) return;
+      const data=JSON.parse(raw);
+      if(data.pushedAt&&data.pushedAt!==_lastSeatPush){ _lastSeatPush=data.pushedAt; _applySeatUpdate(); }
+    }catch(_){}
   }, 30000);
 
-  // Also expose for manual trigger
-  window.rf3D = { check: checkAndApplyAssets, destroy: destroyT3, refreshSeats: _applySeatUpdate };
+  window.rf3D={ check: checkAndApplyAssets, destroy: destroyT3, refreshSeats: _applySeatUpdate };
 })();
 </script>
 
