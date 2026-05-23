@@ -14370,6 +14370,26 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     showToast('3D table ready');
   }
 
+  // Fetch assets from backend HTTP endpoint (works in demo mode — no socket needed)
+  function _fetchAssetsHttp(){
+    fetch('https://royal-flush-backend-production.up.railway.app/api/assets')
+      .then(r=>r.ok?r.json():Promise.reject(r.status))
+      .then(assets=>{
+        assets.forEach(a=>{
+          if(a.type==='bg'&&a.dataUrl){ applyBackground(a.dataUrl); _saveAsset(BG_KEY,a); }
+          if(a.type==='glb'&&a.dataUrl&&!_pendingGlb){
+            _pendingGlb={dataUrl:a.dataUrl,name:a.name};
+            _saveAsset(GLB_KEY,a);
+            console.log('[RF] HTTP asset fetch: GLB received, applying');
+            _getAsset(BG_KEY,bgData=>{
+              applyGLBTable(_pendingGlb,bgData?.dataUrl||null).catch(e=>console.warn('[RF] HTTP apply failed:',e));
+            });
+          }
+        });
+      })
+      .catch(e=>console.warn('[RF] /api/assets fetch failed:',e));
+  }
+
   function checkAndApplyAssets(){
     _getAsset(BG_KEY, bgData=>{ if(bgData?.dataUrl) applyBackground(bgData.dataUrl); });
     // Prefer in-memory GLB (avoids IndexedDB timing issues)
@@ -14381,11 +14401,16 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       return;
     }
     _getAsset(GLB_KEY, glbData=>{
-      if(!glbData?.dataUrl) return;
-      _pendingGlb = glbData;
-      _getAsset(BG_KEY, bgData=>{
-        applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
-      });
+      if(glbData?.dataUrl){
+        _pendingGlb = glbData;
+        _getAsset(BG_KEY, bgData=>{
+          applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
+        });
+      } else {
+        // IndexedDB empty — fetch from backend HTTP (covers demo mode and first visit)
+        console.log('[RF] no cached GLB, fetching from /api/assets');
+        _fetchAssetsHttp();
+      }
     });
   }
 
