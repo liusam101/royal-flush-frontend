@@ -7878,12 +7878,17 @@ function _getCustomSeatPositions(n, wrap){
     const raw = localStorage.getItem(_SEAT_POS_KEY);
     if(!raw) return null;
     const data = JSON.parse(raw);
-    // Must have exactly n seats saved, or we redistribute
     if(!data.seats || !data.seats.length) return null;
-    const W = wrap.offsetWidth  || data.canvasW || 900;
-    const H = wrap.offsetHeight || data.canvasH || 540;
+    const W = wrap.offsetWidth  || 900;
+    const H = wrap.offsetHeight || 540;
     const cx = W * 0.5, cy = H * 0.5;
-    // Resample to n seats if count differs
+    // Seat x/y are normalized 0-1 within the admin canvas (canvasW × canvasH).
+    // Remap to player wrap dimensions, preserving the admin canvas aspect ratio
+    // so positions don't stretch when the two canvases have different shapes.
+    const srcW = data.canvasW || 700;
+    const srcH = data.canvasH || 420;
+    const scaleX = W / srcW;
+    const scaleY = H / srcH;
     const stored = data.seats;
     const seats = [];
     for(let i=0;i<n;i++){
@@ -7892,9 +7897,10 @@ function _getCustomSeatPositions(n, wrap){
       const lo = Math.floor(srcIdx) % stored.length;
       const hi = (lo+1) % stored.length;
       const f  = srcIdx - Math.floor(srcIdx);
-      const px = (stored[lo].x*(1-f) + stored[hi].x*f) * W;
-      const py = (stored[lo].y*(1-f) + stored[hi].y*f) * H;
-      // z-index: seats at bottom of table get higher z
+      const nx = stored[lo].x*(1-f) + stored[hi].x*f;
+      const ny = stored[lo].y*(1-f) + stored[hi].y*f;
+      const px = nx * srcW * scaleX;
+      const py = ny * srcH * scaleY;
       const zIdx = 500 + Math.round(py);
       seats.push({ px, py, cx, cy, scaleFactor:1, zIdx });
     }
@@ -14385,6 +14391,10 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
               applyGLBTable(_pendingGlb,bgData?.dataUrl||null).catch(e=>console.warn('[RF] HTTP apply failed:',e));
             });
           }
+          if(a.type==='seats'&&a.dataUrl){
+            _saveSeatData(a.dataUrl);
+            _applySeatUpdate();
+          }
         });
       })
       .catch(e=>console.warn('[RF] /api/assets fetch failed:',e));
@@ -14483,9 +14493,18 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     }
   }
 
+  function _saveSeatData(raw){
+    try{ localStorage.setItem(SEAT_POS_KEY, raw); }catch(_){}
+  }
+
   function _hookSeatSocket(){
     if(typeof socket==='undefined'||!socket) return;
-    socket.on('assetUpdate', data=>{ if(data.type==='seats') _applySeatUpdate(); });
+    socket.on('assetUpdate', data=>{
+      if(data.type==='seats'){
+        if(data.dataUrl) _saveSeatData(data.dataUrl);
+        _applySeatUpdate();
+      }
+    });
   }
   setTimeout(()=>{
     _hookSeatSocket();
