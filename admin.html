@@ -1188,7 +1188,7 @@ function pushSeats(){
   const data={seats:_seSeats,canvasW:SE_W,canvasH:SE_H,pushedAt:new Date().toISOString()};
   localStorage.setItem('rf_admin_seat_positions',JSON.stringify(data));
   if(socket){
-    socket.emit('adminPushAsset',{secret:adminKey,type:'seats',name:`${_seSeats.length}-seat layout`,pushedAt:data.pushedAt});
+    socket.emit('adminPushAsset',{secret:adminKey,type:'seats',name:`${_seSeats.length}-seat layout`,pushedAt:data.pushedAt,dataUrl:JSON.stringify(data)});
     toast(`Seat layout (${_seSeats.length} seats) pushed to all players`,'success');
     log(`Seat positions pushed: ${_seSeats.length} seats`,'success');
   } else {
