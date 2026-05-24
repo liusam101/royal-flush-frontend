@@ -1032,8 +1032,8 @@ function _seEvenAngles(n){
   const arc=[0];
   for(let i=0;i<STEPS;i++) arc.push(arc[i]+Math.hypot(a*Math.sin(i*dt),b*Math.cos(i*dt))*dt);
   const total=arc[STEPS], seg=total/n;
-  // start at top of ellipse (t = -π/2, wrapping from 3π/2 worth of arc)
-  const startArc=arc[Math.round(3*STEPS/4)];
+  // start at bottom of ellipse (t = π/2) so seat 0 = player's seat (bottom)
+  const startArc=arc[Math.round(STEPS/4)];
   return Array.from({length:n},(_,k)=>{
     const target=((startArc+k*seg)%total+total)%total;
     let lo=0,hi=STEPS;
