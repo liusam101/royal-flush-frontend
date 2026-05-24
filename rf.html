@@ -7893,14 +7893,19 @@ function _getCustomSeatPositions(n, wrap){
       if(score > maxScore){ maxScore=score; bottomIdx=i; }
     }
 
+    // Apply same tilt compression the admin editor uses when drawing seats
+    const tiltFactor = data.tilt !== undefined ? Math.sin(data.tilt * Math.PI / 180) : 1.0;
+    const mcy = data.modelCenter?.cy ?? 0.5;
+    const pivotY = mcy * H;
+
     const seats = [];
     for(let i=0;i<n;i++){
       // Map player i to stored seat, starting from the bottom seat
       const stIdx = (bottomIdx + Math.round(i*m/n)) % m;
       const s = stored[stIdx];
       const px = s.x * W;
-      const py = s.y * H;
-      seats.push({ px, py, cx:W*0.5, cy:H*0.5, scaleFactor:1, zIdx:500+Math.round(py) });
+      const py = pivotY + (s.y * H - pivotY) * tiltFactor;
+      seats.push({ px, py, cx:W*0.5, cy:pivotY, scaleFactor:1, zIdx:500+Math.round(py) });
     }
     return seats;
   } catch(e){ return null; }
@@ -14309,6 +14314,8 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       };
       req.onerror = () => { try { localStorage.setItem(key, JSON.stringify(data)); } catch(_){} };
     } catch(_) { try { localStorage.setItem(key, JSON.stringify(data)); } catch(__){} }
+    // BG is small — also write to localStorage so _getAsset finds it on first try
+    if(key === BG_KEY){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(_){} }
   }
 
   function _getAsset(key, cb){
@@ -14352,8 +14359,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       return;
     }
     const tableWrap=document.getElementById('table-wrap');
-    const svgTable=document.getElementById('ptable');
-    if(!tableWrap||!svgTable){ console.warn('[RF] applyGLBTable: missing DOM elements'); return; }
+    if(!tableWrap){ console.warn('[RF] applyGLBTable: missing table-wrap'); return; }
 
     destroyT3();
 
@@ -14381,16 +14387,11 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     tableWrap.style.position = 'relative';
     tableWrap.insertBefore(mv, tableWrap.firstChild);
 
-    // Swap SVG → 3D only when model-viewer has rendered its first frame
-    const _swap = () => {
-      mv.style.opacity = '1';
-      svgTable.style.transition = 'opacity 0.35s';
-      svgTable.style.opacity = '0';
-      svgTable.style.pointerEvents = 'none';
-    };
-    mv.addEventListener('load', () => requestAnimationFrame(_swap), { once: true });
-    // Fallback: force swap after 6s so player never waits forever
-    setTimeout(() => { if(svgTable.style.opacity !== '0') _swap(); }, 6000);
+    // Fade model-viewer in once it has rendered — SVG already hidden by checkAndApplyAssets
+    const _showMv = () => { mv.style.opacity = '1'; };
+    mv.addEventListener('load', () => requestAnimationFrame(_showMv), { once: true });
+    // Fallback: make visible after 8s in case load event never fires
+    setTimeout(_showMv, 8000);
 
     _t3Active = true;
     console.log('[RF] 3D table mounting:', glbData.name);
@@ -14422,6 +14423,9 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function checkAndApplyAssets(){
+    // Hide SVG table immediately — prevents SVG flash while 3D/BG load in
+    const _svgNow = document.getElementById('ptable');
+    if(_svgNow){ _svgNow.style.transition='opacity 0.15s'; _svgNow.style.opacity='0'; _svgNow.style.pointerEvents='none'; }
     // Always fetch from backend to get latest BG, seats (covers demo mode + stale cache)
     _fetchAssetsHttp();
     // Apply locally cached assets immediately (faster, before HTTP responds)
