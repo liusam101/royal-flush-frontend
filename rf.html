@@ -14249,8 +14249,9 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   let _t3Renderer=null, _t3Scene=null, _t3Camera=null, _t3Controls=null, _t3AnimId=null;
   let _t3Active = false;
   let _mvBlobUrl = null;
-  let _pendingGlb = null; // in-memory — avoids IndexedDB race conditions
-  let _seatedTilt = null; // tilt angle (degrees) from seat editor push data
+  let _pendingGlb = null;     // in-memory — avoids IndexedDB race conditions
+  let _pendingBlobUrl = null; // pre-created blob URL so mounting is instant
+  let _seatedTilt = null;     // tilt angle (degrees) from seat editor push data
 
   const _MV_CDN = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js';
 
@@ -14286,6 +14287,13 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
       return URL.createObjectURL(new Blob([buf],{type:'model/gltf-binary'}));
     }catch(e){ console.warn('[RF] GLB blob error:', e); return null; }
+  }
+
+  // Pre-create blob URL as soon as GLB data arrives — eliminates decode delay on game entry
+  function _ensureBlobUrl(){
+    if(!_pendingGlb||_pendingBlobUrl) return;
+    const url=_rfGlbToBlobUrl(_pendingGlb.dataUrl);
+    if(url){ _pendingBlobUrl=url; console.log('[RF] GLB blob URL pre-created'); }
   }
 
   function _saveAsset(key, data){
@@ -14334,49 +14342,58 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     const old=document.getElementById('t3-canvas'); if(old) old.remove();
     const mv=document.getElementById('t3-mv'); if(mv) mv.remove();
     if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
+    if(_pendingBlobUrl){ URL.revokeObjectURL(_pendingBlobUrl); _pendingBlobUrl=null; }
   }
 
   async function applyGLBTable(glbData, bgDataUrl){
-    // Require game view to be visible — model-viewer WebGL needs real pixel dimensions
+    // model-viewer WebGL needs real pixel dimensions — game view must be visible
     if(!_isGameViewVisible()){
-      console.log('[RF] applyGLBTable: game view hidden, deferred to showView');
+      console.log('[RF] applyGLBTable: game view hidden, skipping');
       return;
     }
     const tableWrap=document.getElementById('table-wrap');
     const svgTable=document.getElementById('ptable');
     if(!tableWrap||!svgTable){ console.warn('[RF] applyGLBTable: missing DOM elements'); return; }
 
-    showToast('Loading 3D table…');
     destroyT3();
 
     try{ await _loadMV(); }
-    catch(e){
-      console.warn('[RF] model-viewer load failed:', e);
-      showToast('3D table error: ' + e.message);
-      return;
-    }
+    catch(e){ console.warn('[RF] model-viewer load failed:', e); showToast('3D table error: ' + e.message); return; }
 
-    if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
-    _mvBlobUrl=_rfGlbToBlobUrl(glbData.dataUrl);
-    if(!_mvBlobUrl){ console.warn('[RF] GLB blob conversion failed'); showToast('3D table: GLB invalid'); return; }
+    // Use pre-created blob URL if available (eliminates decode delay)
+    let blobUrl = _pendingBlobUrl;
+    if(blobUrl){ _pendingBlobUrl = null; }
+    else { blobUrl = _rfGlbToBlobUrl(glbData.dataUrl); }
+    if(!blobUrl){ console.warn('[RF] GLB blob conversion failed'); return; }
+    _mvBlobUrl = blobUrl;
 
-    const mv=document.createElement('model-viewer');
-    mv.id='t3-mv';
-    mv.setAttribute('src',_mvBlobUrl);
-    const _phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 55;
-    mv.setAttribute('camera-orbit',`0deg ${_phi}deg auto`);
-    mv.setAttribute('shadow-intensity','1');
-    mv.setAttribute('disable-zoom','');
-    mv.setAttribute('interaction-prompt','none');
-    mv.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;display:block;';
+    const phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 55;
+    const mv = document.createElement('model-viewer');
+    mv.id = 't3-mv';
+    mv.setAttribute('src', _mvBlobUrl);
+    mv.setAttribute('camera-orbit', `0deg ${phi}deg auto`);
+    mv.setAttribute('shadow-intensity', '1');
+    mv.setAttribute('disable-zoom', '');
+    mv.setAttribute('interaction-prompt', 'none');
+    // Start invisible — fade in only after first render so SVG has no gap
+    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;display:block;opacity:0;transition:opacity 0.35s;';
 
-    tableWrap.style.position='relative';
+    tableWrap.style.position = 'relative';
     tableWrap.insertBefore(mv, tableWrap.firstChild);
-    svgTable.style.opacity='0';
-    svgTable.style.pointerEvents='none';
-    _t3Active=true;
-    console.log('[RF] 3D table mounted:', glbData.name);
-    showToast('3D table ready');
+
+    // Swap SVG → 3D only when model-viewer has rendered its first frame
+    const _swap = () => {
+      mv.style.opacity = '1';
+      svgTable.style.transition = 'opacity 0.35s';
+      svgTable.style.opacity = '0';
+      svgTable.style.pointerEvents = 'none';
+    };
+    mv.addEventListener('load', () => requestAnimationFrame(_swap), { once: true });
+    // Fallback: force swap after 6s so player never waits forever
+    setTimeout(() => { if(svgTable.style.opacity !== '0') _swap(); }, 6000);
+
+    _t3Active = true;
+    console.log('[RF] 3D table mounting:', glbData.name);
   }
 
   // Fetch assets from backend HTTP endpoint (works in demo mode — no socket needed)
@@ -14388,8 +14405,9 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
           if(a.type==='bg'&&a.dataUrl){ applyBackground(a.dataUrl); _saveAsset(BG_KEY,a); }
           if(a.type==='glb'&&a.dataUrl&&!_pendingGlb){
             _pendingGlb={dataUrl:a.dataUrl,name:a.name};
+            _ensureBlobUrl(); // pre-create blob URL immediately
             _saveAsset(GLB_KEY,a);
-            console.log('[RF] HTTP asset fetch: GLB received, applying');
+            console.log('[RF] HTTP: GLB received, blob pre-created');
             _getAsset(BG_KEY,bgData=>{
               applyGLBTable(_pendingGlb,bgData?.dataUrl||null).catch(e=>console.warn('[RF] HTTP apply failed:',e));
             });
@@ -14404,7 +14422,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function checkAndApplyAssets(){
-    // Always fetch from backend to get latest BG, seats, and GLB (covers demo mode + stale cache)
+    // Always fetch from backend to get latest BG, seats (covers demo mode + stale cache)
     _fetchAssetsHttp();
     // Apply locally cached assets immediately (faster, before HTTP responds)
     _getAsset(BG_KEY, bgData=>{ if(bgData?.dataUrl) applyBackground(bgData.dataUrl); });
@@ -14419,33 +14437,31 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     _getAsset(GLB_KEY, glbData=>{
       if(glbData?.dataUrl){
         _pendingGlb = glbData;
+        _ensureBlobUrl(); // pre-create blob URL from cache
         _getAsset(BG_KEY, bgData=>{
           applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
         });
       }
-      // _fetchAssetsHttp() already called above for empty-cache case
+      // _fetchAssetsHttp() already handles empty-cache case
     });
   }
 
-  // Pre-load model-viewer script now so it's ready when game view opens
+  // Pre-load model-viewer script and pre-create blob URL from cache at page load
   _loadMV().catch(()=>{});
+  _getAsset(GLB_KEY, glbData=>{
+    if(glbData?.dataUrl){ _pendingGlb=glbData; _ensureBlobUrl(); console.log('[RF] startup: GLB blob pre-created from cache'); }
+  });
 
   // Wrap showView to apply 3D assets when entering game view
   const _origShowView=window.showView;
   window.showView=function(id){
     _origShowView?.call(this,id);
     if(id==='vl'){
-      // Clear demo restore state when player intentionally returns to lobby
       sessionStorage.removeItem('rf_demo_state');
     }
     if(id==='vg'){
-      // Immediately hide SVG if 3D GLB is already ready — prevents flash
-      if(_pendingGlb){
-        const svgT=document.getElementById('ptable');
-        if(svgT){ svgT.style.opacity='0'; svgT.style.pointerEvents='none'; }
-      }
-      // MV is pre-loaded; 150ms is enough for layout to settle
-      setTimeout(checkAndApplyAssets, 150);
+      // 200ms: past the 180ms transitionTo fade so the view is display:block when we apply
+      setTimeout(checkAndApplyAssets, 200);
     } else {
       if(_t3AnimId){ cancelAnimationFrame(_t3AnimId); _t3AnimId=null; }
     }
@@ -14461,6 +14477,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       }
       if(data.type==='glb'&&data.dataUrl){
         _pendingGlb={dataUrl:data.dataUrl,name:data.name};
+        _ensureBlobUrl(); // pre-create blob URL immediately on receive
         _saveAsset(GLB_KEY,{dataUrl:data.dataUrl,name:data.name,pushedAt:data.pushedAt});
         if(_isGameViewVisible()){
           _getAsset(BG_KEY, bgData=>{
