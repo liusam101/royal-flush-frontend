@@ -10904,6 +10904,8 @@ function confirmBuyin(){
   } else {
     // Not logged in or gold chips — demo mode with bots
     _populateDemoSeats(tier, val, playerName);
+    // Save state so refresh can restore the demo game
+    try{ sessionStorage.setItem('rf_demo_state', JSON.stringify({tierId:tier.id, buyIn:val, mode:_mode, tableName:_buyinTable||tier.name})); }catch(_){}
     showView('vg');
     setTimeout(()=>startHand(), 400);
   }
@@ -14252,6 +14254,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   let _t3Active = false;
   let _mvBlobUrl = null;
   let _pendingGlb = null; // in-memory — avoids IndexedDB race conditions
+  let _seatedTilt = null; // tilt angle (degrees) from seat editor push data
 
   const _MV_CDN = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js';
 
@@ -14259,6 +14262,9 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     const vg = document.getElementById('vg');
     return vg ? getComputedStyle(vg).display !== 'none' : false;
   }
+
+  // Load saved tilt from localStorage immediately
+  try{const _r=localStorage.getItem('rf_admin_seat_positions');if(_r){const _d=JSON.parse(_r);if(_d.tilt!==undefined)_seatedTilt=_d.tilt;}}catch(_){}
 
   function _loadMV(){
     return new Promise((res,rej)=>{
@@ -14361,7 +14367,8 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     const mv=document.createElement('model-viewer');
     mv.id='t3-mv';
     mv.setAttribute('src',_mvBlobUrl);
-    mv.setAttribute('camera-orbit','0deg 55deg auto');
+    const _phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 55;
+    mv.setAttribute('camera-orbit',`0deg ${_phi}deg auto`);
     mv.setAttribute('shadow-intensity','1');
     mv.setAttribute('disable-zoom','');
     mv.setAttribute('interaction-prompt','none');
@@ -14401,6 +14408,9 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function checkAndApplyAssets(){
+    // Always fetch from backend to get latest BG, seats, and GLB (covers demo mode + stale cache)
+    _fetchAssetsHttp();
+    // Apply locally cached assets immediately (faster, before HTTP responds)
     _getAsset(BG_KEY, bgData=>{ if(bgData?.dataUrl) applyBackground(bgData.dataUrl); });
     // Prefer in-memory GLB (avoids IndexedDB timing issues)
     const src = _pendingGlb;
@@ -14416,20 +14426,30 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
         _getAsset(BG_KEY, bgData=>{
           applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
         });
-      } else {
-        // IndexedDB empty — fetch from backend HTTP (covers demo mode and first visit)
-        console.log('[RF] no cached GLB, fetching from /api/assets');
-        _fetchAssetsHttp();
       }
+      // _fetchAssetsHttp() already called above for empty-cache case
     });
   }
+
+  // Pre-load model-viewer script now so it's ready when game view opens
+  _loadMV().catch(()=>{});
 
   // Wrap showView to apply 3D assets when entering game view
   const _origShowView=window.showView;
   window.showView=function(id){
     _origShowView?.call(this,id);
+    if(id==='vl'){
+      // Clear demo restore state when player intentionally returns to lobby
+      sessionStorage.removeItem('rf_demo_state');
+    }
     if(id==='vg'){
-      setTimeout(checkAndApplyAssets, 400);
+      // Immediately hide SVG if 3D GLB is already ready — prevents flash
+      if(_pendingGlb){
+        const svgT=document.getElementById('ptable');
+        if(svgT){ svgT.style.opacity='0'; svgT.style.pointerEvents='none'; }
+      }
+      // MV is pre-loaded; 150ms is enough for layout to settle
+      setTimeout(checkAndApplyAssets, 150);
     } else {
       if(_t3AnimId){ cancelAnimationFrame(_t3AnimId); _t3AnimId=null; }
     }
@@ -14494,7 +14514,10 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function _saveSeatData(raw){
-    try{ localStorage.setItem(SEAT_POS_KEY, raw); }catch(_){}
+    try{
+      localStorage.setItem(SEAT_POS_KEY, raw);
+      const _d=JSON.parse(raw); if(_d.tilt!==undefined) _seatedTilt=_d.tilt;
+    }catch(_){}
   }
 
   function _hookSeatSocket(){
@@ -14522,6 +14545,37 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   }, 30000);
 
   window.rf3D={ check: checkAndApplyAssets, destroy: destroyT3, refreshSeats: _applySeatUpdate };
+
+  // Demo game refresh recovery — restore if player refreshed mid-game
+  setTimeout(()=>{
+    if(typeof _backendActive!=='undefined'&&_backendActive) return; // backend handles its own reconnect
+    try{
+      const raw=sessionStorage.getItem('rf_demo_state');
+      if(!raw) return;
+      const st=JSON.parse(raw);
+      const allTiers=[
+        ...(typeof TIERS_ROYAL!=='undefined'?TIERS_ROYAL:[]),
+        ...(typeof TIERS_GOLD!=='undefined'?TIERS_GOLD:[]),
+        ...(typeof SNGS_ROYAL!=='undefined'?SNGS_ROYAL:[]),
+        ...(typeof SNGS_GOLD!=='undefined'?SNGS_GOLD:[]),
+      ];
+      const tier=allTiers.find(t=>t.id===st.tierId);
+      if(!tier){ sessionStorage.removeItem('rf_demo_state'); return; }
+      console.log('[RF] Restoring demo game from sessionStorage');
+      if(typeof _mode!=='undefined') window._mode=st.mode; // restore mode
+      if(typeof SB_AMT!=='undefined'){ SB_AMT=tier.sb; BB_AMT=tier.bb; }
+      const stEl=document.getElementById('g-stakes');
+      if(stEl&&typeof chip==='function') stEl.textContent=chip(tier.sb)+'/'+chip(tier.bb)+' No Limit Hold\'em';
+      const gnEl=document.getElementById('g-tname');
+      if(gnEl) gnEl.textContent=st.tableName||tier.name;
+      const pName=localStorage.getItem('rf_username')||'HighRoller';
+      if(typeof _populateDemoSeats==='function') _populateDemoSeats(tier,st.buyIn,pName);
+      if(typeof showView==='function'){
+        showView('vg');
+        setTimeout(()=>{ if(typeof startHand==='function') startHand(); },400);
+      }
+    }catch(e){ console.warn('[RF] demo restore failed:',e); sessionStorage.removeItem('rf_demo_state'); }
+  },900);
 })();
 </script>
 
