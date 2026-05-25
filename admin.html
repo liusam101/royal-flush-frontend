@@ -1185,7 +1185,8 @@ function resetSeats(){
 
 function pushSeats(){
   if(!_seSeats.length){toast('Open the Seat Editor first','error');return;}
-  const data={seats:_seSeats,canvasW:SE_W,canvasH:SE_H,tilt:_seLayoutAngle,pushedAt:new Date().toISOString()};
+  const mcx=window._seModelCenter?.cx??0.5, mcy=window._seModelCenter?.cy??0.5;
+  const data={seats:_seSeats,canvasW:SE_W,canvasH:SE_H,tilt:_seLayoutAngle,modelCenter:{cx:mcx,cy:mcy},pushedAt:new Date().toISOString()};
   localStorage.setItem('rf_admin_seat_positions',JSON.stringify(data));
   if(socket){
     socket.emit('adminPushAsset',{secret:adminKey,type:'seats',name:`${_seSeats.length}-seat layout`,pushedAt:data.pushedAt,dataUrl:JSON.stringify(data)});
