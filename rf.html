@@ -14251,12 +14251,15 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
 (function(){
   const GLB_KEY = 'rf_admin_table_glb';
   const BG_KEY  = 'rf_admin_table_bg';
-  let _t3Renderer=null, _t3Scene=null, _t3Camera=null, _t3Controls=null, _t3AnimId=null;
+  let _t3AnimId = null;
   let _t3Active = false;
   let _mvBlobUrl = null;
-  let _pendingGlb = null;     // in-memory — avoids IndexedDB race conditions
-  let _pendingBlobUrl = null; // pre-created blob URL so mounting is instant
-  let _seatedTilt = null;     // tilt angle (degrees) from seat editor push data
+  let _pendingGlb = null;
+  let _pendingBlobUrl = null;
+  let _seatedTilt = null;
+  let _socketHooked = false;
+  let _preRenderMv = null;   // model-viewer rendered off-screen so game entry is instant
+  let _preRenderHost = null;
 
   const _MV_CDN = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js';
 
@@ -14265,7 +14268,6 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     return vg ? getComputedStyle(vg).display !== 'none' : false;
   }
 
-  // Load saved tilt from localStorage immediately
   try{const _r=localStorage.getItem('rf_admin_seat_positions');if(_r){const _d=JSON.parse(_r);if(_d.tilt!==undefined)_seatedTilt=_d.tilt;}}catch(_){}
 
   function _loadMV(){
@@ -14294,7 +14296,6 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     }catch(e){ console.warn('[RF] GLB blob error:', e); return null; }
   }
 
-  // Pre-create blob URL as soon as GLB data arrives — eliminates decode delay on game entry
   function _ensureBlobUrl(){
     if(!_pendingGlb||_pendingBlobUrl) return;
     const url=_rfGlbToBlobUrl(_pendingGlb.dataUrl);
@@ -14314,7 +14315,6 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       };
       req.onerror = () => { try { localStorage.setItem(key, JSON.stringify(data)); } catch(_){} };
     } catch(_) { try { localStorage.setItem(key, JSON.stringify(data)); } catch(__){} }
-    // BG is small — also write to localStorage so _getAsset finds it on first try
     if(key === BG_KEY){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(_){} }
   }
 
@@ -14334,39 +14334,77 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function applyBackground(dataUrl){
+    if(!dataUrl||!dataUrl.startsWith('data:image')) return;
     const g=document.getElementById('garena');
-    if(!g||!dataUrl.startsWith('data:image')) return;
+    if(!g) return;
     g.style.backgroundImage=`url(${dataUrl})`;
     g.style.backgroundSize='cover';
     g.style.backgroundPosition='center';
     g.style.backgroundRepeat='no-repeat';
   }
 
+  // Off-screen host with real dimensions so model-viewer can pre-render while in lobby
+  function _getPreHost(){
+    if(_preRenderHost) return _preRenderHost;
+    _preRenderHost = document.createElement('div');
+    _preRenderHost.style.cssText = 'position:fixed;left:-200%;top:0;width:84vw;max-width:1200px;aspect-ratio:1000/700;pointer-events:none;';
+    document.body.appendChild(_preRenderHost);
+    return _preRenderHost;
+  }
+
+  async function _startPreRender(){
+    if(_preRenderMv) return;
+    const blobUrl = _pendingBlobUrl;
+    if(!blobUrl) return;
+    try { await _loadMV(); } catch(e){ return; }
+    const phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 55;
+    const host = _getPreHost();
+    const mv = document.createElement('model-viewer');
+    mv.setAttribute('src', blobUrl);
+    mv.setAttribute('camera-orbit', `0deg ${phi}deg auto`);
+    mv.setAttribute('shadow-intensity', '1');
+    mv.setAttribute('disable-zoom', '');
+    mv.setAttribute('interaction-prompt', 'none');
+    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;';
+    host.appendChild(mv);
+    _preRenderMv = mv;
+    console.log('[RF] 3D pre-render started off-screen');
+  }
+
   function destroyT3(){
     if(_t3AnimId){ cancelAnimationFrame(_t3AnimId); _t3AnimId=null; }
-    if(_t3Renderer){ _t3Renderer.dispose(); _t3Renderer=null; }
-    _t3Scene=null; _t3Camera=null; _t3Controls=null; _t3Active=false;
+    _t3Active = false;
     const old=document.getElementById('t3-canvas'); if(old) old.remove();
     const mv=document.getElementById('t3-mv'); if(mv) mv.remove();
     if(_mvBlobUrl){ URL.revokeObjectURL(_mvBlobUrl); _mvBlobUrl=null; }
-    if(_pendingBlobUrl){ URL.revokeObjectURL(_pendingBlobUrl); _pendingBlobUrl=null; }
+    // _pendingBlobUrl kept alive — may be in use by pre-render
   }
 
-  async function applyGLBTable(glbData, bgDataUrl){
-    // model-viewer WebGL needs real pixel dimensions — game view must be visible
-    if(!_isGameViewVisible()){
-      console.log('[RF] applyGLBTable: game view hidden, skipping');
-      return;
-    }
+  async function applyGLBTable(glbData){
+    if(!_isGameViewVisible()) return;
     const tableWrap=document.getElementById('table-wrap');
     if(!tableWrap){ console.warn('[RF] applyGLBTable: missing table-wrap'); return; }
 
     destroyT3();
+    tableWrap.style.position = 'relative';
 
+    // Fast path: move pre-rendered model-viewer from off-screen host — instant appearance
+    if(_preRenderMv && _preRenderMv.isConnected){
+      const mv = _preRenderMv;
+      _preRenderMv = null;
+      mv.id = 't3-mv';
+      mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:1;';
+      tableWrap.insertBefore(mv, tableWrap.firstChild);
+      _mvBlobUrl = mv.getAttribute('src');
+      _t3Active = true;
+      console.log('[RF] 3D instant — pre-rendered model-viewer moved into view');
+      return;
+    }
+
+    // Slow path: create fresh model-viewer (2-3s parse time)
     try{ await _loadMV(); }
-    catch(e){ console.warn('[RF] model-viewer load failed:', e); showToast('3D table error: ' + e.message); return; }
+    catch(e){ console.warn('[RF] model-viewer load failed:', e); return; }
 
-    // Use pre-created blob URL if available (eliminates decode delay)
     let blobUrl = _pendingBlobUrl;
     if(blobUrl){ _pendingBlobUrl = null; }
     else { blobUrl = _rfGlbToBlobUrl(glbData.dataUrl); }
@@ -14381,23 +14419,15 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     mv.setAttribute('shadow-intensity', '1');
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
-    // Start invisible — fade in only after first render so SVG has no gap
-    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;display:block;opacity:0;transition:opacity 0.35s;';
-
-    tableWrap.style.position = 'relative';
+    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;';
     tableWrap.insertBefore(mv, tableWrap.firstChild);
-
-    // Fade model-viewer in once it has rendered — SVG already hidden by checkAndApplyAssets
-    const _showMv = () => { mv.style.opacity = '1'; };
-    mv.addEventListener('load', () => requestAnimationFrame(_showMv), { once: true });
-    // Fallback: make visible after 8s in case load event never fires
-    setTimeout(_showMv, 8000);
-
+    const _show = () => { mv.style.opacity = '1'; };
+    mv.addEventListener('load', () => requestAnimationFrame(_show), { once: true });
+    setTimeout(_show, 8000);
     _t3Active = true;
-    console.log('[RF] 3D table mounting:', glbData.name);
+    console.log('[RF] 3D mounting fresh (pre-render was not ready):', glbData.name);
   }
 
-  // Fetch assets from backend HTTP endpoint (works in demo mode — no socket needed)
   function _fetchAssetsHttp(){
     fetch('https://royal-flush-backend-production.up.railway.app/api/assets')
       .then(r=>r.ok?r.json():Promise.reject(r.status))
@@ -14406,109 +14436,103 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
           if(a.type==='bg'&&a.dataUrl){ applyBackground(a.dataUrl); _saveAsset(BG_KEY,a); }
           if(a.type==='glb'&&a.dataUrl&&!_pendingGlb){
             _pendingGlb={dataUrl:a.dataUrl,name:a.name};
-            _ensureBlobUrl(); // pre-create blob URL immediately
+            _ensureBlobUrl();
             _saveAsset(GLB_KEY,a);
-            console.log('[RF] HTTP: GLB received, blob pre-created');
-            _getAsset(BG_KEY,bgData=>{
-              applyGLBTable(_pendingGlb,bgData?.dataUrl||null).catch(e=>console.warn('[RF] HTTP apply failed:',e));
-            });
+            _startPreRender();
+            if(_isGameViewVisible()){
+              applyGLBTable(_pendingGlb).catch(e=>console.warn('[RF] HTTP apply failed:',e));
+            }
           }
-          if(a.type==='seats'&&a.dataUrl){
-            _saveSeatData(a.dataUrl);
-            _applySeatUpdate();
-          }
+          if(a.type==='seats'&&a.dataUrl){ _saveSeatData(a.dataUrl); _applySeatUpdate(); }
         });
       })
       .catch(e=>console.warn('[RF] /api/assets fetch failed:',e));
   }
 
   function checkAndApplyAssets(){
-    // Hide SVG table immediately — prevents SVG flash while 3D/BG load in
-    const _svgNow = document.getElementById('ptable');
-    if(_svgNow){ _svgNow.style.transition='opacity 0.15s'; _svgNow.style.opacity='0'; _svgNow.style.pointerEvents='none'; }
-    // Always fetch from backend to get latest BG, seats (covers demo mode + stale cache)
+    const _svg = document.getElementById('ptable');
+    if(_svg){ _svg.style.transition='opacity 0.15s'; _svg.style.opacity='0'; _svg.style.pointerEvents='none'; }
     _fetchAssetsHttp();
-    // Apply locally cached assets immediately (faster, before HTTP responds)
     _getAsset(BG_KEY, bgData=>{ if(bgData?.dataUrl) applyBackground(bgData.dataUrl); });
-    // Prefer in-memory GLB (avoids IndexedDB timing issues)
     const src = _pendingGlb;
     if(src){
-      _getAsset(BG_KEY, bgData=>{
-        applyGLBTable(src, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
-      });
+      applyGLBTable(src).catch(e=>console.warn('[RF] 3D init failed:',e));
       return;
     }
     _getAsset(GLB_KEY, glbData=>{
       if(glbData?.dataUrl){
         _pendingGlb = glbData;
-        _ensureBlobUrl(); // pre-create blob URL from cache
-        _getAsset(BG_KEY, bgData=>{
-          applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] 3D init failed:',e));
-        });
+        _ensureBlobUrl();
+        applyGLBTable(glbData).catch(e=>console.warn('[RF] 3D init failed:',e));
       }
-      // _fetchAssetsHttp() already handles empty-cache case
     });
   }
 
-  // Pre-load model-viewer script and pre-create blob URL from cache at page load
+  // On page load: pre-create blob URL and start off-screen render from cache
   _loadMV().catch(()=>{});
   _getAsset(GLB_KEY, glbData=>{
-    if(glbData?.dataUrl){ _pendingGlb=glbData; _ensureBlobUrl(); console.log('[RF] startup: GLB blob pre-created from cache'); }
+    if(glbData?.dataUrl){
+      _pendingGlb = glbData;
+      _ensureBlobUrl();
+      _startPreRender();
+      console.log('[RF] startup: GLB pre-render started from cache');
+    }
   });
 
-  // Wrap showView to apply 3D assets when entering game view
   const _origShowView=window.showView;
   window.showView=function(id){
     _origShowView?.call(this,id);
-    if(id==='vl'){
-      sessionStorage.removeItem('rf_demo_state');
-    }
+    if(id==='vl') sessionStorage.removeItem('rf_demo_state');
     if(id==='vg'){
-      // 200ms: past the 180ms transitionTo fade so the view is display:block when we apply
       setTimeout(checkAndApplyAssets, 200);
     } else {
       if(_t3AnimId){ cancelAnimationFrame(_t3AnimId); _t3AnimId=null; }
     }
   };
 
-  function _hookSocket(){
-    if(typeof socket==='undefined'||!socket) return;
+  // Single consolidated socket hook for ALL asset types (bg, glb, seats)
+  // Retries every 500ms until socket is ready — fixes background never arriving
+  function _hookAllSocket(){
+    if(_socketHooked || typeof socket==='undefined' || !socket) return;
+    _socketHooked = true;
     socket.on('assetUpdate', data=>{
-      console.log('[RF] assetUpdate received:', data.type, data.name||'', 'hasData:', !!data.dataUrl);
+      console.log('[RF] assetUpdate:', data.type, data.name||'');
       if(data.type==='bg'&&data.dataUrl){
         applyBackground(data.dataUrl);
         _saveAsset(BG_KEY,{dataUrl:data.dataUrl,name:data.name,pushedAt:data.pushedAt});
       }
       if(data.type==='glb'&&data.dataUrl){
         _pendingGlb={dataUrl:data.dataUrl,name:data.name};
-        _ensureBlobUrl(); // pre-create blob URL immediately on receive
+        if(_pendingBlobUrl){ URL.revokeObjectURL(_pendingBlobUrl); _pendingBlobUrl=null; }
+        if(_preRenderMv){ _preRenderMv.remove(); _preRenderMv=null; }
+        _ensureBlobUrl();
         _saveAsset(GLB_KEY,{dataUrl:data.dataUrl,name:data.name,pushedAt:data.pushedAt});
+        _startPreRender();
         if(_isGameViewVisible()){
-          _getAsset(BG_KEY, bgData=>{
-            applyGLBTable(_pendingGlb, bgData?.dataUrl||null).catch(e=>console.warn('[RF] hot-swap failed:',e));
-          });
-        } else {
-          console.log('[RF] GLB queued — game view not yet visible');
+          applyGLBTable(_pendingGlb).catch(e=>console.warn('[RF] hot-swap failed:',e));
         }
       }
+      if(data.type==='seats'){
+        if(data.dataUrl) _saveSeatData(data.dataUrl);
+        _applySeatUpdate();
+      }
     });
-    console.log('[RF] asset socket listener registered');
+    console.log('[RF] socket hooked for all assets');
+  }
+  _hookAllSocket();
+  if(!_socketHooked){
+    const _sRetry=setInterval(()=>{ _hookAllSocket(); if(_socketHooked) clearInterval(_sRetry); },500);
   }
 
-  _hookSocket();
-
-  // ── POLLING FALLBACK ──────────────────────────────────────────
+  // Polling fallback for clients that lose socket connection
   let _lastGlbPush=null, _lastBgPush=null;
   setInterval(()=>{
     _getAsset(GLB_KEY, glbData=>{
       if(!glbData||glbData.pushedAt===_lastGlbPush) return;
       _lastGlbPush=glbData.pushedAt;
-      if(!_pendingGlb) _pendingGlb=glbData;
+      if(!_pendingGlb){ _pendingGlb=glbData; _ensureBlobUrl(); _startPreRender(); }
       if(_isGameViewVisible()){
-        console.log('[RF] GLB poll update, applying');
-        _getAsset(BG_KEY, bgData=>{
-          applyGLBTable(glbData, bgData?.dataUrl||null).catch(e=>console.warn('[RF] poll hot-swap failed:',e));
-        });
+        applyGLBTable(glbData).catch(e=>console.warn('[RF] poll hot-swap failed:',e));
       }
     });
     _getAsset(BG_KEY, bgData=>{
@@ -14518,7 +14542,6 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     });
   }, 30000);
 
-  // ── SEAT POSITION SOCKET + POLL ──────────────────────────────────
   const SEAT_POS_KEY='rf_admin_seat_positions';
   let _lastSeatPush=null;
 
@@ -14526,7 +14549,6 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     if(typeof _invalidateRimCache==='function') _invalidateRimCache();
     if(document.getElementById('vg')?.classList.contains('active')){
       if(typeof placeSeats==='function') placeSeats();
-      console.log('[RF] seat positions updated');
     }
   }
 
@@ -14536,22 +14558,6 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       const _d=JSON.parse(raw); if(_d.tilt!==undefined) _seatedTilt=_d.tilt;
     }catch(_){}
   }
-
-  function _hookSeatSocket(){
-    if(typeof socket==='undefined'||!socket) return;
-    socket.on('assetUpdate', data=>{
-      if(data.type==='seats'){
-        if(data.dataUrl) _saveSeatData(data.dataUrl);
-        _applySeatUpdate();
-      }
-    });
-  }
-  setTimeout(()=>{
-    _hookSeatSocket();
-    if(typeof socket==='undefined'||!socket){
-      const retry=setInterval(()=>{ if(typeof socket!=='undefined'&&socket){ _hookSeatSocket(); clearInterval(retry); } },500);
-    }
-  }, 1200);
 
   setInterval(()=>{
     try{
@@ -14563,9 +14569,8 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
 
   window.rf3D={ check: checkAndApplyAssets, destroy: destroyT3, refreshSeats: _applySeatUpdate };
 
-  // Demo game refresh recovery — restore if player refreshed mid-game
   setTimeout(()=>{
-    if(typeof _backendActive!=='undefined'&&_backendActive) return; // backend handles its own reconnect
+    if(typeof _backendActive!=='undefined'&&_backendActive) return;
     try{
       const raw=sessionStorage.getItem('rf_demo_state');
       if(!raw) return;
@@ -14578,8 +14583,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       ];
       const tier=allTiers.find(t=>t.id===st.tierId);
       if(!tier){ sessionStorage.removeItem('rf_demo_state'); return; }
-      console.log('[RF] Restoring demo game from sessionStorage');
-      if(typeof _mode!=='undefined') window._mode=st.mode; // restore mode
+      if(typeof _mode!=='undefined') window._mode=st.mode;
       if(typeof SB_AMT!=='undefined'){ SB_AMT=tier.sb; BB_AMT=tier.bb; }
       const stEl=document.getElementById('g-stakes');
       if(stEl&&typeof chip==='function') stEl.textContent=chip(tier.sb)+'/'+chip(tier.bb)+' No Limit Hold\'em';
