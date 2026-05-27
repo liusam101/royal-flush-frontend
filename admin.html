@@ -189,6 +189,8 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <div class="nav-section">Assets</div>
       <div class="nav-item" onclick="nav('assets',this)"><span class="nav-icon">◧</span>Table Assets</div>
       <div class="nav-item" onclick="nav('seat-editor',this)"><span class="nav-icon">⊙</span>Seat Editor</div>
+      <div class="nav-section">Preview</div>
+      <div class="nav-item" onclick="nav('player-preview',this)"><span class="nav-icon">◫</span>Player View</div>
     </nav>
     <main>
       <!-- Dashboard -->
@@ -388,6 +390,17 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
           </div>
           <div id="glb-status" style="font-family:var(--mono);font-size:11px;color:var(--txd);margin-bottom:12px;min-height:16px"></div>
           <button class="btn btn-cyan" id="glb-push-btn" onclick="pushAsset('glb')" disabled style="opacity:0.4">▶ PUSH TO ALL PLAYERS</button>
+          <div style="margin-top:18px;padding:14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+              <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd);white-space:nowrap">TABLE SCALE</span>
+              <input type="range" id="glb-scale" min="0.5" max="2" value="1" step="0.05"
+                oninput="updateGLBScale(this.value)"
+                style="flex:1;accent-color:var(--cyan);cursor:pointer">
+              <span id="glb-scale-val" style="font-family:var(--mono);font-size:11px;color:var(--cyan);min-width:36px;text-align:right">1.00×</span>
+              <button class="btn btn-sm" onclick="document.getElementById('glb-scale').value=1;updateGLBScale(1)" style="border-color:var(--border);color:var(--txd);font-size:10px">↺</button>
+            </div>
+            <button class="btn btn-cyan btn-sm" id="scale-push-btn" onclick="pushGLBScale()">▶ PUSH SCALE TO PLAYERS</button>
+          </div>
         </div>
 
         <div class="card">
@@ -450,6 +463,30 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
           </div>
           <div style="font-family:var(--mono);font-size:10px;color:var(--txd);margin-top:10px;text-align:center">
             Drag seat markers · <span style="color:var(--cyan)">◈ Seat 1</span> = "You" · Angle rotates the view · "Auto from Table" fits seats to your GLB geometry
+          </div>
+        </div>
+      </div>
+
+      <!-- Player Preview -->
+      <div class="panel" id="panel-player-preview">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="card-title" style="margin:0">Player View Preview</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-family:var(--mono);font-size:10px;color:var(--txd)">Live demo mode — reflects pushed assets</span>
+              <button class="btn btn-cyan btn-sm" onclick="reloadPreview()">↺ Reload</button>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:4px;overflow:hidden;background:#000;position:relative" id="preview-wrap">
+            <iframe
+              id="player-preview-iframe"
+              src="https://royal-flush-frontend.vercel.app/rf.html"
+              style="width:100%;height:680px;border:none;display:block"
+              allow="accelerometer; gyroscope"
+            ></iframe>
+          </div>
+          <div style="margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--txd);text-align:center">
+            Shows what players see · Use controls above to reload after pushing assets
           </div>
         </div>
       </div>
@@ -1208,6 +1245,47 @@ function renderActiveAssets() {
       <span>${a.name}</span>
       <span style="color:var(--txd)">${(a.size/1024/1024).toFixed(1)}MB</span>
     </div>`).join('');
+}
+
+// ── GLB Scale ─────────────────────────────────────────────────────────
+let _glbScale = 1.0;
+
+function updateGLBScale(v) {
+  _glbScale = parseFloat(v);
+  document.getElementById('glb-scale-val').textContent = _glbScale.toFixed(2) + '×';
+  const mv = document.querySelector('#glb-preview-inner model-viewer');
+  if (mv) mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
+  const seMv = document.querySelector('#se-glb-inner model-viewer');
+  if (seMv) seMv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
+}
+
+function pushGLBScale() {
+  if (!socket) { toast('Not connected', 'error'); return; }
+  const btn = document.getElementById('scale-push-btn');
+  btn.textContent = 'PUSHING…';
+  btn.disabled = true;
+  socket.emit('adminPushAsset', {
+    secret: adminKey,
+    type: 'glbScale',
+    name: 'glb-scale',
+    pushedAt: new Date().toISOString(),
+    dataUrl: String(_glbScale),
+  });
+  socket.once('adminAssetPushed', d => {
+    if (d.type !== 'glbScale') return;
+    toast(`Scale ${_glbScale.toFixed(2)}× pushed to ${d.tables} client(s)`, 'success');
+    log(`GLB scale ${_glbScale.toFixed(2)}× pushed to all players`, 'success');
+    btn.textContent = '▶ PUSH SCALE TO PLAYERS';
+    btn.disabled = false;
+  });
+  setTimeout(() => {
+    if (btn.textContent === 'PUSHING…') { btn.textContent = '▶ PUSH SCALE TO PLAYERS'; btn.disabled = false; }
+  }, 5000);
+}
+
+function reloadPreview() {
+  const iframe = document.getElementById('player-preview-iframe');
+  if (iframe) { iframe.src = iframe.src; }
 }
 
 // ── Anti-Cheat ────────────────────────────────────────────────────────
