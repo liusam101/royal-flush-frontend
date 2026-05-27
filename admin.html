@@ -413,7 +413,8 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
 
         <div class="card">
           <div class="card-title">Table Scale &amp; Player Preview</div>
-          <div style="display:grid;grid-template-columns:280px 1fr;gap:24px;align-items:start">
+          <div style="display:grid;grid-template-columns:260px 1fr;gap:24px;align-items:start">
+            <!-- Scale controls -->
             <div>
               <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd);margin-bottom:10px">TABLE SCALE</div>
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -425,21 +426,70 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
               </div>
               <button class="btn btn-cyan" id="scale-push-btn" onclick="pushGLBScale()" style="width:100%">▶ PUSH SCALE TO PLAYERS</button>
               <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--txd);line-height:1.6">
-                Scales the 3D table model for all players without re-uploading the GLB.
+                Scales the 3D table for all players. Slider updates the mock preview live.
               </div>
             </div>
+            <!-- Mock game view -->
             <div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd)">PLAYER VIEW MOCK</span>
-                <button class="btn btn-sm" onclick="reloadPreview()" style="border-color:var(--border);color:var(--txd);font-size:10px">↺ Reload</button>
-              </div>
-              <div style="border:1px solid var(--border);border-radius:4px;overflow:hidden;background:#000">
-                <iframe
-                  id="player-preview-iframe"
-                  src="https://royal-flush-frontend.vercel.app/rf.html"
-                  style="width:100%;height:520px;border:none;display:block"
-                  allow="accelerometer; gyroscope"
-                ></iframe>
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">PLAYER VIEW MOCK</div>
+              <div style="position:relative;border:1px solid var(--border);border-radius:4px;overflow:hidden;background:#0a0d14;height:480px;user-select:none">
+
+                <!-- 3D table / fallback oval -->
+                <div id="mock-mv-wrap" style="position:absolute;inset:0;z-index:1">
+                  <div id="mock-mv-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+                    <div style="width:62%;aspect-ratio:2.2/1;background:radial-gradient(ellipse at center,#0d4020 55%,#082d14);border-radius:50%;box-shadow:0 0 0 10px #3a2200,0 0 0 12px rgba(255,184,0,0.2),0 6px 40px rgba(0,0,0,0.8)"></div>
+                  </div>
+                </div>
+
+                <!-- Pot -->
+                <div style="position:absolute;top:21%;left:50%;transform:translateX(-50%);z-index:3;background:rgba(0,0,0,0.65);border:1px solid rgba(255,184,0,0.25);border-radius:20px;padding:2px 14px;font-family:var(--mono);font-size:11px;color:rgba(255,184,0,0.85);letter-spacing:1px;white-space:nowrap">POT $124.50</div>
+
+                <!-- Community cards -->
+                <div style="position:absolute;top:37%;left:50%;transform:translate(-50%,-50%);z-index:3;display:flex;gap:5px">
+                  <div style="width:34px;height:48px;background:#f8f3e8;border-radius:3px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:2px 3px;font-size:9px;font-weight:700;color:#c0392b;line-height:1.2">A<br>&#9829;</div>
+                  <div style="width:34px;height:48px;background:#f8f3e8;border-radius:3px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:2px 3px;font-size:9px;font-weight:700;color:#1a1a1a;line-height:1.2">K<br>&#9824;</div>
+                  <div style="width:34px;height:48px;background:#f8f3e8;border-radius:3px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:2px 3px;font-size:9px;font-weight:700;color:#c0392b;line-height:1.2">7<br>&#9830;</div>
+                  <div style="width:34px;height:48px;background:#1a3568;border-radius:3px;border:1px solid rgba(255,255,255,0.12);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 0,transparent 50%);background-size:5px 5px"></div>
+                  <div style="width:34px;height:48px;background:#1a3568;border-radius:3px;border:1px solid rgba(255,255,255,0.12);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 0,transparent 50%);background-size:5px 5px"></div>
+                </div>
+
+                <!-- Seat: top-left -->
+                <div style="position:absolute;top:11%;left:19%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,77,255,0.2);border:1px solid rgba(155,77,255,0.5);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:rgba(155,77,255,0.9)">VK</div>
+                  <div style="font-family:var(--mono);font-size:8px;color:rgba(224,234,248,0.45)">$342</div>
+                </div>
+
+                <!-- Seat: top-center (active) -->
+                <div style="position:absolute;top:5%;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,229,160,0.18);border:2px solid rgba(0,229,160,0.6);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:rgba(0,229,160,0.9)">JD</div>
+                  <div style="font-family:var(--mono);font-size:8px;color:rgba(224,234,248,0.45)">$891</div>
+                  <div style="background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.35);border-radius:2px;padding:1px 6px;font-family:var(--mono);font-size:8px;color:rgba(0,229,160,0.75)">THINKING…</div>
+                </div>
+
+                <!-- Seat: top-right -->
+                <div style="position:absolute;top:11%;right:19%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,184,0,0.12);border:1px solid rgba(255,184,0,0.4);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:rgba(255,184,0,0.9)">MR</div>
+                  <div style="font-family:var(--mono);font-size:8px;color:rgba(224,234,248,0.45)">$215</div>
+                </div>
+
+                <!-- Player (you) -->
+                <div style="position:absolute;bottom:74px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:5px">
+                  <div style="display:flex;gap:6px">
+                    <div style="width:40px;height:56px;background:#f8f3e8;border-radius:4px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:3px 4px;font-size:10px;font-weight:700;color:#1a1a1a;line-height:1.2">A<br>&#9824;</div>
+                    <div style="width:40px;height:56px;background:#f8f3e8;border-radius:4px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:3px 4px;font-size:10px;font-weight:700;color:#c0392b;line-height:1.2">K<br>&#9829;</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;background:rgba(0,210,255,0.07);border:1px solid rgba(0,210,255,0.2);border-radius:3px;padding:2px 12px">
+                    <span style="font-family:var(--mono);font-size:9px;color:rgba(0,210,255,0.8)">YOU</span>
+                    <span style="font-family:var(--mono);font-size:9px;color:rgba(224,234,248,0.55)">$1,250</span>
+                  </div>
+                </div>
+
+                <!-- Action bar -->
+                <div style="position:absolute;bottom:0;left:0;right:0;height:66px;background:rgba(6,8,16,0.95);border-top:1px solid rgba(255,255,255,0.05);z-index:4;display:flex;align-items:center;justify-content:center;gap:10px">
+                  <div style="padding:8px 18px;border:1px solid rgba(255,59,92,0.35);border-radius:3px;color:rgba(255,59,92,0.7);font-family:var(--mono);font-size:11px;letter-spacing:1px">FOLD</div>
+                  <div style="padding:8px 18px;border:1px solid rgba(0,210,255,0.35);border-radius:3px;color:rgba(0,210,255,0.7);font-family:var(--mono);font-size:11px;letter-spacing:1px">CHECK</div>
+                  <div style="padding:8px 22px;border:1px solid rgba(0,229,160,0.45);border-radius:3px;color:rgba(0,229,160,0.85);font-family:var(--mono);font-size:11px;letter-spacing:1px;background:rgba(0,229,160,0.07)">RAISE &#9650;</div>
+                </div>
               </div>
             </div>
           </div>
@@ -930,8 +980,8 @@ async function showGLBPreview(dataUrl){
 
   if(!window._glbTableDims) window._glbTableDims={rx:0.38,ry:0.22};
   window._glbDataUrl=dataUrl;
-  // Refresh seat editor view if currently open
   if(document.getElementById('panel-seat-editor')?.classList.contains('active')) _seRefreshGLB();
+  initMockView();
 }
 
 // ── Asset drop-in ─────────────────────────────────────────────────
@@ -1250,17 +1300,14 @@ let _glbScale = 1.0;
 function updateGLBScale(v) {
   _glbScale = parseFloat(v);
   document.getElementById('glb-scale-val').textContent = _glbScale.toFixed(2) + '×';
-  const mv = document.querySelector('#glb-preview-inner model-viewer');
-  if (mv) mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
-  const seMv = document.querySelector('#se-glb-inner model-viewer');
-  if (seMv) seMv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
+  ['#glb-preview-inner model-viewer','#se-glb-inner model-viewer','#mock-mv-inner model-viewer'].forEach(sel => {
+    const mv = document.querySelector(sel);
+    if (mv) mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
+  });
 }
 
 function pushGLBScale() {
   if (!socket) { toast('Not connected', 'error'); return; }
-  const btn = document.getElementById('scale-push-btn');
-  btn.textContent = 'PUSHING…';
-  btn.disabled = true;
   socket.emit('adminPushAsset', {
     secret: adminKey,
     type: 'glbScale',
@@ -1268,21 +1315,30 @@ function pushGLBScale() {
     pushedAt: new Date().toISOString(),
     dataUrl: String(_glbScale),
   });
-  socket.once('adminAssetPushed', d => {
-    if (d.type !== 'glbScale') return;
-    toast(`Scale ${_glbScale.toFixed(2)}× pushed to ${d.tables} client(s)`, 'success');
-    log(`GLB scale ${_glbScale.toFixed(2)}× pushed to all players`, 'success');
-    btn.textContent = '▶ PUSH SCALE TO PLAYERS';
-    btn.disabled = false;
-  });
-  setTimeout(() => {
-    if (btn.textContent === 'PUSHING…') { btn.textContent = '▶ PUSH SCALE TO PLAYERS'; btn.disabled = false; }
-  }, 5000);
+  toast(`Scale ${_glbScale.toFixed(2)}× pushed to all players`, 'success');
+  log(`GLB scale ${_glbScale.toFixed(2)}× pushed`, 'success');
 }
 
-function reloadPreview() {
-  const iframe = document.getElementById('player-preview-iframe');
-  if (iframe) { iframe.src = iframe.src; }
+async function initMockView() {
+  const inner = document.getElementById('mock-mv-inner');
+  if (!inner || !window._glbDataUrl) return;
+  if (inner.querySelector('model-viewer')) {
+    inner.querySelector('model-viewer').setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
+    return;
+  }
+  try { await _loadModelViewer(); } catch(e) { return; }
+  const url = _dataUrlToBlobUrl(window._glbDataUrl, 'model/gltf-binary');
+  if (!url) return;
+  const mv = document.createElement('model-viewer');
+  mv.setAttribute('src', url);
+  mv.setAttribute('camera-orbit', '0deg 55deg auto');
+  mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
+  mv.setAttribute('shadow-intensity', '1');
+  mv.setAttribute('disable-zoom', '');
+  mv.setAttribute('interaction-prompt', 'none');
+  mv.style.cssText = 'width:100%;height:100%;background:transparent;--poster-color:transparent;';
+  inner.innerHTML = '';
+  inner.appendChild(mv);
 }
 
 // ── Anti-Cheat ────────────────────────────────────────────────────────
