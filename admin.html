@@ -1252,17 +1252,17 @@ function updateSeAngle(v){
   if(mv){ const phi=Math.max(5,90-_seLayoutAngle); mv.cameraOrbit=`0deg ${phi}deg auto`; }
 }
 
-function autoCalcSeats(){
-  if(!window._glbTableDims){ toast('Drop a GLB file in the Assets panel first','warn'); return; }
-  _seTableRx=window._glbTableDims.rx;
-  _seTableRy=window._glbTableDims.ry;
+function autoCalcSeats(silent){
+  if(!window._glbTableDims){ if(!silent) toast('Drop a GLB file in the Assets panel first','warn'); return; }
+  _seTableRx=Math.max(0.05,Math.min(0.48, window._glbTableDims.rx * _glbScale));
+  _seTableRy=Math.max(0.05,Math.min(0.48, window._glbTableDims.ry * _glbScale));
   const mcx=window._seModelCenter?.cx??0.5;
   const mcy=window._seModelCenter?.cy??0.5;
   const n=parseInt(document.getElementById('se-count').value)||6;
   const angles=_seEvenAngles(n);
   _seSeats=angles.map(a=>({x:mcx+_seTableRx*Math.cos(a), y:mcy+_seTableRy*Math.sin(a)}));
   _seDrawSeats();
-  toast(`Seats fitted to GLB table shape (${n} seats)`,'success');
+  if(!silent) toast(`Seats fitted to GLB table shape (${n} seats)`,'success');
 }
 
 function resetSeats(){
@@ -1313,6 +1313,7 @@ function updateGLBScale(v) {
     const mv = document.querySelector(sel);
     if (mv) mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
   });
+  if (window._glbTableDims) autoCalcSeats(true);
 }
 
 function pushGLBScale() {
