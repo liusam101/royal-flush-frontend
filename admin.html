@@ -1087,7 +1087,7 @@ async function _seRefreshGLB(){
   const url=_dataUrlToBlobUrl(window._glbDataUrl,'model/gltf-binary');
   if(!url){ wrap.style.display='none'; return; }
   const phi=Math.max(5,90-_seLayoutAngle);
-  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" scale="${_glbScale} ${_glbScale} ${_glbScale}" disable-zoom shadow-intensity="1" style="width:100%;height:${SE_H}px;background:transparent;--poster-color:transparent"></model-viewer>`;
+  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" scale="${_glbScale} ${_glbScale} ${_glbScale}" disable-zoom shadow-intensity="1" style="width:100%;height:100%;background:transparent;--poster-color:transparent"></model-viewer>`;
   _seDrawSeats();
   // After model loads, use getDimensions() to project table extents to screen coords
   const mv=inner.querySelector('model-viewer');
