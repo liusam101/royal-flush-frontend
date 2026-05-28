@@ -14367,8 +14367,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     mv.setAttribute('shadow-intensity', '1');
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
-    mv.setAttribute('scale', `${_rfGlbScale} ${_rfGlbScale} ${_rfGlbScale}`);
-    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;';
+    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;transform:scale(${_rfGlbScale});transform-origin:50% 50%;`;
     host.appendChild(mv);
     _preRenderMv = mv;
     console.log('[RF] 3D pre-render started off-screen');
@@ -14396,8 +14395,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
       const mv = _preRenderMv;
       _preRenderMv = null;
       mv.id = 't3-mv';
-      mv.setAttribute('scale', `${_rfGlbScale} ${_rfGlbScale} ${_rfGlbScale}`);
-      mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:1;';
+      mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:1;transform:scale(${_rfGlbScale});transform-origin:50% 50%;`;
       tableWrap.insertBefore(mv, tableWrap.firstChild);
       _mvBlobUrl = mv.getAttribute('src');
       _t3Active = true;
@@ -14423,8 +14421,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
     mv.setAttribute('shadow-intensity', '1');
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
-    mv.setAttribute('scale', `${_rfGlbScale} ${_rfGlbScale} ${_rfGlbScale}`);
-    mv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;';
+    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;transform:scale(${_rfGlbScale});transform-origin:50% 50%;`;
     tableWrap.insertBefore(mv, tableWrap.firstChild);
     const _show = () => { mv.style.opacity = '1'; };
     mv.addEventListener('load', () => requestAnimationFrame(_show), { once: true });
@@ -14447,6 +14444,12 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
             if(_isGameViewVisible()){
               applyGLBTable(_pendingGlb).catch(e=>console.warn('[RF] HTTP apply failed:',e));
             }
+          }
+          if(a.type==='glbScale'&&a.dataUrl){
+            _rfGlbScale=parseFloat(a.dataUrl)||1;
+            try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
+            const _hmv=document.getElementById('t3-mv');
+            if(_hmv) _hmv.style.transform=`scale(${_rfGlbScale})`;
           }
           if(a.type==='seats'&&a.dataUrl){ _saveSeatData(a.dataUrl); _applySeatUpdate(); }
         });
@@ -14525,7 +14528,7 @@ console.log('[RF Poker] Socket.io client ready —', BACKEND_URL);
         _rfGlbScale = parseFloat(data.dataUrl) || 1;
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
-        if(_mv) _mv.setAttribute('scale', `${_rfGlbScale} ${_rfGlbScale} ${_rfGlbScale}`);
+        if(_mv) _mv.style.transform = `scale(${_rfGlbScale})`;
       }
     });
     console.log('[RF] socket hooked for all assets');
