@@ -10327,21 +10327,16 @@ function cashierStep3(){
   const accentCol = _mode==='gold' ? '#00D4AA' : 'var(--gold)';
 
   let formHTML='';
-  if(_cPM==='card'){
-    formHTML=`
-      <div class="cinput-label">Card number</div>
-      <input class="cinput" id="cin-num" type="text" maxlength="19" placeholder="1234 5678 9012 3456" oninput="fmtCard(this)">
-      <div class="cinput-row">
-        <div><div class="cinput-label">Expiry</div><input class="cinput" id="cin-exp" type="text" maxlength="5" placeholder="MM/YY" oninput="fmtExp(this)"></div>
-        <div><div class="cinput-label">CVV</div><input class="cinput" id="cin-cvv" type="text" maxlength="4" placeholder="···"></div>
+  if(_cPM==='card' || _cPM==='apple'){
+    formHTML=`<div style="text-align:center;padding:18px 0 10px">
+      <div style="font-size:36px;margin-bottom:10px">🔒</div>
+      <div style="color:var(--tx);font-size:13px;font-weight:600;margin-bottom:6px">Secure Checkout via Stripe</div>
+      <div style="color:var(--txd);font-size:10px;line-height:1.7;max-width:280px;margin:0 auto">You'll be redirected to Stripe's secure payment page. Card details are never stored on our servers.</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px">
+        ${_cPM==='apple'
+          ? '<span style="font-size:9px;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:3px;letter-spacing:.5px">🍎 Apple Pay</span><span style="font-size:9px;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:3px;letter-spacing:.5px">G Google Pay</span>'
+          : '<span style="font-size:9px;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:3px">VISA</span><span style="font-size:9px;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:3px">Mastercard</span><span style="font-size:9px;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:3px">Amex</span>'}
       </div>
-      <div class="cinput-label">Name on card</div>
-      <input class="cinput" id="cin-name" type="text" placeholder="Full name">`;
-  } else if(_cPM==='apple'){
-    formHTML=`<div style="text-align:center;padding:20px 0">
-      <div style="font-size:48px;margin-bottom:12px">${pm.icon}</div>
-      <div style="color:var(--tx);font-size:14px;margin-bottom:6px">Ready to pay with ${pm.label}</div>
-      <div style="color:var(--txd);font-size:10px;letter-spacing:.5px">Tap Confirm to authenticate</div>
     </div>`;
   } else if(_cPM==='crypto'){
     formHTML=`<div style="text-align:center;padding:12px 0 18px">
@@ -10385,35 +10380,50 @@ function cashierStep3(){
 }
 
 // ── Processing & confirmation ──────────────────────────────────────
-function cashierProcess(){
-  if(_cPM==='card'){
-    const num=document.getElementById('cin-num')?.value.replace(/\s/g,'');
-    const exp=document.getElementById('cin-exp')?.value;
-    const cvv=document.getElementById('cin-cvv')?.value;
-    const name=document.getElementById('cin-name')?.value;
-    if(!num||num.length<15||!exp||exp.length<5||!cvv||!name){
-      document.querySelectorAll('#cashier-body .cinput').forEach(i=>{if(!i.value.trim())i.style.borderColor='rgba(232,64,64,.5)';});
-      return;
-    }
-  }
-
+async function cashierProcess(){
   const usd=_cPkg.usd;
   const gold=_cPkg.gold||_cPkg.chips||0;
   const royal=_cPkg.royal||0;
-  const instant=PM_META[_cPM].instant;
 
+  // Card and Apple/Google Pay → real Stripe Checkout redirect
+  if(_cPM==='card' || _cPM==='apple'){
+    const token = localStorage.getItem('rf_token');
+    if(!token){ showToast('Please log in first.'); return; }
+
+    document.getElementById('cashier-body').innerHTML=`
+      <div class="cashier-processing">
+        <div class="proc-spinner"></div>
+        <div style="color:var(--tx);font-size:14px;margin-bottom:6px">Preparing secure checkout…</div>
+        <div style="color:var(--txd);font-size:10px;letter-spacing:.5px">Redirecting to Stripe</div>
+      </div>`;
+    document.getElementById('cashier-steps').style.display='none';
+
+    const packageId = (_mode==='gold' ? 'gold-' : 'rc-') + usd;
+    try {
+      const res  = await fetch(BACKEND_URL+'/api/payment/checkout',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({packageId})
+      });
+      const data = await res.json();
+      if(!data.ok){ showToast(data.error||'Payment error. Please try again.'); cashierStep3(); return; }
+      window.location.href = data.url;
+    } catch(e){
+      showToast('Network error. Please try again.');
+      cashierStep3();
+    }
+    return;
+  }
+
+  // Crypto and bank → manual pending flow (unchanged)
   document.getElementById('cashier-body').innerHTML=`
     <div class="cashier-processing">
       <div class="proc-spinner"></div>
-      <div style="color:var(--tx);font-size:14px;margin-bottom:6px">${instant?'Processing payment…':'Submitting request…'}</div>
-      <div style="color:var(--txd);font-size:10px;letter-spacing:.5px">${instant?'Authorising with your bank':'Confirming details'}</div>
+      <div style="color:var(--tx);font-size:14px;margin-bottom:6px">Submitting request…</div>
+      <div style="color:var(--txd);font-size:10px;letter-spacing:.5px">Confirming details</div>
     </div>`;
   document.getElementById('cashier-steps').style.display='none';
-
-  setTimeout(()=>{
-    if(instant) cashierSuccess(gold, royal, usd);
-    else cashierPending(gold, royal, usd);
-  }, 2200);
+  setTimeout(()=>cashierPending(gold, royal, usd), 2200);
 }
 
 function cashierSuccess(gold, royal, usd){
@@ -12618,11 +12628,44 @@ const _pageLoadTime = Date.now();
 // ── Auth helpers ─────────────────────────────────────────────────────
 var _resetToken = null; // stores reset token from URL
 
-// Handle ?verify= and ?reset= URL params on page load
+// Handle ?verify=, ?reset=, ?payment= URL params on page load
 function _handleURLTokens(){
   const params = new URLSearchParams(window.location.search);
-  const verifyToken = params.get('verify');
-  const resetToken  = params.get('reset');
+  const verifyToken  = params.get('verify');
+  const resetToken   = params.get('reset');
+  const paymentState = params.get('payment');
+  const sessionId    = params.get('sid');
+
+  if(paymentState === 'success' && sessionId){
+    window.history.replaceState({}, '', window.location.pathname);
+    const token = localStorage.getItem('rf_token');
+    if(!token){ showToast('Payment received — please log in to see your updated balance.'); return; }
+    // Verify session with backend and credit chips if webhook was slow
+    fetch(BACKEND_URL+'/api/payment/verify/'+sessionId,{
+      headers:{'Authorization':'Bearer '+token}
+    }).then(r=>r.json()).then(d=>{
+      if(d.ok){
+        _balGold  += (d.gold  || 0);
+        _balRoyal += (d.royal || 0);
+        updBal();
+        playSound('chip');
+        showToast('Payment confirmed! Chips added to your account.');
+        addNotif('💳','Deposit successful','Payment processed',
+          '<b>$'+d.usd+'</b> → <b>'+(d.gold||0).toLocaleString()+' Gold</b>'+
+          (d.royal?' + <b>'+d.royal+' Royal Chips</b>':''),'promo');
+        const navEl=document.getElementById('nav-bal');
+        if(navEl){ navEl.style.transition='color .3s'; navEl.style.color='#5DC896'; setTimeout(()=>{navEl.style.color='';},1500); }
+      } else {
+        showToast('Payment received — your chips will appear shortly.');
+      }
+    }).catch(()=>showToast('Payment received — refresh to see your updated balance.'));
+  }
+
+  if(paymentState === 'cancel'){
+    window.history.replaceState({}, '', window.location.pathname);
+    showToast('Payment cancelled. No charge was made.');
+  }
+
   if(verifyToken){
     fetch(BACKEND_URL+'/api/auth/verify-email',{
       method:'POST', headers:{'Content-Type':'application/json'},
