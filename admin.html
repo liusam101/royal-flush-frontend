@@ -1088,7 +1088,7 @@ async function _seRefreshGLB(){
   const url=_dataUrlToBlobUrl(window._glbDataUrl,'model/gltf-binary');
   if(!url){ wrap.style.display='none'; return; }
   const phi=Math.max(5,90-_seLayoutAngle);
-  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" scale="${_glbScale} ${_glbScale} ${_glbScale}" disable-zoom shadow-intensity="1" style="width:100%;height:100%;background:transparent;--poster-color:transparent"></model-viewer>`;
+  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" disable-zoom shadow-intensity="1" style="width:100%;height:100%;background:transparent;--poster-color:transparent;transform:scale(${_glbScale});transform-origin:50% 50%"></model-viewer>`;
   _seDrawSeats();
   // After model loads, use getDimensions() to project table extents to screen coords
   const mv=inner.querySelector('model-viewer');
@@ -1312,7 +1312,7 @@ function updateGLBScale(v) {
   if (valEl) valEl.textContent = _glbScale.toFixed(2) + 'x';
   ['#glb-preview-inner model-viewer','#se-glb-inner model-viewer'].forEach(sel => {
     const mv = document.querySelector(sel);
-    if (mv) mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
+    if (mv) { mv.style.transform = `scale(${_glbScale})`; mv.style.transformOrigin = '50% 50%'; }
   });
   if (window._glbTableDims) autoCalcSeats(true);
 }
