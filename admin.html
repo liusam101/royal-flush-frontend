@@ -1088,12 +1088,18 @@ async function _seRefreshGLB(){
   const url=_dataUrlToBlobUrl(window._glbDataUrl,'model/gltf-binary');
   if(!url){ wrap.style.display='none'; return; }
   const phi=Math.max(5,90-_seLayoutAngle);
-  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" disable-zoom shadow-intensity="1" style="width:100%;height:100%;background:transparent;--poster-color:transparent;transform:scale(${_glbScale});transform-origin:50% 50%"></model-viewer>`;
+  window._seBaseRadius=null;
+  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" disable-zoom shadow-intensity="1" style="width:100%;height:100%;background:transparent;--poster-color:transparent"></model-viewer>`;
   _seDrawSeats();
-  // After model loads, use getDimensions() to project table extents to screen coords
+  // After model loads, capture auto camera radius then apply scale via orbit radius
   const mv=inner.querySelector('model-viewer');
   mv.addEventListener('load',()=>{
     try{
+      // Capture base radius so scale changes can zoom camera rather than CSS transform
+      const orbit=mv.getCameraOrbit();
+      window._seBaseRadius=orbit.radius;
+      if(_glbScale!==1.0) mv.setAttribute('camera-orbit',`0deg ${phi}deg ${orbit.radius/_glbScale}m`);
+
       const dims=mv.getDimensions();
       // Use larger horizontal extent as W, smaller as D (table may be rotated in asset)
       const W=Math.max(dims.x||0,dims.z||0)||1, D=Math.min(dims.x||0,dims.z||0)||1, Hm=dims.y||0;
@@ -1250,7 +1256,7 @@ function updateSeAngle(v){
   _seDrawSeats();
   // Sync model-viewer camera to match tilt
   const mv=document.querySelector('#se-glb-inner model-viewer');
-  if(mv){ const phi=Math.max(5,90-_seLayoutAngle); mv.cameraOrbit=`0deg ${phi}deg auto`; }
+  if(mv){ const phi=Math.max(5,90-_seLayoutAngle); const r=window._seBaseRadius?`${window._seBaseRadius/_glbScale}m`:'auto'; mv.setAttribute('camera-orbit',`0deg ${phi}deg ${r}`); }
 }
 
 function autoCalcSeats(silent){
@@ -1310,10 +1316,15 @@ function updateGLBScale(v) {
   _glbScale = parseFloat(v);
   const valEl = document.getElementById('glb-scale-val');
   if (valEl) valEl.textContent = _glbScale.toFixed(2) + 'x';
-  ['#glb-preview-inner model-viewer','#se-glb-inner model-viewer'].forEach(sel => {
-    const mv = document.querySelector(sel);
-    if (mv) { mv.style.transform = `scale(${_glbScale})`; mv.style.transformOrigin = '50% 50%'; }
-  });
+  // Seat editor: zoom camera closer/further — no CSS transform, no overflow
+  const seMv = document.querySelector('#se-glb-inner model-viewer');
+  if (seMv && window._seBaseRadius) {
+    const phi = Math.max(5, 90 - _seLayoutAngle);
+    seMv.setAttribute('camera-orbit', `0deg ${phi}deg ${window._seBaseRadius / _glbScale}m`);
+  }
+  // Table Assets preview card: CSS transform is fine (fixed-size card, overflow hidden)
+  const prevMv = document.querySelector('#glb-preview-inner model-viewer');
+  if (prevMv) { prevMv.style.transform = `scale(${_glbScale})`; prevMv.style.transformOrigin = '50% 50%'; }
   if (window._glbTableDims) autoCalcSeats(true);
 }
 
