@@ -188,7 +188,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <div class="nav-item" onclick="nav('log',this)"><span class="nav-icon">≡</span>Event Log</div>
       <div class="nav-section">Assets</div>
       <div class="nav-item" onclick="nav('assets',this)"><span class="nav-icon">◧</span>Table Assets</div>
-      <div class="nav-item" onclick="nav('seat-editor',this)"><span class="nav-icon">⊙</span>Seat Editor</div>
+      <div class="nav-item" onclick="nav('seat-editor',this)"><span class="nav-icon">⊙</span>Preview + Editor</div>
     </nav>
     <main>
       <!-- Dashboard -->
@@ -410,133 +410,69 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
           <div class="card-title">Active Assets</div>
           <div id="asset-active" style="font-family:var(--mono);font-size:12px;color:var(--txd)">No assets pushed this session</div>
         </div>
-
-        <div class="card">
-          <div class="card-title">Table Scale &amp; Player Preview</div>
-          <div style="display:grid;grid-template-columns:260px 1fr;gap:24px;align-items:start">
-            <!-- Scale controls -->
-            <div>
-              <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd);margin-bottom:10px">TABLE SCALE</div>
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-                <input type="range" id="glb-scale" min="0.5" max="2" value="1" step="0.05"
-                  oninput="updateGLBScale(this.value)"
-                  style="flex:1;accent-color:var(--cyan);cursor:pointer">
-                <span id="glb-scale-val" style="font-family:var(--mono);font-size:13px;color:var(--cyan);min-width:40px;text-align:right">1.00×</span>
-                <button class="btn btn-sm" onclick="document.getElementById('glb-scale').value=1;updateGLBScale(1)" style="border-color:var(--border);color:var(--txd);font-size:10px">↺</button>
-              </div>
-              <button class="btn btn-cyan" id="scale-push-btn" onclick="pushGLBScale()" style="width:100%">▶ PUSH SCALE TO PLAYERS</button>
-              <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--txd);line-height:1.6">
-                Scales the 3D table for all players. Slider updates the mock preview live.
-              </div>
-            </div>
-            <!-- Mock game view -->
-            <div>
-              <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">PLAYER VIEW MOCK</div>
-              <div style="position:relative;border:1px solid var(--border);border-radius:4px;overflow:hidden;background:#0a0d14;height:480px;user-select:none">
-
-                <!-- 3D table / fallback oval -->
-                <div id="mock-mv-wrap" style="position:absolute;inset:0;z-index:1">
-                  <div id="mock-mv-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-                    <div style="width:62%;aspect-ratio:2.2/1;background:radial-gradient(ellipse at center,#0d4020 55%,#082d14);border-radius:50%;box-shadow:0 0 0 10px #3a2200,0 0 0 12px rgba(255,184,0,0.2),0 6px 40px rgba(0,0,0,0.8)"></div>
-                  </div>
-                </div>
-
-                <!-- Pot -->
-                <div style="position:absolute;top:21%;left:50%;transform:translateX(-50%);z-index:3;background:rgba(0,0,0,0.65);border:1px solid rgba(255,184,0,0.25);border-radius:20px;padding:2px 14px;font-family:var(--mono);font-size:11px;color:rgba(255,184,0,0.85);letter-spacing:1px;white-space:nowrap">POT $124.50</div>
-
-                <!-- Community cards -->
-                <div style="position:absolute;top:37%;left:50%;transform:translate(-50%,-50%);z-index:3;display:flex;gap:5px">
-                  <div style="width:34px;height:48px;background:#f8f3e8;border-radius:3px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:2px 3px;font-size:9px;font-weight:700;color:#c0392b;line-height:1.2">A<br>&#9829;</div>
-                  <div style="width:34px;height:48px;background:#f8f3e8;border-radius:3px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:2px 3px;font-size:9px;font-weight:700;color:#1a1a1a;line-height:1.2">K<br>&#9824;</div>
-                  <div style="width:34px;height:48px;background:#f8f3e8;border-radius:3px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:2px 3px;font-size:9px;font-weight:700;color:#c0392b;line-height:1.2">7<br>&#9830;</div>
-                  <div style="width:34px;height:48px;background:#1a3568;border-radius:3px;border:1px solid rgba(255,255,255,0.12);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 0,transparent 50%);background-size:5px 5px"></div>
-                  <div style="width:34px;height:48px;background:#1a3568;border-radius:3px;border:1px solid rgba(255,255,255,0.12);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 0,transparent 50%);background-size:5px 5px"></div>
-                </div>
-
-                <!-- Seat: top-left -->
-                <div style="position:absolute;top:11%;left:19%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px">
-                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,77,255,0.2);border:1px solid rgba(155,77,255,0.5);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:rgba(155,77,255,0.9)">VK</div>
-                  <div style="font-family:var(--mono);font-size:8px;color:rgba(224,234,248,0.45)">$342</div>
-                </div>
-
-                <!-- Seat: top-center (active) -->
-                <div style="position:absolute;top:5%;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px">
-                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,229,160,0.18);border:2px solid rgba(0,229,160,0.6);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:rgba(0,229,160,0.9)">JD</div>
-                  <div style="font-family:var(--mono);font-size:8px;color:rgba(224,234,248,0.45)">$891</div>
-                  <div style="background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.35);border-radius:2px;padding:1px 6px;font-family:var(--mono);font-size:8px;color:rgba(0,229,160,0.75)">THINKING…</div>
-                </div>
-
-                <!-- Seat: top-right -->
-                <div style="position:absolute;top:11%;right:19%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px">
-                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,184,0,0.12);border:1px solid rgba(255,184,0,0.4);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:rgba(255,184,0,0.9)">MR</div>
-                  <div style="font-family:var(--mono);font-size:8px;color:rgba(224,234,248,0.45)">$215</div>
-                </div>
-
-                <!-- Player (you) -->
-                <div style="position:absolute;bottom:74px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:5px">
-                  <div style="display:flex;gap:6px">
-                    <div style="width:40px;height:56px;background:#f8f3e8;border-radius:4px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:3px 4px;font-size:10px;font-weight:700;color:#1a1a1a;line-height:1.2">A<br>&#9824;</div>
-                    <div style="width:40px;height:56px;background:#f8f3e8;border-radius:4px;border:1px solid rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:flex-start;padding:3px 4px;font-size:10px;font-weight:700;color:#c0392b;line-height:1.2">K<br>&#9829;</div>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:8px;background:rgba(0,210,255,0.07);border:1px solid rgba(0,210,255,0.2);border-radius:3px;padding:2px 12px">
-                    <span style="font-family:var(--mono);font-size:9px;color:rgba(0,210,255,0.8)">YOU</span>
-                    <span style="font-family:var(--mono);font-size:9px;color:rgba(224,234,248,0.55)">$1,250</span>
-                  </div>
-                </div>
-
-                <!-- Action bar -->
-                <div style="position:absolute;bottom:0;left:0;right:0;height:66px;background:rgba(6,8,16,0.95);border-top:1px solid rgba(255,255,255,0.05);z-index:4;display:flex;align-items:center;justify-content:center;gap:10px">
-                  <div style="padding:8px 18px;border:1px solid rgba(255,59,92,0.35);border-radius:3px;color:rgba(255,59,92,0.7);font-family:var(--mono);font-size:11px;letter-spacing:1px">FOLD</div>
-                  <div style="padding:8px 18px;border:1px solid rgba(0,210,255,0.35);border-radius:3px;color:rgba(0,210,255,0.7);font-family:var(--mono);font-size:11px;letter-spacing:1px">CHECK</div>
-                  <div style="padding:8px 22px;border:1px solid rgba(0,229,160,0.45);border-radius:3px;color:rgba(0,229,160,0.85);font-family:var(--mono);font-size:11px;letter-spacing:1px;background:rgba(0,229,160,0.07)">RAISE &#9650;</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Seat Editor -->
+      <!-- Preview + Editor -->
       <div class="panel" id="panel-seat-editor">
-        <div class="card">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-            <div class="card-title" style="margin:0">Seat Arrangement</div>
-            <div class="field" style="flex:0;min-width:120px">
-              <label>Table Size</label>
-              <select id="se-count" onchange="seatEditorInit()" style="background:var(--bg3);border:1px solid var(--border);color:var(--tx);padding:6px 10px;border-radius:3px;font-size:12px">
-                <option value="2">2-Max (Heads Up)</option>
+        <div class="card" style="padding:0;overflow:hidden">
+          <!-- Game view area — looks exactly like the player view -->
+          <div id="se-game-area" style="position:relative;width:100%;overflow:hidden;background:#080a10">
+            <!-- Background image layer (populated when BG asset is loaded) -->
+            <div id="se-bg-layer" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;opacity:0.8;pointer-events:none"></div>
+            <!-- 3D table model-viewer -->
+            <div style="position:absolute;inset:0;z-index:1;pointer-events:none">
+              <div id="se-glb-wrap" style="display:none;position:absolute;inset:0;background:transparent">
+                <div id="se-glb-inner" style="width:100%;height:100%"></div>
+              </div>
+            </div>
+            <!-- Seat canvas — draggable markers overlaid on top of everything -->
+            <canvas id="seat-canvas" style="position:relative;z-index:10;width:100%;display:block;cursor:default"></canvas>
+            <!-- Top bar mockup -->
+            <div style="position:absolute;top:0;left:0;right:0;height:46px;background:rgba(0,0,0,0.75);border-bottom:1px solid rgba(255,255,255,0.06);z-index:20;display:flex;align-items:center;padding:0 18px;gap:16px;pointer-events:none">
+              <span style="font-family:var(--mono);font-size:11px;color:rgba(224,234,248,0.45)">&#8592; LOBBY</span>
+              <div>
+                <div style="font-family:var(--font);font-size:13px;font-weight:600;color:var(--tx)">Midnight Velvet</div>
+                <div style="font-family:var(--mono);font-size:9px;color:rgba(255,184,0,0.5)">$0.25/$0.50 No Limit Hold'em</div>
+              </div>
+              <div style="flex:1"></div>
+              <span style="font-family:var(--mono);font-size:10px;color:rgba(224,234,248,0.5);border:1px solid rgba(255,255,255,0.1);padding:3px 10px;border-radius:2px">SIT OUT</span>
+              <span style="font-family:var(--mono);font-size:10px;color:rgba(255,184,0,0.75);border:1px solid rgba(255,184,0,0.3);padding:3px 10px;border-radius:2px">+ CHIPS</span>
+            </div>
+            <!-- Hint -->
+            <div style="position:absolute;bottom:5px;right:10px;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.15);z-index:20;pointer-events:none">drag seats · scale / tilt to match player view</div>
+          </div>
+          <!-- Controls bar -->
+          <div style="padding:12px 18px;border-top:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:var(--mono);font-size:10px;color:var(--txd)">SEATS</span>
+              <select id="se-count" onchange="seatEditorInit()" style="background:var(--bg3);border:1px solid var(--border);color:var(--tx);padding:5px 8px;border-radius:3px;font-size:12px">
+                <option value="2">2-Max</option>
                 <option value="6" selected>6-Max</option>
                 <option value="9">9-Max</option>
               </select>
             </div>
-            <div style="flex:1"></div>
-            <button class="btn btn-cyan" onclick="autoCalcSeats()" style="font-size:11px">⟳ Auto from Table</button>
-            <button class="btn" onclick="resetSeats()" style="border-color:var(--border);color:var(--txd)">↺ Reset</button>
-            <button class="btn btn-green" onclick="pushSeats()">▶ Push to Players</button>
-          </div>
-          <!-- Angle slider -->
-          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:10px 14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)">
-            <span style="font-family:var(--mono);font-size:11px;color:var(--txd);white-space:nowrap">Table Tilt</span>
-            <input type="range" id="se-angle" min="10" max="90" value="55" step="1"
-              oninput="updateSeAngle(this.value)"
-              style="flex:1;accent-color:var(--gold);cursor:pointer">
-            <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:32px;text-align:right">55°</span>
-            <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=55;updateSeAngle(55)" style="border-color:var(--border);color:var(--txd);font-size:10px">↺</button>
-          </div>
-          <div id="se-no-glb" style="display:none;padding:10px 14px;background:var(--bg3);border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--txd);text-align:center;margin-bottom:12px">
-            No 3D table loaded — drop a <b style="color:var(--tx)">.glb</b> in <span onclick="nav('assets')" style="color:var(--cyan);cursor:pointer;text-decoration:underline">Table Assets</span> to see your model here
-          </div>
-          <div id="se-canvas-wrap" style="position:relative;max-width:700px;margin:0 auto;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
-            <div id="se-glb-wrap" style="display:none;position:absolute;inset:0;background:#0c1020">
-              <div id="se-glb-inner" style="width:100%;height:100%"></div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
+              <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">SCALE</span>
+              <input type="range" id="glb-scale" min="0.5" max="2" value="1" step="0.05" oninput="updateGLBScale(this.value)" style="flex:1;accent-color:var(--cyan);cursor:pointer">
+              <span id="glb-scale-val" style="font-family:var(--mono);font-size:12px;color:var(--cyan);min-width:38px;text-align:right">1.00x</span>
+              <button class="btn btn-sm" onclick="document.getElementById('glb-scale').value=1;updateGLBScale(1)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
             </div>
-            <canvas id="seat-canvas" style="width:100%;display:block;position:relative;z-index:1;cursor:default"></canvas>
-          </div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--txd);margin-top:10px;text-align:center">
-            Drag seat markers · <span style="color:var(--cyan)">◈ Seat 1</span> = "You" · Angle rotates the view · "Auto from Table" fits seats to your GLB geometry
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:140px">
+              <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">TILT</span>
+              <input type="range" id="se-angle" min="10" max="90" value="55" step="1" oninput="updateSeAngle(this.value)" style="flex:1;accent-color:var(--gold);cursor:pointer">
+              <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:30px;text-align:right">55&#176;</span>
+              <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=55;updateSeAngle(55)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm btn-cyan" onclick="autoCalcSeats()">&#10227; Auto Seats</button>
+              <button class="btn btn-sm" onclick="resetSeats()" style="border-color:var(--border);color:var(--txd)">&#8635; Reset</button>
+              <button class="btn btn-cyan btn-sm" id="scale-push-btn" onclick="pushGLBScale()">&#9654; Push Scale</button>
+              <button class="btn btn-green btn-sm" onclick="pushSeats()">&#9654; Push Seats</button>
+            </div>
           </div>
         </div>
       </div>
+
 
       <!-- Log -->
       <div class="panel" id="panel-log">
@@ -1032,6 +968,8 @@ function handleAssetFile(file, type) {
       dropEl.style.backgroundSize  = 'cover';
       dropEl.style.backgroundPosition = 'center';
       dropEl.style.opacity = '0.7';
+      const bgLayer = document.getElementById('se-bg-layer');
+      if (bgLayer) { bgLayer.style.backgroundImage = `url(${e.target.result})`; }
     }
   };
   reader.onerror = () => { statusEl.textContent = 'Read failed'; statusEl.style.color = 'var(--red)'; };
@@ -1069,7 +1007,7 @@ function pushAsset(type) {
 }
 
 // ── Seat Editor ───────────────────────────────────────────────────
-const SE_W=700, SE_H=420;
+const SE_W=700, SE_H=560;
 let _seSeats=[], _seDragging=null, _seCanvas=null, _seCtx=null;
 let _seTableRx=0.38, _seTableRy=0.30, _seLayoutAngle=55;
 
@@ -1101,6 +1039,14 @@ function seatEditorInit(){
 
   const angleEl=document.getElementById('se-angle');
   if(angleEl){ _seLayoutAngle=parseInt(angleEl.value)||55; document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°'; }
+
+  // Apply background image if available
+  const bgLayer=document.getElementById('se-bg-layer');
+  if(bgLayer&&_pendingAssets?.bg?.dataUrl) bgLayer.style.backgroundImage=`url(${_pendingAssets.bg.dataUrl})`;
+
+  // Sync scale display
+  const scaleEl=document.getElementById('glb-scale');
+  if(scaleEl) { const v=parseFloat(scaleEl.value)||1; document.getElementById('glb-scale-val').textContent=v.toFixed(2)+'x'; _glbScale=v; }
 
   _seDrawSeats();
   _seBindEvents();
@@ -1141,7 +1087,7 @@ async function _seRefreshGLB(){
   const url=_dataUrlToBlobUrl(window._glbDataUrl,'model/gltf-binary');
   if(!url){ wrap.style.display='none'; return; }
   const phi=Math.max(5,90-_seLayoutAngle);
-  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" disable-zoom shadow-intensity="1" style="width:100%;height:${SE_H}px;background:#000000;--poster-color:#000000"></model-viewer>`;
+  inner.innerHTML=`<model-viewer src="${url}" camera-orbit="0deg ${phi}deg auto" scale="${_glbScale} ${_glbScale} ${_glbScale}" disable-zoom shadow-intensity="1" style="width:100%;height:${SE_H}px;background:transparent;--poster-color:transparent"></model-viewer>`;
   _seDrawSeats();
   // After model loads, use getDimensions() to project table extents to screen coords
   const mv=inner.querySelector('model-viewer');
@@ -1168,7 +1114,6 @@ function _seDrawSeats(){
   if(!_seCtx) return;
   const ctx=_seCtx, W=SE_W, H=SE_H;
   const cx=W/2, cy=H/2;
-  // Use detected model center as tilt pivot — falls back to H/2 when no GLB
   const modelCy=window._seModelCenter ? window._seModelCenter.cy*H : cy;
   const rx=W*_seTableRx;
   const tilt=Math.sin(_seLayoutAngle*Math.PI/180);
@@ -1176,33 +1121,96 @@ function _seDrawSeats(){
   ctx.clearRect(0,0,W,H);
 
   if(!window._glbDataUrl){
-    // No GLB — draw the fallback canvas table (always centered at H/2)
+    // Fallback table — matches player view felt color
     ctx.beginPath(); ctx.ellipse(cx,cy,rx+10,Math.max(4,ry+10),0,0,Math.PI*2);
-    ctx.fillStyle='#3a2200'; ctx.fill();
+    ctx.fillStyle='#3a1500'; ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx,cy,rx,Math.max(2,ry),0,0,Math.PI*2);
-    ctx.fillStyle='#0d3318'; ctx.fill();
-    ctx.strokeStyle='rgba(255,184,0,0.35)'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle='#1a0808'; ctx.fill();
+    ctx.strokeStyle='rgba(100,50,0,0.5)'; ctx.lineWidth=3; ctx.stroke();
     ctx.beginPath(); ctx.ellipse(cx,cy,rx-14,Math.max(1,ry-12),0,0,Math.PI*2);
-    ctx.strokeStyle='rgba(255,184,0,0.1)'; ctx.lineWidth=1; ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(cx,cy,42,Math.max(1,28*tilt),0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(100,50,0,0.15)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx,cy,38,Math.max(1,25*tilt),0,0,Math.PI*2);
     ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
-    ctx.fillStyle='rgba(255,184,0,0.5)'; ctx.font='bold 11px monospace';
+    ctx.fillStyle='rgba(255,184,0,0.4)'; ctx.font='bold 10px monospace';
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('POT',cx,cy);
   }
 
-  // Seats — Y compressed by tilt, pivoting around the actual model center Y
+  const _COLORS=['#00D2FF','#00E5A0','#9B4DFF','#FFB800','#FF3B5C','#FF8C00','#00BFFF','#A0FF00','#FF69B4'];
+  const _INIT=['SA','MA','DE','VI','AL','KO','BN','TY','RX'];
+  const _STACKS=['$50','$50','$49.75','$49.5','$50','$49.5','$50','$48','$50'];
+
   _seSeats.forEach((s,i)=>{
     const px=s.x*W;
     const py=modelCy+(s.y*H-modelCy)*tilt;
     const isYou=i===0;
-    ctx.beginPath(); ctx.arc(px,py,22,0,Math.PI*2);
-    ctx.fillStyle=isYou?'rgba(0,210,255,0.25)':'rgba(255,184,0,0.15)'; ctx.fill();
-    ctx.strokeStyle=isYou?'#00D2FF':'rgba(255,184,0,0.7)'; ctx.lineWidth=2; ctx.stroke();
-    ctx.fillStyle=isYou?'#00D2FF':'rgba(255,184,0,0.95)';
-    ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(isYou?'◈':String(i+1),px,py);
-    ctx.fillStyle='rgba(224,234,248,0.4)'; ctx.font='9px monospace';
-    ctx.fillText(isYou?'YOU':`S${i+1}`,px,py+32);
+    const color=_COLORS[i%_COLORS.length];
+    const initials=_INIT[i]||`S${i+1}`;
+    const stack=_STACKS[i]||'$50';
+    const r=isYou?26:22;
+
+    // Outer glow ring
+    ctx.beginPath(); ctx.arc(px,py,r+4,0,Math.PI*2);
+    ctx.strokeStyle=color; ctx.lineWidth=isYou?3:2;
+    ctx.globalAlpha=isYou?0.9:0.65; ctx.stroke(); ctx.globalAlpha=1;
+
+    // Dark avatar fill
+    ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2);
+    ctx.fillStyle=isYou?'#1a0a30':'#1a1a2e'; ctx.fill();
+
+    // Initials
+    ctx.fillStyle=color; ctx.globalAlpha=isYou?1:0.9;
+    ctx.font=`bold ${isYou?12:10}px monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(initials,px,py); ctx.globalAlpha=1;
+
+    // Card backs for opponents
+    if(!isYou){
+      const cw=13,ch=19,gap=2;
+      const cxBase=px+r+6, cyBase=py-ch/2;
+      for(let c=0;c<2;c++){
+        const cx2=cxBase+c*(cw+gap);
+        ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(cx2+1,cyBase+1,cw,ch);
+        ctx.fillStyle='#1e3a6e'; ctx.fillRect(cx2,cyBase,cw,ch);
+        ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=0.5;
+        ctx.strokeRect(cx2,cyBase,cw,ch);
+        ctx.strokeStyle='rgba(100,150,255,0.08)'; ctx.lineWidth=0.7;
+        ctx.beginPath();
+        ctx.moveTo(cx2+1,cyBase+1); ctx.lineTo(cx2+cw-1,cyBase+ch-1);
+        ctx.moveTo(cx2+cw-1,cyBase+1); ctx.lineTo(cx2+1,cyBase+ch-1);
+        ctx.stroke();
+      }
+    } else {
+      // Player's face cards (K♥ Q♣)
+      const cards=[{v:'K',s:'\u2665',red:true},{v:'Q',s:'\u2663',red:false}];
+      const cw=22,ch=30, cxBase=px-cw-3, cyBase=py+r+5;
+      cards.forEach((card,c)=>{
+        const cx2=cxBase+c*(cw+4);
+        ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(cx2+1,cyBase+1,cw,ch);
+        ctx.fillStyle='#f0ece0'; ctx.fillRect(cx2,cyBase,cw,ch);
+        ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=0.5; ctx.strokeRect(cx2,cyBase,cw,ch);
+        ctx.fillStyle=card.red?'#9b2020':'#1a1a1a';
+        ctx.font='bold 8px serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+        ctx.fillText(card.v,cx2+2,cyBase+2);
+        ctx.font='7px serif'; ctx.fillText(card.s,cx2+2,cyBase+11);
+      });
+    }
+
+    // Stack + name labels
+    const stackY=isYou?py+r+40:py+r+6;
+    ctx.fillStyle='rgba(224,234,248,0.65)'; ctx.font='9px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(stack,px,stackY);
+    ctx.fillStyle='rgba(224,234,248,0.35)'; ctx.font='8px monospace';
+    ctx.fillText(isYou?'Sam':initials,px,stackY+13);
+
+    // Dealer button on seat 1
+    if(i===1&&_seSeats.length>1){
+      ctx.beginPath(); ctx.arc(px-r-8,py-r-6,8,0,Math.PI*2);
+      ctx.fillStyle='#FFB800'; ctx.fill();
+      ctx.fillStyle='#000'; ctx.font='bold 8px monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('D',px-r-8,py-r-6);
+    }
   });
 }
 
@@ -1299,8 +1307,9 @@ let _glbScale = 1.0;
 
 function updateGLBScale(v) {
   _glbScale = parseFloat(v);
-  document.getElementById('glb-scale-val').textContent = _glbScale.toFixed(2) + '×';
-  ['#glb-preview-inner model-viewer','#se-glb-inner model-viewer','#mock-mv-inner model-viewer'].forEach(sel => {
+  const valEl = document.getElementById('glb-scale-val');
+  if (valEl) valEl.textContent = _glbScale.toFixed(2) + 'x';
+  ['#glb-preview-inner model-viewer','#se-glb-inner model-viewer'].forEach(sel => {
     const mv = document.querySelector(sel);
     if (mv) mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
   });
@@ -1319,26 +1328,8 @@ function pushGLBScale() {
   log(`GLB scale ${_glbScale.toFixed(2)}× pushed`, 'success');
 }
 
-async function initMockView() {
-  const inner = document.getElementById('mock-mv-inner');
-  if (!inner || !window._glbDataUrl) return;
-  if (inner.querySelector('model-viewer')) {
-    inner.querySelector('model-viewer').setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
-    return;
-  }
-  try { await _loadModelViewer(); } catch(e) { return; }
-  const url = _dataUrlToBlobUrl(window._glbDataUrl, 'model/gltf-binary');
-  if (!url) return;
-  const mv = document.createElement('model-viewer');
-  mv.setAttribute('src', url);
-  mv.setAttribute('camera-orbit', '0deg 55deg auto');
-  mv.setAttribute('scale', `${_glbScale} ${_glbScale} ${_glbScale}`);
-  mv.setAttribute('shadow-intensity', '1');
-  mv.setAttribute('disable-zoom', '');
-  mv.setAttribute('interaction-prompt', 'none');
-  mv.style.cssText = 'width:100%;height:100%;background:transparent;--poster-color:transparent;';
-  inner.innerHTML = '';
-  inner.appendChild(mv);
+function initMockView() {
+  if (document.getElementById('panel-seat-editor')?.classList.contains('active')) _seRefreshGLB();
 }
 
 // ── Anti-Cheat ────────────────────────────────────────────────────────
