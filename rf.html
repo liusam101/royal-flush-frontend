@@ -12708,6 +12708,38 @@ async function doResetPassword(){
   }
 }
 
+async function doVerifyEmail(code){
+  const token = localStorage.getItem('rf_token');
+  const errEl = document.getElementById('nauth-err-verify');
+  const btn   = document.querySelector('#nauth-step-verify .nauth-btn-primary');
+  if(!token){ if(errEl) errEl.textContent='Please log in first.'; return; }
+  if(btn){ btn.textContent='Verifying…'; btn.disabled=true; }
+  try {
+    const res  = await fetch(BACKEND_URL+'/api/auth/verify-otp',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({code})
+    });
+    const data = await res.json();
+    if(!data.ok){
+      if(errEl) errEl.textContent = data.error||'Incorrect code. Please try again.';
+      if(btn){ btn.textContent='Verify & Enter →'; btn.disabled=false; }
+      return;
+    }
+    // Verified — update local user state and go to lobby
+    const stored = JSON.parse(localStorage.getItem('rf_user')||'{}');
+    stored.emailVerified = true;
+    localStorage.setItem('rf_user', JSON.stringify(stored));
+    const banner = document.getElementById('verify-banner');
+    if(banner) banner.style.display='none';
+    showToast('Email verified! Welcome to Royal Flush.');
+    goLobby();
+  } catch(e){
+    if(errEl) errEl.textContent='Server error. Please try again.';
+    if(btn){ btn.textContent='Verify & Enter →'; btn.disabled=false; }
+  }
+}
+
 async function doResendVerification(){
   const token = localStorage.getItem('rf_token');
   if(!token){ showToast('Please log in first.'); return; }
@@ -12716,7 +12748,7 @@ async function doResendVerification(){
       method:'POST', headers:{'Authorization':'Bearer '+token}
     });
     const data = await res.json();
-    showToast(data.message||'Verification email sent!');
+    showToast(data.message||'Verification code sent!');
   } catch(e){ showToast('Could not send email. Please try again.'); }
 }
 
