@@ -453,7 +453,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
               <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">SCALE</span>
-              <input type="range" id="glb-scale" min="0.5" max="2" value="1" step="0.05" oninput="updateGLBScale(this.value)" style="flex:1;accent-color:var(--cyan);cursor:pointer">
+              <input type="range" id="glb-scale" min="0.5" max="2" value="1" step="0.05" oninput="updateGLBScale(this.value)" onchange="pushGLBScale(true)" style="flex:1;accent-color:var(--cyan);cursor:pointer">
               <span id="glb-scale-val" style="font-family:var(--mono);font-size:12px;color:var(--cyan);min-width:38px;text-align:right">1.00x</span>
               <button class="btn btn-sm" onclick="document.getElementById('glb-scale').value=1;updateGLBScale(1)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
             </div>
@@ -990,6 +990,7 @@ function pushAsset(type) {
     pushedAt,
     dataUrl: asset.dataUrl,
   });
+  if (type === 'glb') pushGLBScale(true);
   socket.once('adminAssetPushed', d => {
     if (d.type !== type) return;
     toast(`${type.toUpperCase()} pushed to ${d.tables} client(s)`, 'success');
@@ -1316,8 +1317,8 @@ function updateGLBScale(v) {
   if (window._glbTableDims) autoCalcSeats(true);
 }
 
-function pushGLBScale() {
-  if (!socket) { toast('Not connected', 'error'); return; }
+function pushGLBScale(silent) {
+  if (!socket) { if (!silent) toast('Not connected', 'error'); return; }
   socket.emit('adminPushAsset', {
     secret: adminKey,
     type: 'glbScale',
@@ -1325,8 +1326,7 @@ function pushGLBScale() {
     pushedAt: new Date().toISOString(),
     dataUrl: String(_glbScale),
   });
-  toast(`Scale ${_glbScale.toFixed(2)}× pushed to all players`, 'success');
-  log(`GLB scale ${_glbScale.toFixed(2)}× pushed`, 'success');
+  if (!silent) { toast(`Scale ${_glbScale.toFixed(2)}× pushed to all players`, 'success'); log(`GLB scale ${_glbScale.toFixed(2)}× pushed`, 'success'); }
 }
 
 function initMockView() {
