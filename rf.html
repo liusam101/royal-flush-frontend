@@ -2761,7 +2761,7 @@ var MTTS = (function(){
     {place:'5th',pct:8},{place:'6th',pct:5},{place:'7th',pct:4}
   ];
   return [
-    { id:'mtt-daily',   name:'Daily RF',      icon:'♠', schedule:'Every day · 8:00 PM UTC', status:'registering', featured:true,
+    { id:'mtt-daily',   name:'Daily BRL',      icon:'♠', schedule:'Every day · 8:00 PM UTC', status:'registering', featured:true,
       buyin:5,    guarantee:500,   rake:0.07, registered:47, startingStack:5000,
       structure:'No-Limit Hold\u2019em · Freezeout', blindMins:10, lateRegMins:60,
       startTime: now+3600000*2, currentLevel:1, playersLeft:47, prizes:PRIZES_STD,
@@ -2907,7 +2907,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- Mode context banner (shows briefly when switching) -->
 <div class="mode-banner gold-banner" id="mode-banner-gold">
   <span class="mode-banner-pill">Free Play</span>
-  🟡 <b>Gold Chips</b>: play for fun, no cash value. Switch to RF mode to play for prizes.
+  🟡 <b>Gold Chips</b>: play for fun, no cash value. Switch to BRL mode to play for prizes.
   <button class="mode-banner-dismiss" onclick="this.parentElement.classList.remove('visible')" aria-label="Dismiss">✕</button>
 </div>
 <div class="mode-banner royal-banner" id="mode-banner-royal">
@@ -3396,7 +3396,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
         </div>
         <div>
           <div class="rf-mega-col-title">Tournaments</div>
-          <div class="rf-mega-link" onclick="goSignup()"><span class="rf-mega-link-icon">🏆</span><div>Daily RF<span class="rf-mega-link-sub">8:00 PM UTC · $500 guaranteed</span></div></div>
+          <div class="rf-mega-link" onclick="goSignup()"><span class="rf-mega-link-icon">🏆</span><div>Daily BRL<span class="rf-mega-link-sub">8:00 PM UTC · $500 guaranteed</span></div></div>
           <div class="rf-mega-link" onclick="goSignup()"><span class="rf-mega-link-icon">⚡</span><div>Turbo Takedown<span class="rf-mega-link-sub">Every 4 hours · Fast structure</span></div></div>
           <div class="rf-mega-link" onclick="goSignup()"><span class="rf-mega-link-icon">♥</span><div>Sunday Million<span class="rf-mega-link-sub">Sundays 6 PM · $5K guaranteed</span></div></div>
         </div>
@@ -3588,7 +3588,7 @@ body.in-lobby #rf-cursor,body.in-lobby #rf-cursor-ring{display:none}
   </div>
 </section>
 
-<!-- WHY RF POKER (original markup, restyled) -->
+<!-- WHY BRL POKER (original markup, restyled) -->
 <section class="lp-section">
   <div class="lp-section-inner">
     <div class="lp-section-label rf-reveal">The Standard</div>
@@ -4918,7 +4918,7 @@ window._showVerifyBanner = function(user){
     <div style="background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.2);border-radius:6px;padding:18px 22px;margin-bottom:8px;text-align:center">
       <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">NO PURCHASE NECESSARY · ODDS OF WINNING VARY BY EVENT</div>
       <div style="font-size:11px;color:var(--txd);line-height:1.8">
-        Grand RF Championship: approx. <b style="color:var(--tx)">1 in 11</b> chance of winning any prize (top ~9% paid) ·
+        Grand BRL Championship: approx. <b style="color:var(--tx)">1 in 11</b> chance of winning any prize (top ~9% paid) ·
         Daily Free Claim: <b style="color:var(--tx)">1 in 1</b> (guaranteed 1 Barrel Chip) ·
         Mail-In: <b style="color:var(--tx)">1 in 1</b> (guaranteed upon valid receipt)
       </div>
@@ -5786,7 +5786,7 @@ window._showVerifyBanner = function(user){
   <div class="nav-logo" onclick="goHome()">BARREL<span>Poker</span></div>
   <div class="nav-r">
     <div class="nav-mode">
-      <div class="nm-opt" id="nm-royal" onclick="switchMode('royal')">RF</div>
+      <div class="nm-opt" id="nm-royal" onclick="switchMode('royal')">BRL</div>
       <div class="nm-opt" id="nm-gold" onclick="switchMode('gold')">Gold</div>
     </div>
     <div class="nav-chips" onclick="openCashier()">
@@ -5809,7 +5809,7 @@ window._showVerifyBanner = function(user){
     <div class="sb-block" id="lobby-mode-header" style="padding-top:24px">
       <div class="sb-mode-title" id="lobby-mode-title">Barrel Chips</div>
       <div class="sb-mode-sub" id="lobby-mode-sub">Real Stakes · Cash &amp; Tournaments</div>
-      <div class="sb-mode-badge" id="lobby-mode-badge">RF Mode</div>
+      <div class="sb-mode-badge" id="lobby-mode-badge">BRL Mode</div>
     </div>
 
     <!-- Navigation -->
@@ -6359,7 +6359,7 @@ window._showVerifyBanner = function(user){
     <button class="mcl" onclick="closeOv('ov-mtt')">✕</button>
     <div class="mh">
       <div class="ms" id="ov-mtt-icon">👑</div>
-      <div class="mt" id="ov-mtt-title">Grand RF Championship</div>
+      <div class="mt" id="ov-mtt-title">Grand BRL Championship</div>
       <div class="msub" id="ov-mtt-sub">Deep Stack · Re-Entry</div>
     </div>
     <div class="mdiv"></div>
@@ -6802,13 +6802,13 @@ const CSS_GOLD_VAL='font-family:\'Cormorant Garamond\',serif;font-size:18px;colo
 const TIERS_ROYAL=[
   {id:'micro',name:'Micro Stakes',sb:.25, bb:.5,  min:10,   max:100,   bg:'#0A2E14',seats:6,backendId:'midnight-velvet', tables:[{name:'Midnight Velvet',fill:0,players:0}]},
   {id:'low',  name:'Low Stakes',  sb:.5,  bb:1,   min:20,   max:200,   bg:'#0A1E3A',seats:6,backendId:'cursed-domain',   tables:[{name:'Cursed Domain',  fill:0,players:0}]},
-  {id:'high', name:'High Stakes', sb:2.5, bb:5,   min:100,  max:1000,  bg:'#2E0A14',seats:9,backendId:'grand-royal',    tables:[{name:'Grand RF',    fill:0,players:0}]},
+  {id:'high', name:'High Stakes', sb:2.5, bb:5,   min:100,  max:1000,  bg:'#2E0A14',seats:9,backendId:'grand-royal',    tables:[{name:'Grand BRL',    fill:0,players:0}]},
 ];
 // Gold Chips tiers (free play, ~200x Royal stakes to match 250k GC balance)
 const TIERS_GOLD=[
   {id:'micro',name:'Micro Stakes',sb:50,   bb:100,  min:2000,  max:20000,  bg:'#0D3B2E',seats:6,backendId:'midnight-velvet',tables:[{name:'Midnight Velvet',fill:0,players:0}]},
   {id:'low',  name:'Low Stakes',  sb:100,  bb:200,  min:4000,  max:40000,  bg:'#0D2B3B',seats:6,backendId:'cursed-domain',  tables:[{name:'Cursed Domain',  fill:0,players:0}]},
-  {id:'high', name:'High Stakes', sb:500,  bb:1000, min:20000, max:200000, bg:'#2A0D1A',seats:9,backendId:'grand-royal',   tables:[{name:'Grand RF',    fill:0,players:0}]},
+  {id:'high', name:'High Stakes', sb:500,  bb:1000, min:20000, max:200000, bg:'#2A0D1A',seats:9,backendId:'grand-royal',   tables:[{name:'Grand BRL',    fill:0,players:0}]},
 ];
 function getTiers(){ return _mode==="gold" ? TIERS_GOLD : TIERS_ROYAL; }
 function getMyName(){ return localStorage.getItem('rf_username') || 'Player'; }
@@ -9498,7 +9498,7 @@ function renderFeaturedTable(){
         </div>
         <div class="ft-info">
           <div class="ft-badge"><div class="ft-badge-dot"></div>LIVE NOW · ${players} PLAYERS</div>
-          <div class="ft-name">${t.tables[0]?.name || 'Grand RF'}</div>
+          <div class="ft-name">${t.tables[0]?.name || 'Grand BRL'}</div>
           <div class="ft-stakes">${sym}${t.sb}/${sym}${t.bb} No Limit Hold'em · ${t.seats}-max</div>
           <div class="ft-players">
             <div class="ft-avs">${avHtml}</div>
@@ -10289,7 +10289,7 @@ function cashierStep2(){
             <div>
               <div style="font-size:11px;color:var(--tx);font-weight:600">${p.label||''}</div>
               <div style="font-size:10px;color:var(--txd);margin-top:2px">
-                🟡 ${(p.gold||p.chips||0).toLocaleString()} Gold${p.royal?` &nbsp;+&nbsp; <span style="color:${accentCol}">♦ ${p.royal.toLocaleString()} RF</span>`:''}
+                🟡 ${(p.gold||p.chips||0).toLocaleString()} Gold${p.royal?` &nbsp;+&nbsp; <span style="color:${accentCol}">♦ ${p.royal.toLocaleString()} BRL</span>`:''}
                 ${p.bonus?`<span class="chip-bonus-badge">+${p.bonus}%</span>`:''}
               </div>
             </div>
@@ -10348,7 +10348,7 @@ function cashierStep3(){
     </div>`;
   } else if(_cPM==='bank'){
     formHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:14px;margin-bottom:4px">
-      ${[['Account name','Barrel Poker Ltd'],['Routing','021000021'],['Account','8847291034'],['Reference','RF-'+Math.floor(Math.random()*900000+100000)]].map(([k,v])=>`
+      ${[['Account name','Barrel Poker Ltd'],['Routing','021000021'],['Account','8847291034'],['Reference','BRL-'+Math.floor(Math.random()*900000+100000)]].map(([k,v])=>`
         <div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
           <span style="color:var(--txd)">${k}</span><span style="color:var(--tx);font-family:monospace">${v}</span>
         </div>`).join('')}
@@ -10475,7 +10475,7 @@ function cashierPending(gold, royal, usd){
       </div>
       <div style="margin-top:14px;display:flex;gap:12px;justify-content:center">
         <div style="text-align:center"><div style="color:#E8C040;font-size:13px">${gold.toLocaleString()}</div><div style="font-size:9px;color:var(--txd)">🟡 Gold pending</div></div>
-        ${royal?`<div style="text-align:center"><div style="color:var(--gold);font-size:13px">${royal.toLocaleString()}</div><div style="font-size:9px;color:var(--txd)">♦ RF pending</div></div>`:''}
+        ${royal?`<div style="text-align:center"><div style="color:var(--gold);font-size:13px">${royal.toLocaleString()}</div><div style="font-size:9px;color:var(--txd)">♦ BRL pending</div></div>`:''}
       </div>
     </div>
     <button class="btn btn-gold" style="width:100%;padding:13px;margin-top:8px" onclick="closeOv('ov-cashier');cashierReset()">
@@ -11506,7 +11506,7 @@ function buildRules(){
     ['7. Odds of Winning',`
 <strong>ODDS OF WINNING VARY</strong> based on the number of eligible entries and skill of play. Barrel Poker uses a certified RNG (Random Number Generator) for all card dealing, independently verified. Below are the approximate odds of winning for each prize tier based on a typical field size. Actual odds may vary per event.
 <br><br>
-<strong>Grand RF Championship</strong> ($50+$5 · ~1,000 entries typical)<br>
+<strong>Grand BRL Championship</strong> ($50+$5 · ~1,000 entries typical)<br>
 1st Place (30% of pool): approximately 1 in 1,000<br>
 2nd Place (17%): approximately 1 in 500<br>
 3rd Place (11%): approximately 1 in 333<br>
@@ -11651,7 +11651,7 @@ function claimFreeRoyal(){
   localStorage.setItem('rf_last_royal_claim',now.toString());
   _lastRoyalClaim=now;
   closeOv('ov-cashier'); _balRoyal+=ROYAL_DAILY; updBal();
-  TXNS.unshift({icon:'♦',label:'Daily RF Claim',table:'',amt:+ROYAL_DAILY,ts:'Just now'});
+  TXNS.unshift({icon:'♦',label:'Daily BRL Claim',table:'',amt:+ROYAL_DAILY,ts:'Just now'});
   showWB('♦ Barrel Chip Claimed!','1 RC added · Come back tomorrow for another free chip!',ROYAL_DAILY); setTimeout(updateRCWidget,100);
 }
 
@@ -14370,13 +14370,13 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       const buf=new Uint8Array(bin.length);
       for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
       return URL.createObjectURL(new Blob([buf],{type:'model/gltf-binary'}));
-    }catch(e){ console.warn('[RF] GLB blob error:', e); return null; }
+    }catch(e){ console.warn('[BRL] GLB blob error:', e); return null; }
   }
 
   function _ensureBlobUrl(){
     if(!_pendingGlb||_pendingBlobUrl) return;
     const url=_rfGlbToBlobUrl(_pendingGlb.dataUrl);
-    if(url){ _pendingBlobUrl=url; console.log('[RF] GLB blob URL pre-created'); }
+    if(url){ _pendingBlobUrl=url; console.log('[BRL] GLB blob URL pre-created'); }
   }
 
   function _saveAsset(key, data){
@@ -14445,7 +14445,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;transform:scale(${_rfGlbScale});transform-origin:50% 50%;`;
     host.appendChild(mv);
     _preRenderMv = mv;
-    console.log('[RF] 3D pre-render started off-screen');
+    console.log('[BRL] 3D pre-render started off-screen');
   }
 
   function destroyT3(){
@@ -14460,7 +14460,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
   async function applyGLBTable(glbData){
     if(!_isGameViewVisible()) return;
     const tableWrap=document.getElementById('table-wrap');
-    if(!tableWrap){ console.warn('[RF] applyGLBTable: missing table-wrap'); return; }
+    if(!tableWrap){ console.warn('[BRL] applyGLBTable: missing table-wrap'); return; }
 
     destroyT3();
     tableWrap.style.position = 'relative';
@@ -14474,18 +14474,18 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       tableWrap.insertBefore(mv, tableWrap.firstChild);
       _mvBlobUrl = mv.getAttribute('src');
       _t3Active = true;
-      console.log('[RF] 3D instant — pre-rendered model-viewer moved into view');
+      console.log('[BRL] 3D instant — pre-rendered model-viewer moved into view');
       return;
     }
 
     // Slow path: create fresh model-viewer (2-3s parse time)
     try{ await _loadMV(); }
-    catch(e){ console.warn('[RF] model-viewer load failed:', e); return; }
+    catch(e){ console.warn('[BRL] model-viewer load failed:', e); return; }
 
     let blobUrl = _pendingBlobUrl;
     if(blobUrl){ _pendingBlobUrl = null; }
     else { blobUrl = _rfGlbToBlobUrl(glbData.dataUrl); }
-    if(!blobUrl){ console.warn('[RF] GLB blob conversion failed'); return; }
+    if(!blobUrl){ console.warn('[BRL] GLB blob conversion failed'); return; }
     _mvBlobUrl = blobUrl;
 
     const phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 55;
@@ -14502,7 +14502,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.addEventListener('load', () => requestAnimationFrame(_show), { once: true });
     setTimeout(_show, 8000);
     _t3Active = true;
-    console.log('[RF] 3D mounting fresh (pre-render was not ready):', glbData.name);
+    console.log('[BRL] 3D mounting fresh (pre-render was not ready):', glbData.name);
   }
 
   function _fetchAssetsHttp(){
@@ -14517,7 +14517,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             _saveAsset(GLB_KEY,a);
             _startPreRender();
             if(_isGameViewVisible()){
-              applyGLBTable(_pendingGlb).catch(e=>console.warn('[RF] HTTP apply failed:',e));
+              applyGLBTable(_pendingGlb).catch(e=>console.warn('[BRL] HTTP apply failed:',e));
             }
           }
           if(a.type==='glbScale'&&a.dataUrl){
@@ -14529,7 +14529,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
           if(a.type==='seats'&&a.dataUrl){ _saveSeatData(a.dataUrl); _applySeatUpdate(); }
         });
       })
-      .catch(e=>console.warn('[RF] /api/assets fetch failed:',e));
+      .catch(e=>console.warn('[BRL] /api/assets fetch failed:',e));
   }
 
   function checkAndApplyAssets(){
@@ -14539,14 +14539,14 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     _getAsset(BG_KEY, bgData=>{ if(bgData?.dataUrl) applyBackground(bgData.dataUrl); });
     const src = _pendingGlb;
     if(src){
-      applyGLBTable(src).catch(e=>console.warn('[RF] 3D init failed:',e));
+      applyGLBTable(src).catch(e=>console.warn('[BRL] 3D init failed:',e));
       return;
     }
     _getAsset(GLB_KEY, glbData=>{
       if(glbData?.dataUrl){
         _pendingGlb = glbData;
         _ensureBlobUrl();
-        applyGLBTable(glbData).catch(e=>console.warn('[RF] 3D init failed:',e));
+        applyGLBTable(glbData).catch(e=>console.warn('[BRL] 3D init failed:',e));
       }
     });
   }
@@ -14558,7 +14558,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       _pendingGlb = glbData;
       _ensureBlobUrl();
       _startPreRender();
-      console.log('[RF] startup: GLB pre-render started from cache');
+      console.log('[BRL] startup: GLB pre-render started from cache');
     }
   });
 
@@ -14579,7 +14579,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     if(_socketHooked || typeof socket==='undefined' || !socket) return;
     _socketHooked = true;
     socket.on('assetUpdate', data=>{
-      console.log('[RF] assetUpdate:', data.type, data.name||'');
+      console.log('[BRL] assetUpdate:', data.type, data.name||'');
       if(data.type==='bg'&&data.dataUrl){
         applyBackground(data.dataUrl);
         _saveAsset(BG_KEY,{dataUrl:data.dataUrl,name:data.name,pushedAt:data.pushedAt});
@@ -14592,7 +14592,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         _saveAsset(GLB_KEY,{dataUrl:data.dataUrl,name:data.name,pushedAt:data.pushedAt});
         _startPreRender();
         if(_isGameViewVisible()){
-          applyGLBTable(_pendingGlb).catch(e=>console.warn('[RF] hot-swap failed:',e));
+          applyGLBTable(_pendingGlb).catch(e=>console.warn('[BRL] hot-swap failed:',e));
         }
       }
       if(data.type==='seats'){
@@ -14606,7 +14606,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         if(_mv) _mv.style.transform = `scale(${_rfGlbScale})`;
       }
     });
-    console.log('[RF] socket hooked for all assets');
+    console.log('[BRL] socket hooked for all assets');
   }
   _hookAllSocket();
   if(!_socketHooked){
@@ -14621,7 +14621,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       _lastGlbPush=glbData.pushedAt;
       if(!_pendingGlb){ _pendingGlb=glbData; _ensureBlobUrl(); _startPreRender(); }
       if(_isGameViewVisible()){
-        applyGLBTable(glbData).catch(e=>console.warn('[RF] poll hot-swap failed:',e));
+        applyGLBTable(glbData).catch(e=>console.warn('[BRL] poll hot-swap failed:',e));
       }
     });
     _getAsset(BG_KEY, bgData=>{
@@ -14684,7 +14684,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         showView('vg');
         setTimeout(()=>{ if(typeof startHand==='function') startHand(); },400);
       }
-    }catch(e){ console.warn('[RF] demo restore failed:',e); sessionStorage.removeItem('rf_demo_state'); }
+    }catch(e){ console.warn('[BRL] demo restore failed:',e); sessionStorage.removeItem('rf_demo_state'); }
   },900);
 })();
 </script>
