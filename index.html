@@ -1315,13 +1315,111 @@ body.royal-mode nav{
   }
 }
 
-/* ── MOBILE LANDSCAPE — rare but should still work ── */
-@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
-  /* In landscape on a phone, give max table area, compact controls */
-  .gtop { height: 32px !important; padding: 4px 8px !important; }
-  .table-wrap { transform: translateY(-30px) !important; aspect-ratio: 1.4/1 !important; }
-  .cbar { padding: 4px 8px !important; }
-  #action-buttons button { height: 40px !important; font-size: 11px !important; }
+/* ── MOBILE LANDSCAPE ── */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 600px) {
+  #vg { height: 100dvh !important; overflow: hidden !important; flex-direction: column !important; }
+
+  .gtop { height: 36px !important; padding: 4px 12px !important; flex-shrink: 0; }
+  .gtitle { font-size: 12px !important; }
+  .gstakes { font-size: 9px !important; }
+  .bk { font-size: 10px !important; padding: 4px 8px !important; }
+  .pills { display: none !important; }
+
+  .garena {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .table-wrap {
+    width: auto !important;
+    height: calc(100dvh - 36px - 80px) !important;
+    max-height: calc(100dvh - 36px - 80px) !important;
+    aspect-ratio: 1000/700 !important;
+    max-width: 72vw !important;
+    transform: none !important;
+    margin: 0 auto !important;
+  }
+
+  .table-svg {
+    transform: perspective(1000px) rotateX(25deg) !important;
+  }
+
+  .seat .av { width: 36px !important; height: 36px !important; font-size: 9px !important; }
+  .sname { font-size: 8px !important; max-width: 52px !important; }
+  .sstack { font-size: 8px !important; }
+  .pot-val { font-size: 14px !important; }
+  .pot-lbl { font-size: 7px !important; }
+  .comm-cards .card { width: 24px !important; height: 34px !important; }
+  .comm-cards .card .ct, .comm-cards .card .cb { font-size: 6px !important; }
+  .comm-cards .card .cm { font-size: 10px !important; }
+
+  .cbar {
+    position: fixed !important;
+    bottom: 0 !important; left: 0 !important; right: 0 !important;
+    height: 72px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    padding: 6px 12px max(6px, env(safe-area-inset-bottom)) !important;
+    background: linear-gradient(to top, rgba(0,0,0,0.97) 70%, transparent) !important;
+    border-top: 1px solid rgba(201,168,76,0.15) !important;
+  }
+
+  .cbar-bot {
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    flex: 1 !important;
+  }
+
+  .yhole {
+    width: auto !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+    order: 0 !important;
+  }
+  .yhole .card { width: 32px !important; height: 46px !important; }
+  .yhole .card .ct, .yhole .card .cb { font-size: 8px !important; }
+  .yhole .card .cm { font-size: 13px !important; }
+
+  .hand-label { display: none !important; }
+
+  #action-buttons {
+    flex: 1 !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+  }
+  #action-buttons > div { flex: 1 !important; max-width: 110px !important; }
+  #action-buttons button {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+  }
+  #action-buttons > div:nth-child(2) #timebank-btn { display: none !important; }
+
+  #raise-panel {
+    position: fixed !important;
+    bottom: 80px !important;
+    right: 12px !important;
+    left: auto !important;
+    width: 220px !important;
+    padding: 8px 10px !important;
+    background: rgba(6,10,15,0.96) !important;
+    border-radius: 8px !important;
+    z-index: 200 !important;
+  }
 }
 
 /* MOBILE GAME TABLE (existing block continues) */
@@ -2560,6 +2658,29 @@ body.theme-crimson .sd.done { background: #E84A5F !important; border-color: #E84
 body.theme-crimson .mtt-card { border-left-color: rgba(220,60,80,0.35) !important; }
 body.theme-crimson .mtt-card:hover { border-left-color: #E84A5F !important; }
 
+/* ── Rotate prompt (shown in portrait on mobile while in game) ── */
+#rotate-prompt {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(6,10,15,0.97);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  color: #D4AF37;
+  font-family: inherit;
+  text-align: center;
+  padding: 32px;
+}
+#rotate-prompt svg { opacity: 0.85; animation: rotpulse 1.8s ease-in-out infinite; }
+@keyframes rotpulse { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(90deg)} }
+#rotate-prompt p { font-size: 15px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ccc; }
+@media (max-width: 768px) and (orientation: portrait) {
+  body.in-game #rotate-prompt { display: flex; }
+}
+
 </style>
 
 <!-- TWEAKS PANEL -->
@@ -2712,6 +2833,10 @@ applyTweaks(TWEAK_DEFAULTS);
 </script>
 </head>
 <body>
+<div id="rotate-prompt">
+  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+  <p>Rotate your device to play</p>
+</div>
 
 <!-- ── USERNAME MODAL ─────────────────────────────────────────────── -->
 <div id="username-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
