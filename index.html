@@ -8621,116 +8621,6 @@ function doStraddle(){
 }
 
 
-// ── BOT ACTION ENGINE ──────────────────────────────────────────────
-function botAct(idx){ if(_backendActive) return;
-  const seat = SEATS[idx];
-  if(!seat || seat.folded) return;
-
-  const currentBet = Math.max(...SEATS.filter(s=>!s.folded).map(s=>s.bet||0));
-  const toCall = Math.max(0, currentBet - (seat.bet||0));
-  const pot = _pot;
-  const stack = seat.stack;
-
-  // Random bot personality: weighted toward calling, sometimes raises, rarely folds to check
-  const r = Math.random();
-  let action, logMsg, logCls='';
-
-  if(toCall === 0){
-    // No bet to call — check or bet
-    if(r < 0.65){
-      // Check
-      action = () => { seat.act=false; };
-      logMsg = `<b>${seat.name}</b> checks`;
-    } else {
-      // Bet ~50-75% pot
-      const betAmt = Math.min(Math.round(pot * (0.5 + Math.random()*0.25)), stack);
-      const bet = Math.max(BB_AMT, betAmt);
-      seat.stack -= bet; seat.bet = (seat.bet||0)+bet; _pot += bet;
-      action = () => { seat.act=false; };
-      logMsg = `<b>${seat.name}</b> bets ${chip(bet)}`; logCls='raise';
-      playSound('raise');
-      showBetChips(idx, seat.bet);
-    }
-  } else {
-    // There's a bet to call
-    if(toCall >= stack){
-      // All-in call
-      _pot += stack; seat.bet=(seat.bet||0)+stack; seat.stack=0;
-      action = () => { seat.act=false; };
-      logMsg = `<b>${seat.name}</b> calls all-in ${chip(seat.stack+stack)}`; 
-      playSound('call');
-    } else if(r < 0.15){
-      // Fold
-      seat.folded=true; seat.act=false;
-      action = () => {};
-      logMsg = `<b>${seat.name}</b> folds`; logCls='fold';
-      playSound('fold');
-    } else if(r < 0.75){
-      // Call
-      seat.stack -= toCall; seat.bet=(seat.bet||0)+toCall; _pot += toCall;
-      action = () => { seat.act=false; };
-      logMsg = `<b>${seat.name}</b> calls ${chip(toCall)}`;
-      playSound('call');
-      showBetChips(idx, seat.bet);
-    } else {
-      // Raise to ~2.5x
-      const raiseTotal = Math.min(Math.round(currentBet * 2.5), stack);
-      const extra = raiseTotal - (seat.bet||0);
-      seat.stack -= extra; seat.bet = raiseTotal; _pot += extra;
-      action = () => { seat.act=false; };
-      logMsg = `<b>${seat.name}</b> raises to ${chip(raiseTotal)}`; logCls='raise';
-      playSound('raise');
-      showBetChips(idx, seat.bet);
-    }
-  }
-
-  action();
-  addLog(logMsg, logCls);
-  updatePotDisplay();
-  updateSeats();
-
-  // Advance to next non-folded player
-  let next = (idx+1) % SEATS.length;
-  let tries = 0;
-  while((SEATS[next].folded) && tries < SEATS.length){ next=(next+1)%SEATS.length; tries++; }
-
-  // Check if only one player remains (everyone else folded) — they win
-  const activePlayers = SEATS.filter(s=>!s.folded);
-  if(activePlayers.length === 1){
-    if(activePlayers[0].you){
-      addLog('─ All opponents folded ─','sys');
-      const _winnerIdx = SEATS.indexOf(activePlayers[0]);
-      flyPotToWinner(_winnerIdx, ()=>{ demoWin(false); });
-    } else {
-      addLog(`<b>${activePlayers[0].name}</b> wins — all others folded`,'sys');
-      nextHand();
-    }
-    return;
-  }
-
-  // Check if all active players have matched the bet (street is over)
-  const maxBet = Math.max(...SEATS.filter(s=>!s.folded).map(s=>s.bet||0));
-  const allCalled = SEATS.filter(s=>!s.folded).every(s=>(s.bet||0)===maxBet || s.stack===0);
-
-  if(allCalled && !SEATS[next].you){
-    // Keep going around to bots
-    SEATS.forEach(s=>s.act=false);
-    SEATS[next].act=true;
-    _actIdx=next;
-    updateSeats();
-    startTimer(next);
-  } else if(SEATS[next].you){
-    // Player's turn
-    SEATS.forEach(s=>s.act=false);
-    SEATS[next].act=true;
-    _actIdx=next;
-    updateActionButtons();
-    updateSeats();
-    startTimer(next);
-  } else {
-    advanceHand();
-  }
-}
 
 function advanceHand(){ if(_backendActive) return; // backend controls hand flow
   // Fly bet stacks into pot then proceed
@@ -8825,9 +8715,6 @@ function startTimer(idx){
         addLog('<b>You</b> fold (time ran out)','fold');
         playSound('fold');
         demoAct('fold');
-      } else if (!_backendActive) {
-        // Bot takes a realistic action (demo mode only)
-        botAct(idx);
       }
     }
   }, 1000);
@@ -10891,30 +10778,11 @@ function confirmBuyin(){
     showView('vg');
     backendJoinTable(backendId, playerName, val);
   } else {
-    // Not logged in or gold chips — demo mode with bots
-    _populateDemoSeats(tier, val, playerName);
-    // Save state so refresh can restore the demo game
-    try{ sessionStorage.setItem('rf_demo_state', JSON.stringify({tierId:tier.id, buyIn:val, mode:_mode, tableName:_buyinTable||tier.name})); }catch(_){}
-    showView('vg');
-    setTimeout(()=>startHand(), 400);
+    showToast('Please log in to join a table.');
+    showView('v-auth');
   }
 }
 
-// Populate SEATS with player + bots for instant table render
-function _populateDemoSeats(tier, val, playerName){
-  if(_backendActive) return; // backend manages its own seat sync
-  const navAv = document.getElementById('nav-av');
-  const playerCol = (navAv?.style.background || '#4A2A6A').trim();
-  const botNames = ['Aleksei','Marina','Dex','Vivian','Kosta','Yuki','Rafe'];
-  const botCols  = ['#3A2A5A','#1A3A2A','#3A1A1A','#1A2A3A','#2A3A1A','#2A2A4A','#3A3A1A'];
-  const n = tier.seats || 6;
-  SEATS.length = 0;
-  SEATS.push({ name: playerName, stack: val, you: true,  folded: false, act: false, bet: 0, col: playerCol, avatarUrl: window._myAvatarDataUrl || null });
-  for(let i = 1; i < n; i++){
-    SEATS.push({ name: botNames[i-1]||('Bot'+i), stack: val, you: false, folded: false, act: false, bet: 0, col: botCols[i-1]||'#2A2A4A' });
-  }
-  _btnIdx = Math.floor(Math.random() * n);
-}
 
 // ══ TOURNAMENT (MTT) ENGINE ════════════════════════════════════════
 
@@ -14614,34 +14482,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
 
   window.rf3D={ check: checkAndApplyAssets, destroy: destroyT3, refreshSeats: _applySeatUpdate };
 
-  setTimeout(()=>{
-    if(typeof _backendActive!=='undefined'&&_backendActive) return;
-    try{
-      const raw=sessionStorage.getItem('rf_demo_state');
-      if(!raw) return;
-      const st=JSON.parse(raw);
-      const allTiers=[
-        ...(typeof TIERS_ROYAL!=='undefined'?TIERS_ROYAL:[]),
-        ...(typeof TIERS_GOLD!=='undefined'?TIERS_GOLD:[]),
-        ...(typeof SNGS_ROYAL!=='undefined'?SNGS_ROYAL:[]),
-        ...(typeof SNGS_GOLD!=='undefined'?SNGS_GOLD:[]),
-      ];
-      const tier=allTiers.find(t=>t.id===st.tierId);
-      if(!tier){ sessionStorage.removeItem('rf_demo_state'); return; }
-      if(typeof _mode!=='undefined') window._mode=st.mode;
-      if(typeof SB_AMT!=='undefined'){ SB_AMT=tier.sb; BB_AMT=tier.bb; }
-      const stEl=document.getElementById('g-stakes');
-      if(stEl&&typeof chip==='function') stEl.textContent=chip(tier.sb)+'/'+chip(tier.bb)+' No Limit Hold\'em';
-      const gnEl=document.getElementById('g-tname');
-      if(gnEl) gnEl.textContent=st.tableName||tier.name;
-      const pName=localStorage.getItem('rf_username')||'HighRoller';
-      if(typeof _populateDemoSeats==='function') _populateDemoSeats(tier,st.buyIn,pName);
-      if(typeof showView==='function'){
-        showView('vg');
-        setTimeout(()=>{ if(typeof startHand==='function') startHand(); },400);
-      }
-    }catch(e){ console.warn('[BRL] demo restore failed:',e); sessionStorage.removeItem('rf_demo_state'); }
-  },900);
+
 })();
 </script>
 
