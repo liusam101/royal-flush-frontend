@@ -13033,17 +13033,14 @@ async function _restoreSession(){
       localStorage.setItem('rf_registered', '1');
       setTimeout(()=>showView('vl'), 150);
     } else {
-      // Token expired — clear and show auth
       localStorage.removeItem('rf_token');
       localStorage.removeItem('rf_registered');
+      localStorage.removeItem('rf_username');
     }
   } catch(e) {
-    // Backend unreachable — fall back to local storage
-    const stored = localStorage.getItem('rf_username');
-    if(stored && localStorage.getItem('rf_registered')){
-      _updateHeader(stored);
-      setTimeout(()=>showView('vl'), 150);
-    }
+    localStorage.removeItem('rf_token');
+    localStorage.removeItem('rf_registered');
+    localStorage.removeItem('rf_username');
   }
 }
 
@@ -14482,4 +14479,5 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
 
 })();
 </script>
+
 
