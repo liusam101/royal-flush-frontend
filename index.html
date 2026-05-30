@@ -9651,9 +9651,9 @@ function setMode(mode, silent) {
   updatePotDisplay();
   updateActionButtons();
 
-  // Go to lobby if not already there
+  // Go to lobby if not already there and user is logged in
   const vl = document.getElementById('vl');
-  if (vl && !vl.classList.contains('active')) showView('vl');
+  if (vl && !vl.classList.contains('active') && localStorage.getItem('rf_token')) showView('vl');
 }
 
 function updBal() {
@@ -13016,7 +13016,7 @@ async function _loadFriendsSidebar(){
 
 async function _restoreSession(){
   const token = localStorage.getItem('rf_token');
-  if(!token){ showView('v-login'); return; }
+  if(!token) return;
   try {
     const res  = await fetch(BACKEND_URL + '/api/auth/verify', {
       method: 'POST',
