@@ -4653,19 +4653,35 @@ async function nauthDoLogin(){
   if(!email || !email.includes('@')){ errEl.textContent='Please enter a valid email.'; return; }
   if(!pass){ errEl.textContent='Please enter your password.'; return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
-  let legEmail = document.getElementById('login-email') || document.getElementById('l-email');
-  let legPass  = document.getElementById('login-pass');
-  if(legEmail) legEmail.value = email;
-  if(legPass)  legPass.value  = pass;
   try {
-    await doLogin();
-    setTimeout(()=>{
-      const loginErr = document.getElementById('login-error')?.textContent;
-      if(loginErr) errEl.textContent = loginErr;
+    const res  = await fetch(BACKEND_URL + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const data = await res.json();
+    if(!data.ok){
+      errEl.textContent = data.error || 'Invalid email or password.';
       btn.disabled = false; btn.textContent = 'Log In →';
-    }, 1200);
+      return;
+    }
+    localStorage.setItem('rf_token',     data.token);
+    localStorage.setItem('rf_username',  data.user.username);
+    localStorage.setItem('rf_email',     data.user.email);
+    localStorage.setItem('rf_user_id',   data.user.id);
+    localStorage.setItem('rf_registered','1');
+    _balRoyal = data.user.chips     || 10;
+    _balGold  = data.user.goldChips || 250000;
+    updBal();
+    _updateHeader(data.user.username);
+    _showVerifyBanner(data.user);
+    showView('vl');
+    _addWelcomeNotif(data.user.username);
+    _loadFriendsSidebar();
+    _loadBonusStatus();
+    setTimeout(()=>showRGConfirm('Welcome back, '+data.user.username+'!'), 300);
   } catch(e){
-    errEl.textContent = 'Something went wrong. Try again.';
+    errEl.textContent = 'Server error — please try again.';
     btn.disabled = false; btn.textContent = 'Log In →';
   }
 }
