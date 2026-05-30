@@ -4397,32 +4397,12 @@ body.in-auth > nav { display: none !important; }
 
         <!-- ── LOGIN STEP 1: Email ── -->
         <div class="nauth-step active" id="nauth-step-l1" data-mode="login">
-          <div class="nauth-step-label">Step 1 of 2</div>
           <div class="nauth-step-title">Welcome back</div>
-          <div class="nauth-step-sub">Enter your email to continue.</div>
-          <div class="nauth-progress">
-            <div class="nauth-dot active"></div>
-            <div class="nauth-dot"></div>
-          </div>
+          <div class="nauth-step-sub">Sign in to your account.</div>
           <div class="nauth-field">
             <label class="nauth-label" for="nauth-l-email">Email Address</label>
             <input class="nauth-input" id="nauth-l-email" type="email" placeholder="you@example.com"
-              onkeydown="if(event.key==='Enter') nauthNext('l1')">
-          </div>
-          <div class="nauth-error" id="nauth-err-l1"></div>
-          <button class="nauth-btn-primary" onclick="nauthNext('l1')">Continue →</button>
-          <div class="nauth-divider"><span>or</span></div>
-          <div class="nauth-switch">No account? <span class="auth-link" onclick="nauthSetMode('signup')">Sign up free →</span></div>
-        </div>
-
-        <!-- ── LOGIN STEP 2: Password ── -->
-        <div class="nauth-step" id="nauth-step-l2" data-mode="login">
-          <div class="nauth-step-label">Step 2 of 2</div>
-          <div class="nauth-step-title">Enter password</div>
-          <div class="nauth-step-sub" id="nauth-l2-email-display">Signing in as <span style="color:var(--gold)"></span></div>
-          <div class="nauth-progress">
-            <div class="nauth-dot done"></div>
-            <div class="nauth-dot active"></div>
+              onkeydown="if(event.key==='Enter') document.getElementById('nauth-l-pass').focus()">
           </div>
           <div class="nauth-field">
             <label class="nauth-label" for="nauth-l-pass">Password</label>
@@ -4437,7 +4417,8 @@ body.in-auth > nav { display: none !important; }
           <div class="nauth-forgot" onclick="showForgotPassword()">Forgot password?</div>
           <div class="nauth-error" id="nauth-err-l2"></div>
           <button class="nauth-btn-primary" id="nauth-login-btn" onclick="nauthDoLogin()">Log In →</button>
-          <div class="nauth-switch" style="margin-top:4px"><span class="auth-link" onclick="nauthGoStep('l1')">← Change email</span></div>
+          <div class="nauth-divider"><span>or</span></div>
+          <div class="nauth-switch">No account? <span class="auth-link" onclick="nauthSetMode('signup')">Sign up free →</span></div>
         </div>
 
         <!-- ── SIGNUP STEP 1: Email ── -->
@@ -4667,17 +4648,17 @@ async function nauthDoLogin(){
   const btn = document.getElementById('nauth-login-btn');
   const errEl = document.getElementById('nauth-err-l2');
   errEl.textContent = '';
-  btn.disabled = true; btn.textContent = 'Signing in…';
-  // Sync email/pass to legacy inputs for doLogin()
   const email = document.getElementById('nauth-l-email').value.trim();
   const pass  = document.getElementById('nauth-l-pass').value;
+  if(!email || !email.includes('@')){ errEl.textContent='Please enter a valid email.'; return; }
+  if(!pass){ errEl.textContent='Please enter your password.'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
   let legEmail = document.getElementById('login-email') || document.getElementById('l-email');
   let legPass  = document.getElementById('login-pass');
   if(legEmail) legEmail.value = email;
   if(legPass)  legPass.value  = pass;
   try {
     await doLogin();
-    // If still on login page after 1s, show error
     setTimeout(()=>{
       const loginErr = document.getElementById('login-error')?.textContent;
       if(loginErr) errEl.textContent = loginErr;
