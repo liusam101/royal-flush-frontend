@@ -14232,6 +14232,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
   let _preRenderHost = null;
   let _rfGlbScale = 1;
   let _mvCameraRadius = null; // exact camera distance (meters) sent by admin; takes precedence over local auto-fit
+  let _rfLighting = { exposure: 1.0, shadowIntensity: 1.0 };
 
   const _MV_CDN = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js';
 
@@ -14245,9 +14246,15 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     if(comm) comm.style.transform = `translate(-50%,-50%) scale(${s})`;
   }
 
+  function _applyLighting(mv){
+    mv.setAttribute('exposure', _rfLighting.exposure);
+    mv.setAttribute('shadow-intensity', _rfLighting.shadowIntensity);
+  }
+
   try{const _r=localStorage.getItem('rf_admin_seat_positions');if(_r){const _d=JSON.parse(_r);if(_d.tilt!==undefined)_seatedTilt=_d.tilt;}}catch(_){}
   try{const _s=localStorage.getItem('rf_glb_scale');if(_s){_rfGlbScale=parseFloat(_s)||1;}}catch(_){}
   try{const _cr=localStorage.getItem('rf_glb_camera_radius');if(_cr){_mvCameraRadius=parseFloat(_cr)||null;}}catch(_){}
+  try{const _l=localStorage.getItem('rf_lighting');if(_l){_rfLighting={..._rfLighting,...JSON.parse(_l)};}}catch(_){}
 
   function _loadMV(){
     return new Promise((res,rej)=>{
@@ -14341,7 +14348,8 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     const mv = document.createElement('model-viewer');
     mv.setAttribute('src', blobUrl);
     mv.setAttribute('camera-orbit', `0deg ${phi}deg auto`);
-    mv.setAttribute('shadow-intensity', '1');
+    mv.setAttribute('shadow-intensity', _rfLighting.shadowIntensity);
+    mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
     mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;`;
@@ -14381,6 +14389,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       _mvBlobUrl = mv.getAttribute('src');
       _t3Active = true;
       _applyCommScale(_rfGlbScale);
+      _applyLighting(mv);
       console.log('[BRL] 3D instant — pre-rendered model-viewer moved into view');
       return;
     }
@@ -14399,7 +14408,8 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.id = 't3-mv';
     mv.setAttribute('src', _mvBlobUrl);
     mv.setAttribute('camera-orbit', orbitStr);
-    mv.setAttribute('shadow-intensity', '1');
+    mv.setAttribute('shadow-intensity', _rfLighting.shadowIntensity);
+    mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
     mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;`;
@@ -14434,6 +14444,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             if(_hmv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
             _applyCommScale(_rfGlbScale);
           }
+          if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
           if(a.type==='seats'&&a.dataUrl){ _saveSeatData(a.dataUrl); _applySeatUpdate(); }
         });
       })
@@ -14513,6 +14524,14 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         const _mv = document.getElementById('t3-mv');
         if(_mv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
         _applyCommScale(_rfGlbScale);
+      }
+      if(data.type==='lighting'&&data.dataUrl){
+        try{
+          _rfLighting={..._rfLighting,...JSON.parse(data.dataUrl)};
+          try{localStorage.setItem('rf_lighting',data.dataUrl);}catch(_){}
+          const _lmv=document.getElementById('t3-mv');
+          if(_lmv) _applyLighting(_lmv);
+        }catch(_){}
       }
     });
     console.log('[BRL] socket hooked for all assets');
