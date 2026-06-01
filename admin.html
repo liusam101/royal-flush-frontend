@@ -1344,12 +1344,14 @@ function updateGLBScale(v) {
 
 function pushGLBScale(silent) {
   if (!socket) { if (!silent) toast('Not connected', 'error'); return; }
+  const cameraRadius = (window._seBaseRadius && _glbScale > 0) ? window._seBaseRadius / _glbScale : null;
   socket.emit('adminPushAsset', {
     secret: adminKey,
     type: 'glbScale',
     name: 'glb-scale',
     pushedAt: new Date().toISOString(),
     dataUrl: String(_glbScale),
+    cameraRadius,
   });
   if (!silent) { toast(`Scale ${_glbScale.toFixed(2)}× pushed to all players`, 'success'); log(`GLB scale ${_glbScale.toFixed(2)}× pushed`, 'success'); }
 }
