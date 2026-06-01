@@ -6174,59 +6174,6 @@ window._showVerifyBanner = function(user){
   </div>
   <div class="garena" id="garena">
     <div class="table-wrap" id="table-wrap">
-      <svg class="table-svg" id="ptable" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <!-- Dark felt gradient: near-black center to deep black edge -->
-          <radialGradient id="feltGrad" cx="50%" cy="50%" r="60%">
-            <stop offset="0%" stop-color="#1a1a1a"/>
-            <stop offset="100%" stop-color="#050505"/>
-          </radialGradient>
-          <!-- Inner cyan glow filter (Cursed Energy) -->
-          <filter id="feltShadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="blur"/>
-            <feFlood flood-color="rgba(0,242,255,0.4)" result="color"/>
-            <feComposite in="color" in2="blur" operator="in" result="glow"/>
-            <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <!-- Deep outer drop shadow filter -->
-          <filter id="outerShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="blur"/>
-            <feOffset dx="0" dy="20" result="offsetblur"/>
-            <feFlood flood-color="rgba(0,0,0,0.9)" result="color"/>
-            <feComposite in="color" in2="offsetblur" operator="in" result="shadow"/>
-            <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <filter id="feltNoise" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="4" stitchTiles="stitch" result="noise"/>
-            <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
-            <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay" result="blended"/>
-            <feComposite in="blended" in2="SourceGraphic" operator="in"/>
-          </filter>
-        </defs>
-        <!-- Outer rail: deep purple rim -->
-        <rect x="70" y="42" width="860" height="616" rx="220" ry="308"
-          fill="#1c0b2e" stroke="#2a1040" stroke-width="3"
-          filter="url(#outerShadow)"/>
-        <!-- Mid cushion ring -->
-        <rect x="90" y="70" width="820" height="560" rx="200" ry="280"
-          fill="#130820" stroke="#1c0b2e" stroke-width="1"/>
-        <!-- Felt surface: dark with inner cyan glow -->
-        <rect x="100" y="84" width="800" height="532" rx="190" ry="220"
-          fill="url(#feltGrad)" filter="url(#feltShadow)"/>
-        <!-- Felt texture overlay -->
-        <rect x="100" y="84" width="800" height="532" rx="190" ry="220"
-          fill="transparent" filter="url(#feltNoise)" style="pointer-events:none;opacity:0.07"/>
-
-        <!-- felt-path: used by getPointAtLength for seat positioning -->
-        <path id="felt-path"
-          d="M 290,84 h 420 a 190,220 0 0 1 190,220 v 92 a 190,220 0 0 1 -190,220 h -420 a 190,220 0 0 1 -190,-220 v -92 a 190,220 0 0 1 190,-220 Z"
-          fill="none"/>
-        <!-- Cyan center glow -->
-        <ellipse cx="500" cy="350" rx="320" ry="180" fill="rgba(0,242,255,0.03)"/>
-        <!-- Logo -->
-        <text x="500" y="338" text-anchor="middle" font-family="Cormorant Garamond,serif" font-size="18" letter-spacing="8" fill="rgba(201,168,76,0.08)" style="user-select:none">RF POKER</text>
-        <text x="500" y="362" text-anchor="middle" font-family="serif" font-size="14" letter-spacing="6" fill="rgba(201,168,76,0.06)" style="user-select:none">♠ ♥ ♦ ♣</text>
-      </svg>
       <div class="comm">
         <div class="comm-cards" id="comm-cards"></div>
         <div id="pot-chips" style="position:relative;width:100px;height:52px;margin:0 auto 2px;pointer-events:none"></div>
@@ -7732,8 +7679,8 @@ const HAND_SUITS = {
 function showHandLabel(handName, winnerName){
   // Remove any existing label
   document.querySelectorAll('.win-hand-label').forEach(e=>e.remove());
-  const ptable = document.getElementById('ptable');
-  if(!ptable) return;
+  const tableWrapLabel = document.getElementById('table-wrap');
+  if(!tableWrapLabel) return;
   const suits = HAND_SUITS[handName] || '♠ ♥ ♦ ♣';
   const el = document.createElement('div');
   el.className = 'win-hand-label';
@@ -7742,7 +7689,7 @@ function showHandLabel(handName, winnerName){
     <div class="win-hand-label-name">${handName}</div>
     <div class="win-hand-label-winner">${winnerName} wins</div>
   `;
-  ptable.appendChild(el);
+  tableWrapLabel.appendChild(el);
   // Fade out and remove after 3s
   setTimeout(()=>{
     el.classList.add('fade-out');
@@ -8122,15 +8069,13 @@ function removeAllBetChips(){
 // Animate all felt bet chip stacks flying into the pot, then callback
 function flyBetsIntoPot(onDone){
   const wrap=document.getElementById('table-wrap');
-  const tbl=document.getElementById('ptable');
   const stacks = Array.from(document.querySelectorAll('[id^="felt-bet-"]'));
-  if(!stacks.length||!wrap||!tbl){ onDone&&onDone(); return; }
+  if(!stacks.length||!wrap){ onDone&&onDone(); return; }
 
   // Get pot center in wrap-relative coords
   const wr=wrap.getBoundingClientRect();
-  const tr=tbl.getBoundingClientRect();
-  const potX=tr.left-wr.left+tr.width/2;
-  const potY=tr.top-wr.top+tr.height*0.55;
+  const potX=wr.width/2;
+  const potY=wr.height*0.55;
 
   stacks.forEach((stack, si)=>{
     stack.style.transition = `left .45s cubic-bezier(.4,0,.2,1) ${si*50}ms, top .45s cubic-bezier(.4,0,.2,1) ${si*50}ms, opacity .25s ease ${si*50+250}ms, transform .45s ease ${si*50}ms`;
@@ -9842,8 +9787,7 @@ function placeSeats(){
   _invalidateRimCache();
   // Full rebuild — only call this at hand start or on resize
   const wrap=document.getElementById('table-wrap');
-  const tbl=document.getElementById('ptable');
-  if(!wrap||!tbl) return;
+  if(!wrap) return;
   wrap.querySelectorAll('.seat').forEach(e=>e.remove());
   wrap.querySelectorAll('.felt-hole').forEach(e=>e.remove());
   wrap.querySelectorAll('.felt-bet').forEach(e=>e.remove());
@@ -14484,8 +14428,6 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function checkAndApplyAssets(){
-    const _svg = document.getElementById('ptable');
-    if(_svg){ _svg.style.transition='opacity 0.15s'; _svg.style.opacity='0'; _svg.style.pointerEvents='none'; }
     _fetchAssetsHttp();
     _getAsset(BG_KEY, bgData=>{ if(bgData?.dataUrl) applyBackground(bgData.dataUrl); });
     const src = _pendingGlb;
