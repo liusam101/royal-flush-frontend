@@ -14240,6 +14240,11 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     return vg ? getComputedStyle(vg).display !== 'none' : false;
   }
 
+  function _applyCommScale(s){
+    const comm = document.querySelector('#table-wrap .comm');
+    if(comm) comm.style.transform = `translate(-50%,-50%) scale(${s})`;
+  }
+
   try{const _r=localStorage.getItem('rf_admin_seat_positions');if(_r){const _d=JSON.parse(_r);if(_d.tilt!==undefined)_seatedTilt=_d.tilt;}}catch(_){}
   try{const _s=localStorage.getItem('rf_glb_scale');if(_s){_rfGlbScale=parseFloat(_s)||1;}}catch(_){}
   try{const _cr=localStorage.getItem('rf_glb_camera_radius');if(_cr){_mvCameraRadius=parseFloat(_cr)||null;}}catch(_){}
@@ -14375,6 +14380,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       tableWrap.insertBefore(mv, tableWrap.firstChild);
       _mvBlobUrl = mv.getAttribute('src');
       _t3Active = true;
+      _applyCommScale(_rfGlbScale);
       console.log('[BRL] 3D instant — pre-rendered model-viewer moved into view');
       return;
     }
@@ -14398,7 +14404,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.setAttribute('interaction-prompt', 'none');
     mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;`;
     tableWrap.insertBefore(mv, tableWrap.firstChild);
-    const _show = () => { mv.style.opacity = '1'; };
+    const _show = () => { mv.style.opacity = '1'; _applyCommScale(_rfGlbScale); };
     mv.addEventListener('load', () => requestAnimationFrame(_show), { once: true });
     setTimeout(_show, 8000);
     _t3Active = true;
@@ -14426,6 +14432,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
             if(_hmv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+            _applyCommScale(_rfGlbScale);
           }
           if(a.type==='seats'&&a.dataUrl){ _saveSeatData(a.dataUrl); _applySeatUpdate(); }
         });
@@ -14505,6 +14512,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
         if(_mv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+        _applyCommScale(_rfGlbScale);
       }
     });
     console.log('[BRL] socket hooked for all assets');
