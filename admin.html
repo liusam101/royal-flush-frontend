@@ -467,6 +467,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
               <button class="btn btn-sm btn-cyan" onclick="autoCalcSeats()">&#10227; Auto Seats</button>
               <button class="btn btn-sm" onclick="resetSeats()" style="border-color:var(--border);color:var(--txd)">&#8635; Reset</button>
               <button class="btn btn-cyan btn-sm" id="scale-push-btn" onclick="pushGLBScale()">&#9654; Push Scale</button>
+              <button class="btn btn-gold btn-sm" onclick="pushTilt()">&#9654; Push Tilt</button>
               <button class="btn btn-green btn-sm" onclick="pushSeats()">&#9654; Push Seats</button>
             </div>
           </div>
@@ -1280,6 +1281,19 @@ function resetSeats(){
     return {x:0.5+_seTableRx*Math.cos(a),y:0.5+_seTableRy*Math.sin(a)};
   });
   _seDrawSeats(); toast('Reset to default positions','info');
+}
+
+function pushTilt(){
+  let data;
+  try { const raw=localStorage.getItem('rf_admin_seat_positions'); data=raw?JSON.parse(raw):{}; } catch(_){ data={}; }
+  data.tilt=_seLayoutAngle;
+  data.pushedAt=new Date().toISOString();
+  localStorage.setItem('rf_admin_seat_positions',JSON.stringify(data));
+  if(socket){
+    socket.emit('adminPushAsset',{secret:adminKey,type:'seats',name:`tilt-${_seLayoutAngle}deg`,pushedAt:data.pushedAt,dataUrl:JSON.stringify(data)});
+    toast(`Tilt ${_seLayoutAngle}° pushed to all players`,'success');
+    log(`Tilt ${_seLayoutAngle}° pushed`,'success');
+  } else { toast('Not connected — saved locally only','warn'); }
 }
 
 function pushSeats(){
