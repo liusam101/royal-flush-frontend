@@ -14427,7 +14427,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
   }
 
   function _fetchAssetsHttp(){
-    fetch('https://royal-flush-backend-production.up.railway.app/api/assets')
+    fetch(BACKEND_URL + '/api/assets')
       .then(r=>r.ok?r.json():Promise.reject(r.status))
       .then(assets=>{
         assets.forEach(a=>{
