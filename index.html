@@ -7175,9 +7175,7 @@ async function claimBonus(){
       _bonusClaimed=true; _renderBonusPanel();
     }
   } catch(e){
-    _bonusClaimed=true; _balGold+=1250; updBal();
-    showWB('🎁 Daily Bonus!','1,250 Gold Chips added!',1250);
-    _renderBonusPanel();
+    showWB('Connection Error','Could not reach server. Try again.',0);
   }
 }
 
@@ -11129,7 +11127,7 @@ function _hideReturnBanner(){
   const banner = document.getElementById('return-banner');
   if (banner) banner.style.display = 'none';
 }
-function goHome() {showView('v-home'); renderLPTables();}
+function goHome() { if(localStorage.getItem('rf_token')){ goLobby(); return; } showView('v-home'); renderLPTables(); }
 function goLogin()  { showView('v-login'); authSlide('login'); }
 function goSignup() { showView('v-login'); setTimeout(()=>authSlide('signup'), 60); }
 
