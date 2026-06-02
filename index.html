@@ -11207,12 +11207,16 @@ async function doLogin(){
   const btn = document.querySelector('[onclick="doLogin()"]');
   if(btn){ btn.textContent = 'Logging in...'; btn.disabled = true; }
 
+  const _ctrl = new AbortController();
+  const _tid  = setTimeout(() => _ctrl.abort(), 10000);
   try {
     const res  = await fetch(BACKEND_URL + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pass }),
+      signal: _ctrl.signal,
     });
+    clearTimeout(_tid);
     const data = await res.json();
     if(!data.ok){
       if(errEl) errEl.textContent = data.error || 'Login failed.';
@@ -11238,7 +11242,9 @@ async function doLogin(){
     _loadBonusStatus();
     setTimeout(()=>showRGConfirm('Welcome back, '+data.user.username+'!'), 300);
   } catch(e) {
-    if(errEl) errEl.textContent = 'Server error — please try again.';
+    clearTimeout(_tid);
+    const msg = e.name === 'AbortError' ? 'Connection timed out — please try again.' : 'Server error — please try again.';
+    if(errEl) errEl.textContent = msg;
     if(btn){ btn.textContent = 'Log In →'; btn.disabled = false; }
   }
 }
@@ -13112,10 +13118,11 @@ async function _restoreSession(){
       showView('v-login');
     }
   } catch(e) {
-    localStorage.removeItem('rf_token');
-    localStorage.removeItem('rf_registered');
-    localStorage.removeItem('rf_username');
-    showView('v-login');
+    // Network error (backend down/restarting) — don't wipe the token,
+    // it may still be valid. Go to lobby optimistically using cached data.
+    const uname = localStorage.getItem('rf_username');
+    if(uname) _updateHeader(uname);
+    setTimeout(()=>showView('vl'), 150);
   }
 }
 
