@@ -12346,9 +12346,10 @@ const BACKEND_URL = 'https://royal-flush-backend-production.up.railway.app';
 // ── State ─────────────────────────────────────────────────────────────
 const socket = io(BACKEND_URL, {
   auth: { token: localStorage.getItem('rf_token') || null }, autoConnect: false });
-var _connectedTableId = null;
-var _mySocketSeat     = null;   // which seat index belongs to this client
-var _backendActive    = false;  // true once we join a backend table — var so it's hoisted
+var _connectedTableId    = null;
+var _mySocketSeat        = null;   // which seat index belongs to this client
+var _backendActive       = false;  // true once we join a backend table — var so it's hoisted
+var _wasConnectedBefore  = false;  // false on page load; true after first connect (stays true across network blips)
 
 // ── Multi-table state ──────────────────────────────────────────────────────
 var _tables = {};       // tableId → { state, myCards, active }
@@ -13632,17 +13633,20 @@ socket.on('disconnect', (reason) => {
 // Connected
 socket.on('connect', () => {
   console.log('[Socket] connected, id:', socket.id);
-  // Auto-rejoin table if we were seated before a page refresh
-  const savedTable = sessionStorage.getItem('rf_last_table');
-  const savedBuyIn = parseFloat(sessionStorage.getItem('rf_last_buyin')) || 100;
-  const myName     = localStorage.getItem('rf_username') || 'HighRoller';
-  if (savedTable && !_backendActive) {
-    console.log('[Socket] Auto-reconnecting to', savedTable);
+  // Only auto-rejoin on a network blip (not page refresh).
+  // _wasConnectedBefore resets to false on every page load, so a refresh
+  // always lands the player in the lobby cleanly instead of forcing them
+  // back into a game they may not want to re-enter.
+  if (_wasConnectedBefore && _connectedTableId && !_backendActive) {
+    const savedBuyIn = parseFloat(sessionStorage.getItem('rf_last_buyin')) || 100;
+    const myName     = localStorage.getItem('rf_username') || 'HighRoller';
+    console.log('[Socket] Network reconnect — rejoining', _connectedTableId);
     setTimeout(() => {
       showToast('⟳ Reconnecting to table...');
-      backendJoinTable(savedTable, myName, savedBuyIn);
+      backendJoinTable(_connectedTableId, myName, savedBuyIn);
     }, 600);
   }
+  _wasConnectedBefore = true;
 });
 
 // ══ SYNC BACKEND → UI ═════════════════════════════════════════════════
