@@ -2864,7 +2864,7 @@ applyTweaks(TWEAK_DEFAULTS);
 // ── Core state variables — declared first so nothing crashes on init ──
 var _mode = 'royal';
 var _authMode = 'login';
-var _bal = 500, _balGold = 250000, _balRoyal = 500;
+var _bal = 0, _balGold = 0, _balRoyal = 0;
 // Real-data only — sidebar arrays populated by backend
 var LEADERS = [];
 var _recentPots = [];
@@ -10849,7 +10849,7 @@ function confirmBuyin(){
     backendJoinTable(backendId, playerName, val);
   } else {
     showToast('Please log in to join a table.');
-    showView('v-auth');
+    showView('v-login');
   }
 }
 
@@ -13284,8 +13284,13 @@ function backendLeaveTable() {
 
 // ══ INCOMING EVENTS ═══════════════════════════════════════════════════
 
-socket.on('chipsReturned', () => {
-  // Balance already restored via addBal on leave — no action needed
+socket.on('chipsReturned', ({ balance }) => {
+  // Sync UI balance to authoritative server value (covers off-table + returned stack)
+  if (typeof balance === 'number' && balance >= 0 && _mode !== 'gold') {
+    _balRoyal = balance;
+    _bal = _balRoyal;
+    updBal();
+  }
 });
 
 // Seat confirmed
