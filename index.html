@@ -8,10 +8,6 @@
 <meta name="apple-mobile-web-app-title" content="Barrel Poker">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#060A0F">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0E1520">
 <title>Barrel Poker</title>
 <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -10410,7 +10406,7 @@ function cashierSuccess(gold, royal, usd){
       Back to Lobby →
     </button>`;
 
-  addNotif('💳','Deposit successful','Payment processed','<b>$'+usd+'</b> → <b>'+gold.toLocaleString()+' Gold</b>'+(royal?' + <b>'+royal.toLocaleString()+' Barrel Chips</b>':''),'promo');
+  addNotif('promo','💳','gold','<b>Deposit successful:</b> $'+usd+' → <b>'+gold.toLocaleString()+' Gold</b>'+(royal?' + <b>'+royal.toLocaleString()+' Barrel Chips</b>':''));
 }
 
 function cashierPending(gold, royal, usd){
@@ -10443,17 +10439,6 @@ function fmtExp(el){
   if(v.length>=3) v=v.slice(0,2)+'/'+v.slice(2);
   el.value=v;
   el.style.borderColor='';
-}
-
-function addNotif(icon,icoCls,label,msg,type){
-  const id=Date.now();
-  NOTIFS.unshift({id,type,icon,icoCls:'green',unread:true,msg,time:'Just now'});
-  const badge=document.getElementById('notif-badge');
-  if(badge){
-    const cur=parseInt(badge.textContent)||0;
-    badge.textContent=cur+1;
-    badge.style.display='flex';
-  }
 }
 
 // ══ NOTIFICATIONS ══════════════════════════════════════════════════
@@ -12576,9 +12561,7 @@ function _handleURLTokens(){
         updBal();
         playSound('chip');
         showToast('Payment confirmed! Chips added to your account.');
-        addNotif('💳','Deposit successful','Payment processed',
-          '<b>$'+d.usd+'</b> → <b>'+(d.gold||0).toLocaleString()+' Gold</b>'+
-          (d.royal?' + <b>'+d.royal+' Barrel Chips</b>':''),'promo');
+        addNotif('promo','💳','gold','<b>Deposit confirmed:</b> $'+d.usd+' → <b>'+(d.gold||0).toLocaleString()+' Gold</b>'+(d.royal?' + <b>'+d.royal+' Barrel Chips</b>':''));
         const navEl=document.getElementById('nav-bal');
         if(navEl){ navEl.style.transition='color .3s'; navEl.style.color='#5DC896'; setTimeout(()=>{navEl.style.color='';},1500); }
       } else {
