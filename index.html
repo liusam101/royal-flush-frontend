@@ -2864,7 +2864,9 @@ applyTweaks(TWEAK_DEFAULTS);
 // ── Core state variables — declared first so nothing crashes on init ──
 var _mode = 'royal';
 var _authMode = 'login';
-var _bal = 0, _balGold = 0, _balRoyal = 0;
+var _balRoyal = parseFloat(localStorage.getItem('rf_chips_cache')) || 0;
+var _balGold  = parseInt(localStorage.getItem('rf_gold_cache'))    || 0;
+var _bal      = _balRoyal;
 // Real-data only — sidebar arrays populated by backend
 var LEADERS = [];
 var _recentPots = [];
@@ -2964,12 +2966,12 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="mode-bal-pill" id="mode-toggle">
     <div class="mbal-side" id="mode-opt-gold" onclick="setMode('gold')">
       <span class="mbal-icon">🟡</span>
-      <span class="mbal-n" id="nav-bal-gold">250,000</span>
+      <span class="mbal-n" id="nav-bal-gold"></span>
       <span class="mbal-label">GOLD</span>
     </div>
     <div class="mbal-side active" id="mode-opt-royal" onclick="setMode('royal')">
       <span class="mbal-icon">♦</span>
-      <span class="mbal-n" id="nav-bal">$10.00</span>
+      <span class="mbal-n" id="nav-bal"></span>
       <span class="mbal-label">BRL</span>
     </div>
     <div class="mode-slider" id="mode-slider"></div>
@@ -4801,8 +4803,10 @@ async function nauthDoLogin(){
     localStorage.setItem('rf_email',     data.user.email);
     localStorage.setItem('rf_user_id',   data.user.id);
     localStorage.setItem('rf_registered','1');
-    _balRoyal = data.user.chips     || 10;
-    _balGold  = data.user.goldChips || 250000;
+    _balRoyal = data.user.chips     ?? 10;
+    _balGold  = data.user.goldChips ?? 250000;
+    localStorage.setItem('rf_chips_cache', _balRoyal);
+    localStorage.setItem('rf_gold_cache',  _balGold);
     updBal();
     _updateHeader(data.user.username);
     _showVerifyBanner(data.user);
@@ -9726,9 +9730,6 @@ function setMode(mode, silent) {
   updatePotDisplay();
   updateActionButtons();
 
-  // Go to lobby if not already there and user is logged in
-  const vl = document.getElementById('vl');
-  if (vl && !vl.classList.contains('active') && localStorage.getItem('rf_token')) showView('vl');
 }
 
 function updBal() {
@@ -11230,8 +11231,10 @@ async function doLogin(){
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
     // Update chips from DB
-    _balRoyal = data.user.chips || 10;
-    _balGold  = data.user.goldChips || 250000;
+    _balRoyal = data.user.chips     ?? 10;
+    _balGold  = data.user.goldChips ?? 250000;
+    localStorage.setItem('rf_chips_cache', _balRoyal);
+    localStorage.setItem('rf_gold_cache',  _balGold);
     updBal();
     _updateHeader(data.user.username);
     _showVerifyBanner(data.user);
@@ -11325,10 +11328,12 @@ async function doSignup(){
     localStorage.setItem('rf_user_id',  data.user.id);
     localStorage.setItem('rf_registered', '1');
     // Set chips from DB
-    _balRoyal = data.user.chips || 10;
-    _balGold  = data.user.goldChips || 250000;
+    _balRoyal = data.user.chips     ?? 10;
+    _balGold  = data.user.goldChips ?? 250000;
     // Award referral bonus (Gold Chips only — no real-money impact)
     if(_refBonusApplied){ _balGold += 2500; addNotif('social','🎁','gold','Referral bonus: 2,500 Gold Chips added!'); }
+    localStorage.setItem('rf_chips_cache', _balRoyal);
+    localStorage.setItem('rf_gold_cache',  _balGold);
     updBal();
     _updateHeader(data.user.username);
     _showVerifyBanner(data.user);
@@ -13114,25 +13119,29 @@ async function _restoreSession(){
     });
     const data = await res.json();
     if(data.ok && data.user){
-      _balRoyal = data.user.chips || 10;
-      _balGold  = data.user.goldChips || 250000;
+      _balRoyal = data.user.chips     ?? 10;
+      _balGold  = data.user.goldChips ?? 250000;
+      // Persist so next page load shows correct values immediately (no zero flash)
+      localStorage.setItem('rf_chips_cache', _balRoyal);
+      localStorage.setItem('rf_gold_cache',  _balGold);
       updBal();
       _updateHeader(data.user.username);
       localStorage.setItem('rf_username', data.user.username);
       localStorage.setItem('rf_registered', '1');
-      setTimeout(()=>showView('vl'), 150);
+      showView('vl');
     } else {
       localStorage.removeItem('rf_token');
       localStorage.removeItem('rf_registered');
       localStorage.removeItem('rf_username');
+      localStorage.removeItem('rf_chips_cache');
+      localStorage.removeItem('rf_gold_cache');
       showView('v-login');
     }
   } catch(e) {
-    // Network error (backend down/restarting) — don't wipe the token,
-    // it may still be valid. Go to lobby optimistically using cached data.
+    // Network error (backend down/restarting) — go to lobby with cached data
     const uname = localStorage.getItem('rf_username');
     if(uname) _updateHeader(uname);
-    setTimeout(()=>showView('vl'), 150);
+    showView('vl');
   }
 }
 
