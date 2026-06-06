@@ -3051,7 +3051,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- LOBBY -->
 
-<div id="v-home" class="view active">
+<div id="v-home" class="view" style="display:none">
 
 <!-- ═══ REDESIGN OVERLAY STYLES (landing page only) ═══════════════════════════ -->
 <style>
@@ -9316,8 +9316,17 @@ function hideSeatTip(av){
   safe(()=>{ if(typeof renderSession==='function') renderSession(); });
   safe(()=>{ if(typeof renderVIP==='function') renderVIP(); });
   safe(renderLPTables);
-  // Init mode toggle slider position after DOM renders
-  // Restore session (defined in later script block — guard with typeof)
+  // Show correct initial view immediately — no flash
+  // If logged in: show lobby right away using cached data; verify token in background
+  // If not: show landing page
+  if(localStorage.getItem('rf_token')){
+    const cn = localStorage.getItem('rf_username');
+    if(cn && typeof _updateHeader === 'function') _updateHeader(cn);
+    if(typeof showView === 'function') showView('vl');
+  } else {
+    if(typeof showView === 'function') showView('v-home');
+  }
+  // Full session restore (verify token, refresh balance from DB) — runs in background
   if(typeof _restoreSession === 'function') _restoreSession();
   else setTimeout(()=>{ if(typeof _restoreSession==='function') _restoreSession(); }, 500);
   // Handle ?verify= and ?reset= URL tokens (defined in later script block)
@@ -13111,6 +13120,12 @@ async function _loadFriendsSidebar(){
 async function _restoreSession(){
   const token = localStorage.getItem('rf_token');
   if(!token) return;
+
+  // Immediately show lobby with cached data — no landing-page flash while network verifies
+  const cachedName = localStorage.getItem('rf_username');
+  if(cachedName) _updateHeader(cachedName);
+  showView('vl');
+
   try {
     const res  = await fetch(BACKEND_URL + '/api/auth/verify', {
       method: 'POST',
@@ -13121,15 +13136,15 @@ async function _restoreSession(){
     if(data.ok && data.user){
       _balRoyal = data.user.chips     ?? 10;
       _balGold  = data.user.goldChips ?? 250000;
-      // Persist so next page load shows correct values immediately (no zero flash)
       localStorage.setItem('rf_chips_cache', _balRoyal);
       localStorage.setItem('rf_gold_cache',  _balGold);
       updBal();
       _updateHeader(data.user.username);
       localStorage.setItem('rf_username', data.user.username);
       localStorage.setItem('rf_registered', '1');
-      showView('vl');
+      // Already on lobby — no showView needed
     } else {
+      // Token truly invalid — clear everything and go to login
       localStorage.removeItem('rf_token');
       localStorage.removeItem('rf_registered');
       localStorage.removeItem('rf_username');
@@ -13138,10 +13153,7 @@ async function _restoreSession(){
       showView('v-login');
     }
   } catch(e) {
-    // Network error (backend down/restarting) — go to lobby with cached data
-    const uname = localStorage.getItem('rf_username');
-    if(uname) _updateHeader(uname);
-    showView('vl');
+    // Network error — stay on lobby with cached data (token may still be valid)
   }
 }
 
