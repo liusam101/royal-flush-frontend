@@ -9467,6 +9467,8 @@ function renderFeaturedTable(){
 }
 
 function renderTiers(){
+  // If any filter is active, route through applyFilters so the selection is preserved
+  if(Object.values(_filters).some(v=>v!=='all')){ applyFilters(); return; }
   const TIERS=getTiers();
   const el=document.getElementById('tgrid');
   if(!el) return;
