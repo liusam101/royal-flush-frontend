@@ -10822,9 +10822,8 @@ function confirmBuyin(){
     document.getElementById('buyin-error').textContent = 'Insufficient balance. Please deposit more chips.';
     return;
   }
-  // Deduct buy-in from display balance
-  subBal(val);
-  TXNS.unshift({icon:'🪑',label:'Table Buy-in',table:_buyinTable,amt:-val,ts:'Just now'});
+  // Hold buy-in pending server confirmation — deduct only when joinedTable fires
+  _pendingBuyinAmt = val;
   // Update blinds to match tier
   SB_AMT = tier.sb; BB_AMT = tier.bb;
   closeOv('ov-buyin');
@@ -12359,6 +12358,7 @@ var _connectedTableId    = null;
 var _mySocketSeat        = null;   // which seat index belongs to this client
 var _backendActive       = false;  // true once we join a backend table — var so it's hoisted
 var _wasConnectedBefore  = false;  // false on page load; true after first connect (stays true across network blips)
+var _pendingBuyinAmt     = 0;      // buy-in held pending server joinedTable confirmation
 
 // ── Multi-table state ──────────────────────────────────────────────────────
 var _tables = {};       // tableId → { state, myCards, active }
@@ -13313,6 +13313,12 @@ socket.on('joinedTable', ({ tableId, seat }) => {
   _mySocketSeat     = seat;
   _backendActive    = true;
   _connectedTableId = tableId;
+  // Server confirmed join — now it's safe to deduct the buy-in from displayed balance
+  if (_pendingBuyinAmt > 0) {
+    subBal(_pendingBuyinAmt);
+    TXNS.unshift({icon:'🪑',label:'Table Buy-in',table:tableId,amt:-_pendingBuyinAmt,ts:'Just now'});
+    _pendingBuyinAmt = 0;
+  }
   console.log(`[Socket] joined ${tableId} at seat ${seat}`);
   showToast(`✓ Connected — Seat ${seat + 1}`);
   startSessionClock();
@@ -13616,6 +13622,11 @@ socket.on('error', ({ message }) => {
   console.warn('[Socket] error:', message);
   // Don't show toast for "Not your turn" — happens during demo mode overlap
   if (message !== 'Not your turn') showToast(`⚠ ${message}`);
+  // If join was rejected before confirmation, cancel pending buy-in (no deduction)
+  if (_pendingBuyinAmt > 0 && !_backendActive) {
+    _pendingBuyinAmt = 0;
+    showView('v-lobby');
+  }
 });
 
 // Disconnected
