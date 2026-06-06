@@ -7129,10 +7129,11 @@ function _renderBonusPanel(){
   const sub = document.getElementById('bonus-sub-text');
   const btn = document.getElementById('claim-chips-btn');
   const dots = document.getElementById('streak-dots');
+  const _rcEligible = _balRoyal < RC_BALANCE_CAP;
   if(sub){
     sub.textContent = _bonusClaimed
-      ? 'Come back tomorrow for 1,250 chips + 1 RC!'
-      : 'Claim 1,250 Gold Chips + 1 Barrel Chip free';
+      ? ('Come back tomorrow for 1,250 chips' + (_rcEligible ? ' + 1 RC!' : '!'))
+      : ('Claim 1,250 Gold Chips' + (_rcEligible ? ' + 1 Barrel Chip free' : ''));
   }
   if(btn){
     btn.textContent = _bonusClaimed ? '✓ Claimed Today' : 'Claim Daily Bonus';
@@ -7143,7 +7144,7 @@ function _renderBonusPanel(){
   if(dots){
     dots.innerHTML = _bonusClaimed
       ? '<div style="font-size:10px;color:var(--grn);letter-spacing:.5px">✓ Claimed — see you tomorrow!</div>'
-      : '<div style="font-size:10px;color:var(--gold);letter-spacing:.5px">🎁 1,250 Gold + ♦1 RC available</div>';
+      : '<div style="font-size:10px;color:var(--gold);letter-spacing:.5px">🎁 1,250 Gold' + (_rcEligible ? ' + ♦1 RC' : '') + ' available</div>';
   }
 }
 
@@ -11302,12 +11303,16 @@ async function doSignup(){
   const btn = document.querySelector('[onclick="doSignup()"]');
   if(btn){ btn.textContent = 'Creating account...'; btn.disabled = true; }
 
+  const _sCtrl = new AbortController();
+  const _sTid  = setTimeout(() => _sCtrl.abort(), 10000);
   try {
     const res  = await fetch(BACKEND_URL + '/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: user, email, password: pass }),
+      signal: _sCtrl.signal,
     });
+    clearTimeout(_sTid);
     const data = await res.json();
     if(!data.ok){
       if(signupErr) signupErr.textContent = data.error || 'Registration failed.';
@@ -11323,6 +11328,8 @@ async function doSignup(){
     // Set chips from DB
     _balRoyal = data.user.chips || 10;
     _balGold  = data.user.goldChips || 250000;
+    // Award referral bonus (Gold Chips only — no real-money impact)
+    if(_refBonusApplied){ _balGold += 2500; addNotif('social','🎁','gold','Referral bonus: 2,500 Gold Chips added!'); }
     updBal();
     _updateHeader(data.user.username);
     _showVerifyBanner(data.user);
@@ -11334,7 +11341,9 @@ async function doSignup(){
     showView('vl');
     setTimeout(()=>showRGConfirm('Welcome to Barrel Poker, '+data.user.username+'! You have received $10 Barrel Chips. Check your email to verify your account.'),400);
   } catch(e) {
-    if(signupErr) signupErr.textContent = 'Server error — please try again.';
+    clearTimeout(_sTid);
+    const msg = e.name === 'AbortError' ? 'Connection timed out — please try again.' : 'Server error — please try again.';
+    if(signupErr) signupErr.textContent = msg;
     if(btn){ btn.textContent = 'Create Account →'; btn.disabled = false; }
   }
 }
@@ -13307,8 +13316,6 @@ socket.on('joinedTable', ({ tableId, seat }) => {
   console.log(`[Socket] joined ${tableId} at seat ${seat}`);
   showToast(`✓ Connected — Seat ${seat + 1}`);
   startSessionClock();
-  // Save for reconnect
-  sessionStorage.setItem('rf_last_table', tableId);
   refreshLobbyFromBackend && refreshLobbyFromBackend();
   // Navigate to game view if not already there
   if (!document.getElementById('vg')?.classList.contains('active')) {
@@ -13409,18 +13416,6 @@ socket.on('handResult', (result) => {
       showBustModal();
     }
   }, 2500);
-
-  // Sitting-out removal check
-  if (_sittingOut) {
-    setTimeout(() => {
-      if (_sittingOut && _connectedTableId) {
-        showToast('You have been removed from the table (sat out)');
-        backendLeaveTable();
-        _hideReturnBanner();
-        _sittingOut = false;
-      }
-    }, 8000);
-  }
 
   // Update leaderboard
   const lEntry = LEADERS.find(l => l.name === result.winner);
