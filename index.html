@@ -5020,7 +5020,7 @@ const _origShowVerifyBanner = window._showVerifyBanner;
 window._showVerifyBanner = function(user){
   if(_origShowVerifyBanner) _origShowVerifyBanner(user);
   // If we're on the auth page, show OTP step
-  if(document.getElementById('v-login')?.classList.contains('active') || true){
+  if(document.getElementById('v-login')?.classList.contains('active')){
     const email = user?.email || document.getElementById('nauth-s-email')?.value || document.getElementById('su-email')?.value || '';
     document.getElementById('nauth-verify-email').textContent = email;
     nauthGoStep('verify');
@@ -11081,15 +11081,7 @@ function goLobby(){
 var _sittingOut = false;
 
 function goLobbyFromTable(){
-  if (!_backendActive || !_connectedTableId) { goLobby(); return; }
-  const you = SEATS.find(s => s.you);
-  if (you && you.stack > 0) {
-    addBal(you.stack);
-    TXNS.unshift({icon:'🪑',label:'Cash Out — Left Table',table:_buyinTable||'',amt:+you.stack,ts:'Just now'});
-    you.stack = 0;
-  }
-  backendLeaveTable();
-  showView('vl');
+  goLobby(); // goLobby override handles backend leave + balance update
 }
 
 function returnToTable(){
@@ -13371,7 +13363,7 @@ socket.on('handResult', (result) => {
   const now    = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
   HIST.unshift({ table: _buyinTable + ' · Hand #' + (HIST.length+1), hand: result.hand||'', profit: isWin ? +result.amount : -(result.amount||0), time: now });
   if (HIST.length > 50) HIST.pop();
-  TXNS.unshift({ icon: isWin?'🏆':'💸', label: isWin?'Hand Win':'Hand Lost', table: _buyinTable||'Table', amt: isWin?+result.amount:-0, ts: 'Just now' });
+  TXNS.unshift({ icon: isWin?'🏆':'💸', label: isWin?'Hand Win':'Hand Lost', table: _buyinTable||'Table', amt: isWin?+result.amount:-(result.amount||0), ts: 'Just now' });
   if (TXNS.length > 50) TXNS.pop();
   // Update hands played stat
   _playerHands++;
@@ -13496,6 +13488,11 @@ socket.on('tournBlindUp', ({ tournId, level, sb, bb }) => {
 socket.on('sngEliminated', ({ place, prize, remainingPlayers }) => {
   showToast(`You finished ${place}${['st','nd','rd'][place-1]||'th'}${prize ? ' — Won $'+prize.toFixed(2) : ''}!`);
   _sngMode = false;
+  // Clear backend state before goLobby so it doesn't emit a redundant leaveTable
+  _backendActive = false;
+  _connectedTableId = null;
+  _mySocketSeat = null;
+  if (typeof stopSessionClock === 'function') stopSessionClock();
   setTimeout(() => goLobby(), 3000);
 });
 
@@ -13511,7 +13508,7 @@ socket.on('sngResult', ({ results, myResult }) => {
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
           <span style="font-size:18px">${['🥇','🥈','🥉'][i]||'  '}</span>
           <span style="font-weight:600;${r.name===getMyName()?'color:var(--gold)':''}">${r.name}${r.name===getMyName()?' (You)':''}</span>
-          <span style="color:var(--green);font-family:'Cormorant Garamond',serif;font-size:18px">${r.prize ? '$'+r.prize.toFixed(2) : '—'}</span>
+          <span style="color:var(--grn);font-family:'Cormorant Garamond',serif;font-size:18px">${r.prize ? '$'+r.prize.toFixed(2) : '—'}</span>
         </div>`).join('')}
       <button onclick="this.closest('div[style]').remove();_sngMode=false;goLobby();" 
         style="margin-top:20px;background:linear-gradient(135deg,#B8942E,#FFB800);border:none;border-radius:4px;color:#000;font-weight:700;font-size:11px;letter-spacing:2px;padding:12px 32px;cursor:pointer;width:100%">
@@ -13631,7 +13628,7 @@ socket.on('error', ({ message }) => {
   // If join was rejected before confirmation, cancel pending buy-in (no deduction)
   if (_pendingBuyinAmt > 0 && !_backendActive) {
     _pendingBuyinAmt = 0;
-    showView('v-lobby');
+    showView('vl');
   }
 });
 
