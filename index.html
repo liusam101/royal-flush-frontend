@@ -6888,11 +6888,15 @@ let _sngId   = null;
 let _activeSNGTableId = null;
 let _activeSNGTournId = null; // backend tournament ID we're registered in
 
+const _sngStates = {};  // tournId → latest sngLobbyUpdate state
+
 function renderSNGList(){
   const el = document.getElementById('sng-list');
   if (!el) return;
   const SNGS = getSNGS();
-  el.innerHTML = SNGS.map(t => `
+  el.innerHTML = SNGS.map(t => {
+    const reg = _sngStates[t.id]?.registered || 0;
+    return `
     <div class="sng-card ${t.status||''}" onclick="openSNG('${t.id}')">
       <div style="flex:1">
         <div class="sng-name">${t.name} <span class="sng-pill waiting">OPEN</span></div>
@@ -6900,9 +6904,10 @@ function renderSNGList(){
       </div>
       <div style="text-align:right">
         <div class="sng-buyin">${chip(t.buyIn)}</div>
-        <div class="sng-seats-lbl">0/${t.max} seats</div>
+        <div class="sng-seats-lbl">${reg}/${t.max} seats</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function openSNG(id){
@@ -9511,27 +9516,14 @@ async function renderLeaderboard(){
 
   renderFromMemory();
 
-  // Fetch real data from backend
+  // Fetch real data from public leaderboard endpoint
   try {
-    const res = await fetch(BACKEND_URL+'/api/auth/users',{
-      headers:{'x-admin-key': localStorage.getItem('rf_admin_key')||'rf_admin_2025'}
-    });
+    const res = await fetch(BACKEND_URL+'/api/auth/leaderboard');
     if(!res.ok) return;
-    const users = await res.json();
-    if(!Array.isArray(users)||!users.length) return;
-    // Sort by net profit
-    const sorted = users
-      .filter(u=>u.stats&&(u.stats.handsPlayed>0))
-      .map(u=>({
-        name:  u.username,
-        net:   (u.stats.totalWon||0)-(u.stats.totalLost||0),
-        hands: u.stats.handsPlayed||0,
-        col:   '#3A2A5A',
-      }))
-      .sort((a,b)=>b.net-a.net)
-      .slice(0,10);
+    const data = await res.json();
+    if(!data.ok||!Array.isArray(data.leaders)||!data.leaders.length) return;
+    const sorted = data.leaders.map(p=>({...p, col:'#3A2A5A'}));
     if(!sorted.length) return;
-    // Update in-memory LEADERS
     LEADERS.length=0; sorted.forEach(p=>LEADERS.push(p));
     renderFromMemory();
   } catch(e){ /* backend not reachable — use memory data */ }
@@ -11554,6 +11546,9 @@ function claimFreeRoyal(){
   closeOv('ov-cashier'); _balRoyal+=ROYAL_DAILY; updBal();
   TXNS.unshift({icon:'♦',label:'Daily BRL Claim',table:'',amt:+ROYAL_DAILY,ts:'Just now'});
   showWB('♦ Barrel Chip Claimed!','1 RC added · Come back tomorrow for another free chip!',ROYAL_DAILY); setTimeout(updateRCWidget,100);
+  // Persist RC to DB so balance survives page refresh
+  const _rcTok = localStorage.getItem('rf_token');
+  if (_rcTok) fetch(BACKEND_URL+'/api/auth/rc-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_rcTok}}).catch(()=>{});
 }
 
 function getDailyClaimStatus(){
@@ -13438,6 +13433,7 @@ socket.on('sngRegistered', ({ tournId, registered, max }) => {
 });
 
 socket.on('sngLobbyUpdate', (state) => {
+  if (state?.id) _sngStates[state.id] = state;
   _updateSNGRegModal(state);
   // Also update the SNG list in lobby
   renderSNGList();
@@ -13810,8 +13806,10 @@ function syncTableState(state) {
   if (potEl) {
     if (state.phase === 'waiting' || state.phase === 'starting') {
       potEl.textContent = '$0';
+    } else if (_pot > 0) {
+      // Mid-hand reconnect — render current pot immediately so it's not stuck at $0
+      renderPotChips();
     }
-    // For other phases: display updated only by flyBetsIntoPot / phase-change callbacks
   }
 
   // ── Sync blind amounts from backend table ────────────────────────
