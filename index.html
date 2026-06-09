@@ -9268,12 +9268,12 @@ function openPlayerProfile(name){
 // ══ FRIENDS ════════════════════════════════════════════════════════
 function renderFriends(){
   document.getElementById('side-friends').innerHTML=FRIENDS.map(f=>`
-    <div class="ldr-row" onclick="openPlayerProfile('${f.name}')" style="cursor:pointer">
+    <div class="ldr-row" data-pname="${escHtml(f.name)}" onclick="openPlayerProfile(this.dataset.pname)" style="cursor:pointer">
       <span class="${f.online?'online':'offline'}-dot"></span>
       <div class="ldr-av" style="background:${f.col}">${f.name.slice(0,2).toUpperCase()}</div>
       <div style="flex:1">
-        <div class="ldr-nm">${f.name}</div>
-        ${f.table?`<div style="font-size:8px;color:var(--txd)">${f.table}</div>`:'<div style="font-size:8px;color:#555">Offline</div>'}
+        <div class="ldr-nm">${escHtml(f.name)}</div>
+        ${f.table?`<div style="font-size:8px;color:var(--txd)">${escHtml(f.table)}</div>`:'<div style="font-size:8px;color:#555">Offline</div>'}
       </div>
     </div>`).join('');
 }
@@ -9283,7 +9283,7 @@ function showSeatTip(av,name){
   const s=PLAYER_STATS[name]; if(!s) return;
   let tip=av.querySelector('.seat-tooltip');
   if(!tip){tip=document.createElement('div');tip.className='seat-tooltip';av.appendChild(tip);}
-  tip.innerHTML=`<div class="seat-tooltip-name">${name}</div>
+  tip.innerHTML=`<div class="seat-tooltip-name">${escHtml(name)}</div>
     <div class="seat-tooltip-row"><span>Hands</span><span>${s.hands.toLocaleString()}</span></div>
     <div class="seat-tooltip-row"><span>Win Rate</span><span>${s.winRate}%</span></div>
     <div class="seat-tooltip-row"><span>Net</span><span style="color:var(--grn)">+$${(s.net/1000).toFixed(1)}k</span></div>`;
@@ -9506,10 +9506,10 @@ async function renderLeaderboard(){
   function renderFromMemory(){
     if(!LEADERS.length){ ldr.innerHTML='<div style="color:var(--txd);font-size:11px;padding:8px 0;text-align:center">No hands played yet</div>'; return; }
     ldr.innerHTML=LEADERS.map((p,i)=>
-      `<div class="ldr-row" onclick="openPlayerProfile('${p.name}')">
+      `<div class="ldr-row" data-pname="${escHtml(p.name)}" onclick="openPlayerProfile(this.dataset.pname)">
         <span class="ldr-rk ${ranks[i]||''}">${i+1}</span>
         <div class="ldr-av" style="background:${p.col||'#3A2A5A'}">${p.name.slice(0,2).toUpperCase()}</div>
-        <span class="ldr-nm">${p.name}</span>
+        <span class="ldr-nm">${escHtml(p.name)}</span>
         <span class="ldr-amt" style="color:${p.net>=0?'var(--grn)':'#E87070'}">${p.net>=0?'+$':'-$'}${Math.abs(p.net/1000).toFixed(1)}k</span>
       </div>`).join('');
   }
@@ -9541,8 +9541,8 @@ function renderBigPots(){
     <div class="ldr-row" style="cursor:default">
       <div class="ldr-av" style="background:#2A3A1A;font-size:11px">${(p.winner||'?').slice(0,2).toUpperCase()}</div>
       <div style="flex:1;min-width:0">
-        <div class="ldr-nm">${p.winner||'Unknown'}</div>
-        <div style="font-size:9px;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hand||p.table||''}</div>
+        <div class="ldr-nm">${escHtml(p.winner||'Unknown')}</div>
+        <div style="font-size:9px;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.hand||p.table||'')}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div class="ldr-amt" style="font-size:13px">+$${p.amt.toLocaleString()}</div>
@@ -9806,14 +9806,15 @@ function placeSeats(){
 
     el.innerHTML=`
       <div class="${avCls}" style="background:${s.col};${s.folded?'opacity:.35':''};position:relative;cursor:pointer"
-        onclick="openPlayerProfile('${s.name}')"
-        onmouseenter="showSeatTip(this,'${s.name}')"
+        data-pname="${escHtml(s.name)}"
+        onclick="openPlayerProfile(this.dataset.pname)"
+        onmouseenter="showSeatTip(this, this.dataset.pname)"
         onmouseleave="hideSeatTip(this)">
         ${avInner}
         ${role?'<div class="seat-role btn">D</div>':''}
         ${s.act?`<svg class="seat-timer-ring" viewBox="0 0 78 78" xmlns="http://www.w3.org/2000/svg"><circle class="seat-timer-track" cx="39" cy="39" r="36"/><circle class="seat-timer-arc" id="timer-arc-${i}" cx="39" cy="39" r="36" stroke="#00E5A0" stroke-dasharray="226.2" stroke-dashoffset="0"/></svg>`:''}
       </div>
-      <div class="sname">${s.name}</div>
+      <div class="sname">${escHtml(s.name)}</div>
       <div class="sstack" style="color:${s.folded?'var(--txd)':'var(--gold)'}">
         ${_mode==='gold' ? s.stack.toLocaleString()+'🟡' : '$'+s.stack.toLocaleString()}
       </div>`;
@@ -13004,12 +13005,12 @@ async function renderFriends(){
     const col  = f.col || '#3A2A5A';
     const dotCol = f.online ? 'var(--grn)' : 'rgba(255,255,255,0.15)';
     const sub  = f.online ? (f.table || 'In lobby') : 'Offline';
-    return `<div class="ldr-row" onclick="openPlayerProfile('${name}')" style="cursor:pointer">
+    return `<div class="ldr-row" data-pname="${escHtml(name)}" onclick="openPlayerProfile(this.dataset.pname)" style="cursor:pointer">
       <div style="width:7px;height:7px;border-radius:50%;background:${dotCol};flex-shrink:0;${f.online?'box-shadow:0 0 6px '+dotCol:''}"></div>
       <div class="ldr-av" style="background:${col}">${name.slice(0,2).toUpperCase()}</div>
       <div style="flex:1;min-width:0">
-        <div class="ldr-nm">${name}</div>
-        <div style="font-size:9px;color:var(--txd);letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>
+        <div class="ldr-nm">${escHtml(name)}</div>
+        <div style="font-size:9px;color:var(--txd);letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(sub)}</div>
       </div>
     </div>`;
   }).join('');
