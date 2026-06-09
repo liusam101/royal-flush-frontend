@@ -11531,7 +11531,7 @@ function addRCMonthlyUsed(n){
   localStorage.setItem(key,(getRCMonthlyUsed()+n).toString());
 }
 
-function claimFreeRoyal(){
+async function claimFreeRoyal(){
   const now=Date.now(), COOLDOWN=24*60*60*1000;
   const elapsed=now-parseInt(localStorage.getItem('rf_last_royal_claim')||'0');
   if(elapsed<COOLDOWN){
@@ -11541,14 +11541,19 @@ function claimFreeRoyal(){
   if(_balRoyal>=RC_BALANCE_CAP){
     showRGConfirm('Balance is $'+_balRoyal.toFixed(2)+' RC. Free claims are only available when your balance is below $'+RC_BALANCE_CAP+'. Play some hands first!'); return;
   }
+  // Persist to DB first — only commit UI and cooldown on success
+  const _rcTok = localStorage.getItem('rf_token');
+  if (_rcTok) {
+    try {
+      const res = await fetch(BACKEND_URL+'/api/auth/rc-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_rcTok}});
+      if (!res.ok) { showRGConfirm('Could not claim RC — please try again.'); return; }
+    } catch(e) { showRGConfirm('Could not reach server — please try again.'); return; }
+  }
   localStorage.setItem('rf_last_royal_claim',now.toString());
   _lastRoyalClaim=now;
   closeOv('ov-cashier'); _balRoyal+=ROYAL_DAILY; updBal();
   TXNS.unshift({icon:'♦',label:'Daily BRL Claim',table:'',amt:+ROYAL_DAILY,ts:'Just now'});
   showWB('♦ Barrel Chip Claimed!','1 RC added · Come back tomorrow for another free chip!',ROYAL_DAILY); setTimeout(updateRCWidget,100);
-  // Persist RC to DB so balance survives page refresh
-  const _rcTok = localStorage.getItem('rf_token');
-  if (_rcTok) fetch(BACKEND_URL+'/api/auth/rc-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_rcTok}}).catch(()=>{});
 }
 
 function getDailyClaimStatus(){
