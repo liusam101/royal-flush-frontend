@@ -4732,7 +4732,7 @@ function nauthNext(step){
     if(!email || !email.includes('@')){ if(errEl) errEl.textContent='Please enter a valid email.'; return; }
     // Update login step 2 display
     const sub = document.getElementById('nauth-l2-email-display');
-    if(sub){ sub.innerHTML = `Signing in as <span style="color:#D4AF37">${email}</span>`; }
+    if(sub){ sub.innerHTML = `Signing in as <span style="color:#D4AF37">${escHtml(email)}</span>`; }
     // Sync to legacy inputs for backend compat
     const leg = document.getElementById('login-email') || document.getElementById('l-email');
     if(leg) leg.value = email;
@@ -7690,8 +7690,8 @@ function showHandLabel(handName, winnerName){
   el.className = 'win-hand-label';
   el.innerHTML = `
     <div class="win-hand-label-suit">${suits}</div>
-    <div class="win-hand-label-name">${handName}</div>
-    <div class="win-hand-label-winner">${winnerName} wins</div>
+    <div class="win-hand-label-name">${escHtml(handName)}</div>
+    <div class="win-hand-label-winner">${escHtml(winnerName)} wins</div>
   `;
   tableWrapLabel.appendChild(el);
   // Fade out and remove after 3s
@@ -9212,9 +9212,9 @@ function appendChat(name,text,isYou){
   const div=document.createElement('div');
   div.className='chat-msg';
   if(isEmote){
-    div.innerHTML=`<span class="chat-name ${isYou?'you':'opp'}">${name}</span><span class="chat-emote">${text}</span>`;
+    div.innerHTML=`<span class="chat-name ${isYou?'you':'opp'}">${escHtml(name)}</span><span class="chat-emote">${escHtml(text)}</span>`;
   } else {
-    div.innerHTML=`<span class="chat-name ${isYou?'you':'opp'}">${name}</span><span class="chat-text">${text}</span>`;
+    div.innerHTML=`<span class="chat-name ${isYou?'you':'opp'}">${escHtml(name)}</span><span class="chat-text">${escHtml(text)}</span>`;
   }
   el.appendChild(div);
   el.scrollTop=el.scrollHeight;
@@ -10477,7 +10477,7 @@ function _notifTimeAgo(ts){
 // Add welcome notification on first login
 function _addWelcomeNotif(username){
   if(localStorage.getItem('rf_welcomed')) return;
-  addNotif('social','🎉','gold','Welcome to Barrel Poker, <b>'+username+'</b>! You have $10 Barrel Chips to get started.');
+  addNotif('social','🎉','gold','Welcome to Barrel Poker, <b>'+escHtml(username)+'</b>! You have $10 Barrel Chips to get started.');
   localStorage.setItem('rf_welcomed','1');
 }
 
@@ -12973,7 +12973,7 @@ async function addFriend(){
       if(msg){ msg.textContent=`✓ Added ${data.friend.username}!`; msg.style.color='var(--grn)'; }
       if(input) input.value='';
       setTimeout(()=>renderFriendsPanel(), 500);
-      addNotif('social','🤝','blue',`You and <b>${data.friend.username}</b> are now friends`);
+      addNotif('social','🤝','blue',`You and <b>${escHtml(data.friend.username)}</b> are now friends`);
     } else {
       if(msg){ msg.textContent=data.error||'Could not add friend'; msg.style.color='#E87070'; }
     }
@@ -13186,7 +13186,7 @@ function _updateHandStrengthBadge() {
 // ── Join ──────────────────────────────────────────────────────────────
 function backendJoinTable(tableId, playerName, buyIn) {
   const tName = tableId.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
-  addNotif('game','\u2660','gold','Joined <b>'+tName+'</b> table');
+  addNotif('game','\u2660','gold','Joined <b>'+escHtml(tName)+'</b> table');
   backendConnect();
   _connectedTableId = tableId;
   // Start session tracking
@@ -13347,10 +13347,10 @@ socket.on('handResult', (result) => {
   // Real notification on win/loss
   if(result && myName){
     if(result.winner===myName){
-      addNotif('game','🏆','gold','You won <b>$'+Number(result.amount||0).toFixed(2)+'</b> with '+(result.hand||'best hand'));
+      addNotif('game','🏆','gold','You won <b>$'+Number(result.amount||0).toFixed(2)+'</b> with '+escHtml(result.hand||'best hand'));
     } else if(result.reason!=='others folded'){
       const meSeat = result.showCards?.find(s=>s.name===myName);
-      if(meSeat) addNotif('game','🃏','green','Showdown — <b>'+result.winner+'</b> wins with '+result.hand);
+      if(meSeat) addNotif('game','🃏','green','Showdown — <b>'+escHtml(result.winner)+'</b> wins with '+escHtml(result.hand));
     }
   }
   // Rabbit hunt: show button if board < 5 and it was a fold (not showdown)
@@ -14029,7 +14029,7 @@ socket.on('timeBankStatus', ({ remaining }) => {
 
 socket.on('timeBankUsed', ({ player, secondsAdded, bankRemaining }) => {
   showToast(`⏱ ${player} uses time bank (+${secondsAdded}s)`);
-  addNotif('game','⏱','blue',`<b>${player}</b> uses their time bank`);
+  addNotif('game','⏱','blue',`<b>${escHtml(player)}</b> uses their time bank`);
 });
 
 function useTimeBank() {
@@ -14135,7 +14135,7 @@ function _muckRespond(show) {
 socket.on('cardsShown', ({ player, cards, message }) => {
   addLog(message || `${player} shows cards`, 'show');
   showToast(`👀 ${player} shows: ${(cards||[]).map(c=>c.r+c.s).join(' ')}`);
-  addNotif('game','👀','green',message||`${player} shows cards`);
+  addNotif('game','👀','green',message ? escHtml(message) : `${escHtml(player)} shows cards`);
 });
 
 socket.on('cardsMucked', ({ player }) => {
@@ -14223,7 +14223,7 @@ function _updateEquityBadge(equity, handName) {
   }
   const pct = equity || 0;
   const col = pct >= 70 ? '#5DC896' : pct >= 50 ? '#FFB800' : pct >= 30 ? '#E8A44A' : '#E87070';
-  badge.innerHTML = `${handName||''}<span style="margin-left:6px;color:${col}">${pct}%</span>`;
+  badge.innerHTML = `${escHtml(handName||'')}<span style="margin-left:6px;color:${col}">${pct}%</span>`;
   badge.style.opacity = '1';
   badge.style.borderColor = col.replace(')',',0.35)').replace('rgb','rgba').replace('#','');
   // Use CSS color directly
