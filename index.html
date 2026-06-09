@@ -13292,6 +13292,8 @@ function backendLeaveTable() {
 
 // ══ INCOMING EVENTS ═══════════════════════════════════════════════════
 
+const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
 socket.on('chipsReturned', ({ balance }) => {
   // Sync UI balance to authoritative server value (covers off-table + returned stack)
   if (typeof balance === 'number' && balance >= 0) {
@@ -13299,8 +13301,8 @@ socket.on('chipsReturned', ({ balance }) => {
     localStorage.setItem('rf_chips_cache', _balRoyal);
     if (_mode !== 'gold') {
       _bal = _balRoyal;
-      updBal();
     }
+    updBal();
   }
 });
 
@@ -13564,9 +13566,9 @@ socket.on('chatMessage', ({ from, message, ts }) => {
   const isMe   = from === myName;
   const time   = ts ? new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
   // Add to in-game log
-  addLog(`<span style="color:${isMe?'rgba(201,168,76,0.9)':'rgba(120,190,255,0.85)'};font-weight:700">${from}</span>`
+  addLog(`<span style="color:${isMe?'rgba(201,168,76,0.9)':'rgba(120,190,255,0.85)'};font-weight:700">${escHtml(from)}</span>`
     + (time ? `<span style="color:rgba(255,255,255,0.25);font-size:9px;margin-left:4px">${time}</span>` : '')
-    + ` ${message}`, '');
+    + ` ${escHtml(message)}`, '');
   // Flash the chat icon if panel isn't open
   const chatIcon = document.querySelector('.hbtn[onclick*="chat"]');
   if (chatIcon && !isMe) {
@@ -13589,7 +13591,7 @@ socket.on('adminBroadcast', ({ message }) => {
     + 'letter-spacing:0.5px;z-index:9500;box-shadow:0 8px 40px rgba(0,0,0,0.6);'
     + 'max-width:520px;text-align:center;cursor:pointer;animation:toastIn .25s ease;';
   banner.innerHTML = '<div style="font-size:9px;letter-spacing:3px;opacity:0.7;margin-bottom:4px">📢 ANNOUNCEMENT</div>'
-    + '<div>' + message + '</div>';
+    + '<div>' + escHtml(message) + '</div>';
   banner.onclick = () => banner.remove();
   document.body.appendChild(banner);
   clearTimeout(banner._t);
