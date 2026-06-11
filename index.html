@@ -10521,7 +10521,7 @@ function renderNotifs(){
   }
   document.getElementById('notif-list').innerHTML=filtered.map(n=>`
     <div class="notif-item${n.unread?' unread':''}" onclick="readNotif(${n.id})">
-      <div class="notif-ico ${n.icoCls}">${n.icon}</div>
+      <div class="notif-ico ${n.icoCls}">${escHtml(String(n.icon||''))}</div>
       <div class="notif-body">
         <div class="notif-msg">${n.msg}</div>
         <div class="notif-time">${n.time}</div>
@@ -11791,7 +11791,7 @@ function verifyHand(){
     el.innerHTML=`
       <div style="padding:14px;background:rgba(93,200,150,.06);border:1px solid rgba(93,200,150,.2);border-radius:4px">
         <div style="color:var(--grn);font-weight:600;margin-bottom:8px">✓ Hand Verified — No Manipulation Detected</div>
-        <div style="color:var(--txd);margin-bottom:4px"><b style="color:var(--tx)">Hand ID:</b> ${id}</div>
+        <div style="color:var(--txd);margin-bottom:4px"><b style="color:var(--tx)">Hand ID:</b> ${escHtml(id)}</div>
         <div style="color:var(--txd);margin-bottom:4px"><b style="color:var(--tx)">Server seed hash:</b> <span style="font-family:monospace;font-size:9px">${hash}</span></div>
         <div style="color:var(--txd);margin-bottom:4px"><b style="color:var(--tx)">Revealed seed:</b> <span style="font-family:monospace;font-size:9px">${seed}</span></div>
         <div style="color:var(--txd);font-size:9px;margin-top:8px">SHA-256(revealed seed) matches the published hash. The deck order was committed before any player action.</div>
