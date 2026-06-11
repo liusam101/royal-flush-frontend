@@ -9801,7 +9801,7 @@ function placeSeats(){
     const role=i===_btnIdx?'btn':'';
     // Avatar inner content — show image if available, otherwise initials
     const avInner = s.you && _sitOut ? sitOutBadge()
-      : s.avatarUrl ? `<img src="${s.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0">`
+      : s.avatarUrl ? `<img src="${escHtml(s.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0">`
       : escHtml(s.name.slice(0,2).toUpperCase());
 
     el.innerHTML=`
