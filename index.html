@@ -12849,7 +12849,7 @@ async function renderHistPanel(){
       const dur = s.endTime ? fmtDur(s.endTime-s.startTime) : 'Active';
       return `<div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <div style="font-weight:600;font-size:12px;color:var(--tx)">${s.table||'Table'}</div>
+          <div style="font-weight:600;font-size:12px;color:var(--tx)">${escHtml(s.table||'Table')}</div>
           <div style="font-size:14px;font-weight:700;color:${col}">${net>=0?'+':''}\$${Math.abs(net).toFixed(2)}</div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txd)">
@@ -12894,10 +12894,10 @@ async function renderAchievements(){
       return `<div style="padding:12px 18px 4px;font-size:9px;letter-spacing:2px;color:${RARITY_COL[rarity]};font-family:Montserrat,sans-serif">${RARITY_LABEL[rarity].toUpperCase()}</div>
         ${items.map(a=>`
         <div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.03);opacity:${a.earned?1:0.35}">
-          <div style="font-size:24px;width:36px;text-align:center">${a.icon}</div>
+          <div style="font-size:24px;width:36px;text-align:center">${escHtml(String(a.icon||''))}</div>
           <div style="flex:1">
-            <div style="font-size:11px;font-weight:600;color:${a.earned?'var(--tx)':'var(--txd)'}">${a.name}</div>
-            <div style="font-size:9px;color:var(--txd)">${a.desc}</div>
+            <div style="font-size:11px;font-weight:600;color:${a.earned?'var(--tx)':'var(--txd)'}">${escHtml(a.name||'')}</div>
+            <div style="font-size:9px;color:var(--txd)">${escHtml(a.desc||'')}</div>
           </div>
           <div style="font-size:9px;color:${a.earned?RARITY_COL[rarity]:'rgba(255,255,255,0.2)'}">
             ${a.earned?'✓ '+new Date(a.unlockedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'Locked'}
