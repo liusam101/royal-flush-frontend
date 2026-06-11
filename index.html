@@ -7622,7 +7622,7 @@ function doShowCards(){
     // Find the winning opponent
     const winnerOpp = OPP_HANDS.find(o=>!SEATS.find(s=>s.name===o.name)?.folded);
     if(winnerOpp){
-      addLog(`<b>${winnerOpp.name} wins</b> with ${winnerOpp.hand}`,'win');
+      addLog(`<b>${escHtml(winnerOpp.name)} wins</b> with ${escHtml(winnerOpp.hand)}`,'win');
       showHandLabel(winnerOpp.hand, winnerOpp.name);
       highlightWinner(winnerOpp.name);
     }
@@ -8390,7 +8390,7 @@ function startHand(){ if(_backendActive) return; // backend controls hand flow
   while(SEATS[_actIdx].folded) _actIdx=(_actIdx+1)%SEATS.length;
   SEATS[_actIdx].act=true;
   updateActionButtons();
-  addLog(`─ Hand #${_handNum} · ${sb.name} posts SB $${SB_AMT} · ${bb.name} posts BB $${BB_AMT} ─`,'sys');
+  addLog(`─ Hand #${_handNum} · ${escHtml(sb.name)} posts SB $${SB_AMT} · ${escHtml(bb.name)} posts BB $${BB_AMT} ─`,'sys');
   // Show blind bet stacks
   const sbI=sbIdx(), bbI=bbIdx();
   setTimeout(()=>{ showBetChips(sbI, SB_AMT); showBetChips(bbI, BB_AMT); }, 200);
@@ -14133,13 +14133,13 @@ function _muckRespond(show) {
 }
 
 socket.on('cardsShown', ({ player, cards, message }) => {
-  addLog(message || `${player} shows cards`, 'show');
+  addLog(escHtml(message) || `${escHtml(player)} shows cards`, 'show');
   showToast(`👀 ${player} shows: ${(cards||[]).map(c=>c.r+c.s).join(' ')}`);
   addNotif('game','👀','green',message ? escHtml(message) : `${escHtml(player)} shows cards`);
 });
 
 socket.on('cardsMucked', ({ player }) => {
-  addLog(`${player} mucks their hand`, '');
+  addLog(`${escHtml(player)} mucks their hand`, '');
   showToast(`${player} mucks`);
 });
 
