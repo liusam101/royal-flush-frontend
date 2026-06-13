@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Barrel Poker — Admin Console</title>
+<script>if(localStorage.getItem('rf_admin_key'))document.documentElement.classList.add('auto-login');</script>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -30,6 +31,8 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 
 /* Login */
 #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:24px;}
+.auto-login #login-screen{display:none!important}
+.auto-login #app{display:flex!important}
 .login-logo{font-family:var(--head);font-size:28px;color:var(--cyan);letter-spacing:4px;text-shadow:0 0 30px rgba(0,210,255,0.5);}
 .login-sub{font-family:var(--mono);font-size:11px;color:var(--txd);letter-spacing:3px;}
 .login-box{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:32px;width:340px;display:flex;flex-direction:column;gap:16px;}
