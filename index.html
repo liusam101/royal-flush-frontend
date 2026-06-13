@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>try{if(localStorage.getItem('rf_token'))document.documentElement.dataset.initView='lobby';else document.documentElement.dataset.initView='home';}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -41,6 +42,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .view{display:none}.view.active{display:block}
 #vg.active{display:flex}
 #vl.active{display:flex}
+html[data-init-view='lobby'] #vl{display:flex}
+html[data-init-view='home'] #v-home{display:block}
 .shd{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:10px}
 .shd::after{content:'';flex:1;height:1px;background:rgba(201,168,76,.08)}
 
@@ -8907,9 +8910,10 @@ function _clearTimerUI(){
 
 // ══ SOUND ══════════════════════════════════════════════════════════
 // ══ VIEW TRANSITIONS ═══════════════════════════════════════════════
+let _firstTransition=true;
 function transitionTo(fn){
   const ov=document.getElementById('view-transition');
-  if(!ov){ fn(); return; }
+  if(!ov||_firstTransition){ _firstTransition=false; fn(); return; }
   ov.classList.add('fade-in');
   setTimeout(()=>{ fn(); ov.classList.remove('fade-in'); }, 180);
 }
@@ -9320,6 +9324,7 @@ function hideSeatTip(av){
   // Show correct initial view immediately — no flash
   // If logged in: show lobby right away using cached data; verify token in background
   // If not: show landing page
+  document.documentElement.removeAttribute('data-init-view'); // hand off from CSS pre-render to JS
   if(localStorage.getItem('rf_token')){
     const cn = localStorage.getItem('rf_username');
     if(cn && typeof _updateHeader === 'function') _updateHeader(cn);
