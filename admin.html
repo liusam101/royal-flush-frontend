@@ -521,6 +521,7 @@ let state = { tables:[], tournaments:[], totalPlayers:0, handsToday:0 };
 function doLogin() {
   const key = document.getElementById('admin-key').value.trim();
   if (!key) { toast('Enter admin key','error'); return; }
+  localStorage.setItem('rf_admin_key', key);
   adminKey = key;
   initSocket(key);
 }
@@ -880,6 +881,17 @@ document.addEventListener('input', e=>{
 
 // Enter key on login
 document.getElementById('admin-key')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// Auto-login on refresh if key was saved
+(function() {
+  const saved = localStorage.getItem('rf_admin_key');
+  if (saved) {
+    const inp = document.getElementById('admin-key');
+    if (inp) inp.value = saved;
+    adminKey = saved;
+    initSocket(saved);
+  }
+})();
 
 // ── GLB Preview ───────────────────────────────────────────────────
 let _prevObjectUrl = null;
