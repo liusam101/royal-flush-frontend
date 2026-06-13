@@ -546,6 +546,35 @@ function initSocket(key) {
     document.getElementById('app').style.display = 'flex';
     state.tables = snap.tables;
     state.tournaments = snap.tournaments;
+
+    // Restore persisted assets from DB so the admin panel shows what's currently active
+    if (snap.assets) {
+      const _fmtSz = b => b >= 1048576 ? (b/1048576).toFixed(1)+'MB' : b >= 1024 ? Math.round(b/1024)+'KB' : b+'B';
+      Object.values(snap.assets).forEach(a => {
+        if (!a?.type || !a?.dataUrl) return;
+        const approxSize = Math.round(a.dataUrl.length * 0.75); // base64 → bytes
+        _pendingAssets[a.type] = { type: a.type, dataUrl: a.dataUrl, name: a.name || a.type, size: approxSize };
+        const statusEl = document.getElementById(a.type + '-status');
+        const btnEl    = document.getElementById(a.type + '-push-btn');
+        if (statusEl) {
+          const ts = a.pushedAt ? new Date(a.pushedAt).toLocaleString() : '';
+          statusEl.textContent = `✓ Active: ${a.name || a.type} — ${_fmtSz(approxSize)}${ts ? ' · pushed ' + ts : ''}`;
+          statusEl.style.color = 'var(--green)';
+        }
+        if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; }
+        // Restore BG preview in drop zone
+        if (a.type === 'bg') {
+          const dropEl = document.getElementById('bg-drop');
+          if (dropEl) { dropEl.style.backgroundImage = `url(${a.dataUrl})`; dropEl.style.backgroundSize = 'cover'; dropEl.style.backgroundPosition = 'center'; dropEl.style.opacity = '0.7'; }
+          const bgLayer = document.getElementById('se-bg-layer');
+          if (bgLayer) bgLayer.style.backgroundImage = `url(${a.dataUrl})`;
+        }
+        // Restore GLB preview
+        if (a.type === 'glb') showGLBPreview(a.dataUrl);
+      });
+      renderActiveAssets();
+    }
+
     refresh();
     log('Admin snapshot received','info');
   });
