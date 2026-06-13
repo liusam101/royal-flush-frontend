@@ -9325,6 +9325,10 @@ function hideSeatTip(av){
   // If logged in: show lobby right away using cached data; verify token in background
   // If not: show landing page
   document.documentElement.removeAttribute('data-init-view'); // hand off from CSS pre-render to JS
+  // Set mode before first showView so lobby renders with correct currency labels immediately
+  setMode('royal', true);
+  const ag=document.getElementById('ov-agegate');
+  if(ag) ag.style.display='none';
   if(localStorage.getItem('rf_token')){
     const cn = localStorage.getItem('rf_username');
     if(cn && typeof _updateHeader === 'function') _updateHeader(cn);
@@ -9337,26 +9341,18 @@ function hideSeatTip(av){
   else setTimeout(()=>{ if(typeof _restoreSession==='function') _restoreSession(); }, 500);
   // Handle ?verify= and ?reset= URL tokens (defined in later script block)
   setTimeout(()=>{ if(typeof _handleURLTokens==='function') _handleURLTokens(); }, 500);
-
+  // Show cookie consent after short delay — only if not already accepted
   setTimeout(()=>{
-    setMode('royal', true);
-    positionModeSlider();
-    // Hide age gate — it lives inside signup now
-    const ag=document.getElementById('ov-agegate');
-    if(ag) ag.style.display='none';
-    // Show cookie consent after short delay — only if not already accepted
-    setTimeout(()=>{
-      try{
-        if(!localStorage.getItem('rf_cookie_consent')){
-          const cb=document.getElementById('cookie-banner');
-          if(cb) cb.style.display='flex';
-        }
-      }catch(e){
+    try{
+      if(!localStorage.getItem('rf_cookie_consent')){
         const cb=document.getElementById('cookie-banner');
         if(cb) cb.style.display='flex';
       }
-    }, 1200);
-  }, 80);
+    }catch(e){
+      const cb=document.getElementById('cookie-banner');
+      if(cb) cb.style.display='flex';
+    }
+  }, 1200);
   // lobby online counter — backend only, no simulation
 })();
 
@@ -13103,11 +13099,6 @@ async function _loadFriendsSidebar(){
 async function _restoreSession(){
   const token = localStorage.getItem('rf_token');
   if(!token) return;
-
-  // Immediately show lobby with cached data — no landing-page flash while network verifies
-  const cachedName = localStorage.getItem('rf_username');
-  if(cachedName) _updateHeader(cachedName);
-  showView('vl');
 
   try {
     const res  = await fetch(BACKEND_URL + '/api/auth/verify', {
