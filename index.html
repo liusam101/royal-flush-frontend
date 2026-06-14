@@ -9321,14 +9321,12 @@ function hideSeatTip(av){
   safe(()=>{ if(typeof renderSession==='function') renderSession(); });
   safe(()=>{ if(typeof renderVIP==='function') renderVIP(); });
   safe(renderLPTables);
+  safe(renderTiers);
+  safe(renderMTT);
   // Show correct initial view immediately — no flash
   // If logged in: show lobby right away using cached data; verify token in background
   // If not: show landing page
   document.documentElement.removeAttribute('data-init-view'); // hand off from CSS pre-render to JS
-  // Set mode before first showView so lobby renders with correct currency labels immediately
-  setMode('royal', true);
-  const ag=document.getElementById('ov-agegate');
-  if(ag) ag.style.display='none';
   if(localStorage.getItem('rf_token')){
     const cn = localStorage.getItem('rf_username');
     if(cn && typeof _updateHeader === 'function') _updateHeader(cn);
@@ -9341,18 +9339,24 @@ function hideSeatTip(av){
   else setTimeout(()=>{ if(typeof _restoreSession==='function') _restoreSession(); }, 500);
   // Handle ?verify= and ?reset= URL tokens (defined in later script block)
   setTimeout(()=>{ if(typeof _handleURLTokens==='function') _handleURLTokens(); }, 500);
-  // Show cookie consent after short delay — only if not already accepted
   setTimeout(()=>{
-    try{
-      if(!localStorage.getItem('rf_cookie_consent')){
+    setMode('royal', true);
+    positionModeSlider();
+    const ag=document.getElementById('ov-agegate');
+    if(ag) ag.style.display='none';
+    // Show cookie consent after short delay — only if not already accepted
+    setTimeout(()=>{
+      try{
+        if(!localStorage.getItem('rf_cookie_consent')){
+          const cb=document.getElementById('cookie-banner');
+          if(cb) cb.style.display='flex';
+        }
+      }catch(e){
         const cb=document.getElementById('cookie-banner');
         if(cb) cb.style.display='flex';
       }
-    }catch(e){
-      const cb=document.getElementById('cookie-banner');
-      if(cb) cb.style.display='flex';
-    }
-  }, 1200);
+    }, 1200);
+  }, 80);
   // lobby online counter — backend only, no simulation
 })();
 
