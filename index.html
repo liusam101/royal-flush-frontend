@@ -6321,7 +6321,7 @@ window._showVerifyBanner = function(user){
           📷 UPLOAD PHOTO
           <input type="file" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
         </label>
-        <div style="font-size:9px;color:var(--txd)">JPG, PNG (max 40KB)</div>
+        <div style="font-size:9px;color:var(--txd)">JPG, PNG (max 200KB)</div>
       </div>
       <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">OR CHOOSE COLOUR</div>
       <div class="avatar-grid" id="avatar-grid"></div>
@@ -12714,9 +12714,11 @@ function _updateHeader(username){
   const avAb = document.getElementById('hdr-avatar-abbr');
   if(avEl) avEl.textContent = username;
   if(avAb) avAb.textContent = username.slice(0,2).toUpperCase();
-  // Update nav avatar initials
+  // Update nav and dropdown avatar initials
   const navAv = document.getElementById('nav-av');
   if(navAv) navAv.textContent = username.slice(0,2).toUpperCase();
+  const ddAv = document.getElementById('dd-av');
+  if(ddAv) ddAv.textContent = username.slice(0,2).toUpperCase();
   const navName = document.getElementById('nav-trig')?.querySelector('.nav-trigger-name');
   if(navName) navName.textContent = username;
   const ddName = document.getElementById('nav-dd')?.querySelector('.dd-uname');
@@ -13046,7 +13048,7 @@ async function loadAvatarPanel(){
 function handleAvatarUpload(input){
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 50000){ showToast('Image too large — max 40KB'); return; }
+  if(file.size > 204800){ showToast('Image too large — max 200KB'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     _avatarUploadData = e.target.result;
