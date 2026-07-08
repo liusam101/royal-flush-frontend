@@ -7114,7 +7114,12 @@ function ddAct(a){
     bonus:     ()=>{goLobby();switchTab('cash');setTimeout(claimBonus,200);},
     rg:        ()=>goRG(),
     settings:  ()=>openOv('ov-settings'),
-    logout:    ()=>goHome(),
+    logout: () => {
+      ['rf_token','rf_username','rf_email','rf_user_id','rf_registered','rf_chips_cache','rf_gold_cache'].forEach(k=>localStorage.removeItem(k));
+      _balRoyal = 0; _balGold = 0;
+      showView('v-home');
+      renderLPTables();
+    },
   }[a]||function(){})();
 }
 
