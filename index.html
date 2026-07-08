@@ -7059,6 +7059,7 @@ setInterval(function(){
       t.status = 'running';
       t.playersLeft = Math.floor((t.registered || 100) * 0.85);
       t.currentLevel = 1;
+      if(_mttRegistered[t.id]) _onMTTStarted(t);
     } else if(t.status === 'running'){
       // Simulate players being knocked out over time
       if(t.playersLeft > 1 && Math.random() < 0.02){
@@ -7074,6 +7075,58 @@ setInterval(function(){
     }
   });
 }, 5000);
+
+// When a registered MTT starts: prompt the player if they're at a cash table,
+// otherwise open the tournament directly.
+let _pendingMTTReady = null;
+function _onMTTStarted(t){
+  const atCashTable = document.body.classList.contains('in-game') && !_sngMode && _connectedTableId;
+  if (atCashTable) {
+    _pendingMTTReady = t.id;
+    _showMTTReadyBanner(t);
+  } else {
+    addNotif('game','🏆','gold','Tournament started — '+t.name);
+    showToast('🏆 '+t.name+' started');
+  }
+}
+function _showMTTReadyBanner(t){
+  let banner = document.getElementById('mtt-ready-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'mtt-ready-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:500;background:linear-gradient(90deg,#0f2a1a,#1a4530);border-bottom:1px solid rgba(93,200,150,.4);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;font-family:Montserrat,sans-serif';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML = '<div style="display:flex;align-items:center;gap:12px">'
+    + '<div style="width:8px;height:8px;border-radius:50%;background:#5DC896;animation:pulse 1s infinite"></div>'
+    + '<span style="font-size:11px;letter-spacing:1px;color:#fff">🏆 Tournament ready — <b style="color:#5DC896">' + escHtml(t.name) + '</b></span>'
+    + '<span style="font-size:10px;color:rgba(255,255,255,.5)">&nbsp;· Joining will leave your current table</span>'
+    + '</div>'
+    + '<div style="display:flex;gap:6px">'
+    + '<button onclick="_dismissPendingMTT()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:3px;color:rgba(255,255,255,.7);font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;padding:8px 14px;cursor:pointer;text-transform:uppercase">Later</button>'
+    + '<button onclick="_joinPendingMTT()" style="background:linear-gradient(135deg,#3F9E6E,#5DC896);border:none;border-radius:3px;color:#000;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:8px 18px;cursor:pointer;text-transform:uppercase">Join Tournament</button>'
+    + '</div>';
+  banner.style.display = 'flex';
+}
+function _joinPendingMTT(){
+  if (!_pendingMTTReady) return;
+  const id = _pendingMTTReady;
+  _pendingMTTReady = null;
+  const banner = document.getElementById('mtt-ready-banner');
+  if (banner) banner.style.display = 'none';
+  if (_connectedTableId) {
+    socket.emit('leaveTable', { tableId: _connectedTableId });
+    _connectedTableId = null;
+    _backendActive = false;
+  }
+  goLobby();
+  setTimeout(()=>{ if(typeof switchTab === 'function') switchTab('mtt'); openMTT(id); }, 200);
+}
+function _dismissPendingMTT(){
+  _pendingMTTReady = null;
+  const banner = document.getElementById('mtt-ready-banner');
+  if (banner) banner.style.display = 'none';
+}
 
 
 let _ddOpen=false;
@@ -13480,18 +13533,8 @@ socket.on('sngStarting', ({ tournId, state }) => {
   }
 });
 
-// Server confirms SNG table is ready — join it (or prompt if in a cash game)
-let _pendingSNGReady = null;
+// Server confirms SNG table is ready — join it
 socket.on('sngTableReady', ({ tournId, tableId, state }) => {
-  const atCashTable = document.body.classList.contains('in-game') && !_sngMode && _connectedTableId;
-  if (atCashTable) {
-    _pendingSNGReady = { tournId, tableId, state };
-    _showSNGReadyBanner(state);
-    return;
-  }
-  _joinSNGNow(tournId, tableId, state);
-});
-function _joinSNGNow(tournId, tableId, state){
   _activeSNGTournId = tournId;
   _activeSNGTableId = tableId;
   _sngMode = true;
@@ -13499,35 +13542,9 @@ function _joinSNGNow(tournId, tableId, state){
   _backendActive = true;
   showToast('SNG started! Good luck 🍀');
   showView('vg');
+  // Show tournament blind info
   if(state?.blinds) addNotif('game','🏆','gold','SNG started — Blinds '+state.blinds.sb+'/'+state.blinds.bb);
-}
-function _showSNGReadyBanner(state){
-  let banner = document.getElementById('sng-ready-banner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'sng-ready-banner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:500;background:linear-gradient(90deg,#0f2a1a,#1a4530);border-bottom:1px solid rgba(93,200,150,.4);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;font-family:Montserrat,sans-serif';
-    document.body.appendChild(banner);
-  }
-  banner.innerHTML = '<div style="display:flex;align-items:center;gap:12px">'
-    + '<div style="width:8px;height:8px;border-radius:50%;background:#5DC896;animation:pulse 1s infinite"></div>'
-    + '<span style="font-size:11px;letter-spacing:1px;color:#fff">🏆 Tournament ready — <b style="color:#5DC896">' + escHtml(state?.name || 'SNG') + '</b></span>'
-    + '<span style="font-size:10px;color:rgba(255,255,255,.5)">&nbsp;· Joining will leave your current table</span>'
-    + '</div>'
-    + '<button onclick="_joinPendingSNG()" style="background:linear-gradient(135deg,#3F9E6E,#5DC896);border:none;border-radius:3px;color:#000;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:8px 18px;cursor:pointer;text-transform:uppercase">Join Tournament</button>';
-  banner.style.display = 'flex';
-}
-function _joinPendingSNG(){
-  if (!_pendingSNGReady) return;
-  const { tournId, tableId, state } = _pendingSNGReady;
-  _pendingSNGReady = null;
-  const banner = document.getElementById('sng-ready-banner');
-  if (banner) banner.style.display = 'none';
-  if (_connectedTableId && _connectedTableId !== tableId) {
-    socket.emit('leaveTable', { tableId: _connectedTableId });
-  }
-  _joinSNGNow(tournId, tableId, state);
-}
+});
 
 socket.on('tournBlindUp', ({ tournId, level, sb, bb }) => {
   showToast('⬆ Blinds up: '+sb+'/'+bb);
