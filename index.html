@@ -2877,48 +2877,77 @@ var _authCanvasActive = false; // canvas animation flag
 var _authAnimId = null; // animation frame id
 
 // ── Demo MTT data ─────────────────────────────────────────────────
-var MTTS = (function(){
-  const now = Date.now();
-  // Standard payout structures
-  const PRIZES_STD=[
-    {place:'1st',pct:30},{place:'2nd',pct:20},{place:'3rd',pct:14},{place:'4th',pct:10},
-    {place:'5th',pct:7},{place:'6th',pct:5},{place:'7th',pct:4},{place:'8th',pct:3},
-    {place:'9th',pct:2.5},{place:'10th',pct:2},{place:'11th-15th',pct:1.3},{place:'16th-25th',pct:0.7}
-  ];
-  const PRIZES_TURBO=[
-    {place:'1st',pct:40},{place:'2nd',pct:25},{place:'3rd',pct:17},{place:'4th',pct:11},{place:'5th',pct:7}
-  ];
-  const PRIZES_HR=[
-    {place:'1st',pct:35},{place:'2nd',pct:22},{place:'3rd',pct:15},{place:'4th',pct:11},
-    {place:'5th',pct:8},{place:'6th',pct:5},{place:'7th',pct:4}
-  ];
-  return [
-    { id:'mtt-daily',   name:'Daily BRL',      icon:'♠', schedule:'Every day · 8:00 PM UTC', status:'registering', featured:true,
-      buyin:5,    guarantee:500,   rake:0.07, registered:47, startingStack:5000,
-      structure:'No-Limit Hold\u2019em · Freezeout', blindMins:10, lateRegMins:60,
-      startTime: now+3600000*2, currentLevel:1, playersLeft:47, prizes:PRIZES_STD,
-      blinds:[[25,50,0],[50,100,10],[75,150,15],[100,200,25],[150,300,30],[200,400,50],[300,600,75],[400,800,100]],
-      goldBuyin:1000, goldGuarantee:100000 },
-    { id:'mtt-sunday',  name:'Sunday Million',   icon:'♦', schedule:'Sundays · 6:00 PM UTC', status:'upcoming', featured:true,
-      buyin:20,   guarantee:5000,  rake:0.07, registered:89, startingStack:10000,
-      structure:'No-Limit Hold\u2019em · Re-entry (1x)', blindMins:15, lateRegMins:90,
-      startTime: now+3600000*18, currentLevel:1, playersLeft:89, prizes:PRIZES_STD,
-      blinds:[[25,50,0],[50,100,10],[100,200,25],[150,300,30],[200,400,50],[300,600,75],[400,800,100],[600,1200,150]],
-      goldBuyin:4000, goldGuarantee:1000000 },
-    { id:'mtt-turbo',   name:'Turbo Takedown',   icon:'⚡', schedule:'Every 4 hours', status:'running', featured:false,
-      buyin:2,    guarantee:200,   rake:0.08, registered:18, startingStack:2000,
-      structure:'No-Limit Hold\u2019em · Turbo Freezeout', blindMins:5, lateRegMins:30,
-      startTime: now-3600000, currentLevel:4, playersLeft:12, prizes:PRIZES_TURBO,
-      blinds:[[25,50,0],[50,100,10],[100,200,25],[200,400,50],[400,800,100],[800,1600,200]],
-      goldBuyin:400, goldGuarantee:40000 },
-    { id:'mtt-highroller', name:'High Roller',   icon:'♣', schedule:'Wednesdays · 9:00 PM UTC', status:'upcoming', featured:false,
-      buyin:100,  guarantee:20000, rake:0.05, registered:12, startingStack:20000,
-      structure:'No-Limit Hold\u2019em · Deep Stack Freezeout', blindMins:20, lateRegMins:120,
-      startTime: now+3600000*30, currentLevel:1, playersLeft:12, prizes:PRIZES_HR,
-      blinds:[[100,200,25],[150,300,30],[200,400,50],[300,600,75],[400,800,100],[600,1200,150]],
-      goldBuyin:20000, goldGuarantee:4000000 },
-  ];
-})();
+// Tournament list — populated from server via fetchTournaments().
+// Kept in this shape for compatibility with existing renderMTT/openMTT.
+var MTTS = [];
+
+const _DEFAULT_MTT_BLINDS = [
+  [25,50,0],[50,100,0],[75,150,0],[100,200,0],[150,300,0],[200,400,0],
+  [300,600,0],[400,800,0],[600,1200,0],[1000,2000,0],[1500,3000,0],
+  [2000,4000,0],[3000,6000,0],[5000,10000,0],[10000,20000,0],
+];
+
+function _mttOrdinal(n){
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+function _mttMapStatus(st){
+  if (st === 'scheduled' || st === 'registering') return 'upcoming';
+  if (st === 'running')  return 'running';
+  if (st === 'finished' || st === 'cancelled') return 'finished';
+  return 'upcoming';
+}
+function _mttSchedule(st, msUntil){
+  if (st === 'running')  return 'Running now';
+  if (st === 'finished') return 'Finished';
+  if (st === 'cancelled') return 'Cancelled';
+  if (msUntil == null) return 'Scheduled';
+  if (msUntil <= 0)    return st === 'registering' ? 'Late reg open' : 'Starting';
+  if (typeof fmtTournTime === 'function') return 'Starts in ' + fmtTournTime(msUntil);
+  return 'Scheduled';
+}
+
+async function fetchTournaments(){
+  try {
+    const token = localStorage.getItem('rf_token');
+    const res = await fetch(BACKEND_URL + '/api/tournaments', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+    });
+    const data = await res.json();
+    if (!data.ok) return;
+    (data.tournaments || []).forEach(t => {
+      if (t.iAmRegistered) _mttRegistered[t.id] = true;
+    });
+    MTTS = (data.tournaments || []).map(t => ({
+      id:            t.id,
+      name:          t.name,
+      icon:          '\u{1F3C6}',
+      schedule:      _mttSchedule(t.status, t.msUntilStart),
+      status:        _mttMapStatus(t.status),
+      _serverStatus: t.status,
+      featured:      false,
+      buyin:         Number(t.buyIn),
+      guarantee:     Number(t.guarantee || 0),
+      rake:          0.05,
+      registered:    t.registered,
+      startingStack: t.startingStack,
+      structure:     'No-Limit Hold’em · Freezeout',
+      blindMins:     t.blindMins,
+      lateRegMins:   0,
+      startTime:     t.startTime,
+      currentLevel:  1,
+      playersLeft:   t.registered,
+      prizes:        (t.prizes || []).map(p => ({ place: _mttOrdinal(p.place), pct: p.pct })),
+      blinds:        _DEFAULT_MTT_BLINDS,
+      goldBuyin:     Number(t.buyIn) * 200,
+      goldGuarantee: Number(t.guarantee || 0) * 200,
+    }));
+    if (typeof renderMTT === 'function') renderMTT();
+  } catch(e) {
+    // Network hiccup — keep whatever we had
+  }
+}
+
 
 function confirmUsername() {
   const input = document.getElementById('username-input');
@@ -7055,6 +7084,8 @@ function _updateSNGRegModal(state){
 setInterval(function(){
   const now = Date.now();
   MTTS.forEach(t => {
+    // Server-driven tournaments: rely on tournStarted socket event, don't self-flip.
+    if (t._serverStatus) return;
     if(t.status === 'upcoming' && now >= t.startTime){
       t.status = 'running';
       t.playersLeft = Math.floor((t.registered || 100) * 0.85);
@@ -9381,6 +9412,7 @@ function hideSeatTip(av){
   safe(renderLPTables);
   safe(renderTiers);
   safe(renderMTT);
+  safe(fetchTournaments);
   // Show correct initial view immediately — no flash
   // If logged in: show lobby right away using cached data; verify token in background
   // If not: show landing page
@@ -11100,23 +11132,27 @@ function openMTT(id){
 function registerForMTT(id){
   const t=MTTS.find(function(m){return m.id===id;});
   if(!t) return;
-  const isGold=_mode==='gold', sym=isGold?'🟡 ':'$';
-  const bal=isGold?_balGold:_balRoyal;
   const isGoldMode=_mode==='gold';
-  const totalCost=isGoldMode?(t.goldBuyin||t.buyin*200):t.buyin;
-  const displayBuyin=totalCost;
+  // Phase 1: MTTs are Barrel Chips only (server-driven money). Gold mode -> show unsupported message.
+  if (isGoldMode) {
+    showRGConfirm('Gold Chip tournaments are coming soon. Switch to Barrel Chips to register.');
+    return;
+  }
+  if (!localStorage.getItem('rf_token')) {
+    showRGConfirm('Please sign in to register for tournaments.');
+    return;
+  }
+  const bal=_balRoyal;
+  const totalCost=t.buyin;
   if(bal<totalCost){ showRGConfirm('Insufficient balance. Please add chips to register.'); return; }
-  subBal(totalCost); // deduct buyin + rake fee
-  _mttRegistered[t.id]=true;
-  t.registered=(t.registered||0)+1;
-  TXNS.unshift({icon:'🏆',label:'Tournament Entry',table:t.name,amt:-totalCost,ts:'Just now'});
-  closeOv('ov-mtt');
-  renderMTT();
-  const d=document.createElement('div');
-  d.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(13,59,46,.95);border:1px solid rgba(93,200,150,.3);border-radius:6px;padding:14px 28px;font-size:12px;color:var(--grn);z-index:500;letter-spacing:.5px;box-shadow:0 8px 32px rgba(0,0,0,.6);text-align:center';
-  d.innerHTML='<div style="font-size:18px;margin-bottom:4px">✓</div><b>Registered for '+escHtml(t.name)+'</b><br><span style="font-size:10px;opacity:.8">'+sym+totalCost+' deducted · '+Math.round((t.rake||.07)*100)+'% rake from final prize pool</span>';
-  document.body.appendChild(d);
-  setTimeout(function(){d.remove();},4000);
+  socket.emit('tournRegister', { tournId: t.id, playerName: getMyName() });
+  // UI feedback + confirmation happen when the server emits 'tournRegistered'.
+}
+
+function unregisterFromMTT(id){
+  const t = MTTS.find(m => m.id === id);
+  if (!t) return;
+  socket.emit('tournUnregister', { tournId: t.id });
 }
 
 
@@ -12147,7 +12183,7 @@ function toggleSbMore(){
 }
 
 function switchTab(t){
-  if(t==='mtt') setTimeout(renderMTT, 50);
+  if(t==='mtt') { fetchTournaments(); setTimeout(renderMTT, 50); }
   if(t==='cash') setTimeout(()=>{ renderTiers(); }, 30);
   _tab=t;
   ['cash','sng','mtt','filters'].forEach(id=>{
@@ -13550,6 +13586,65 @@ socket.on('tournBlindUp', ({ tournId, level, sb, bb }) => {
   showToast('⬆ Blinds up: '+sb+'/'+bb);
   addNotif('game','⬆','gold','Blind level '+(level+1)+' — '+sb+'/'+bb);
   BB_AMT=bb; SB_AMT=sb;
+});
+
+// ── MTT: server-driven registration lifecycle ───────────────────────────
+socket.on('tournRegistered', ({ tournId, registered, balance }) => {
+  _mttRegistered[tournId] = true;
+  if (typeof balance === 'number') { _balRoyal = balance; updBal(); }
+  const t = MTTS.find(m => m.id === tournId);
+  if (t) t.registered = registered;
+  closeOv('ov-mtt');
+  renderMTT();
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(13,59,46,.95);border:1px solid rgba(93,200,150,.3);border-radius:6px;padding:14px 28px;font-size:12px;color:var(--grn);z-index:500;letter-spacing:.5px;box-shadow:0 8px 32px rgba(0,0,0,.6);text-align:center';
+  d.innerHTML = '<div style="font-size:18px;margin-bottom:4px">✓</div><b>Registered for '+escHtml(t?.name||'tournament')+'</b>';
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 4000);
+});
+
+socket.on('tournUnregistered', ({ tournId, balance }) => {
+  delete _mttRegistered[tournId];
+  if (typeof balance === 'number') { _balRoyal = balance; updBal(); }
+  closeOv('ov-mtt');
+  fetchTournaments();
+  showToast('Unregistered — buy-in refunded');
+});
+
+socket.on('tournStarted', ({ tournId, tableId, state }) => {
+  const t = MTTS.find(m => m.id === tournId);
+  if (t) t._serverStatus = 'running';
+  // Reuse the pending-MTT banner if the player is at a cash table;
+  // otherwise redirect immediately to the tournament table.
+  const atCashTable = document.body.classList.contains('in-game') && !_sngMode && _connectedTableId;
+  if (atCashTable) {
+    _pendingMTTReady = tournId;
+    _showMTTReadyBanner(t || { name: 'Tournament' });
+  } else {
+    _connectedTableId = tableId;
+    _backendActive = true;
+    _activeSNGTournId = tournId;
+    _activeSNGTableId = tableId;
+    _sngMode = true;
+    showToast('🏆 Tournament started! Good luck');
+    showView('vg');
+  }
+});
+
+socket.on('tournCancelled', ({ tournId, reason }) => {
+  delete _mttRegistered[tournId];
+  fetchTournaments();
+  addNotif('game','⚠','gold','Tournament cancelled — buy-in refunded' + (reason === 'insufficient_registrations' ? ' (not enough players)' : ''));
+});
+
+socket.on('tournState', (state) => {
+  if (!state || !state.id) return;
+  const t = MTTS.find(m => m.id === state.id);
+  if (!t) return;
+  t.registered = state.registered;
+  t._serverStatus = state.status;
+  t.status = _mttMapStatus(state.status);
+  if (typeof renderMTT === 'function') renderMTT();
 });
 
 socket.on('sngEliminated', ({ place, prize, remainingPlayers }) => {
