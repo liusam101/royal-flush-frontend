@@ -11145,6 +11145,7 @@ function registerForMTT(id){
   const bal=_balRoyal;
   const totalCost=t.buyin;
   if(bal<totalCost){ showRGConfirm('Insufficient balance. Please add chips to register.'); return; }
+  backendConnect();
   socket.emit('tournRegister', { tournId: t.id, playerName: getMyName() });
   // UI feedback + confirmation happen when the server emits 'tournRegistered'.
 }
@@ -11152,6 +11153,7 @@ function registerForMTT(id){
 function unregisterFromMTT(id){
   const t = MTTS.find(m => m.id === id);
   if (!t) return;
+  backendConnect();
   socket.emit('tournUnregister', { tournId: t.id });
 }
 
