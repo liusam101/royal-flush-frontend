@@ -5297,6 +5297,7 @@ window._showVerifyBanner = function(user){
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost btn-sm" onclick="adminRefresh()">↻ Refresh</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminLogout()" style="color:#E87070;border-color:rgba(232,112,112,.3)">Log out admin</button>
         <button class="btn btn-ghost btn-sm" onclick="goLobby()">← Lobby</button>
       </div>
     </div>
@@ -11464,23 +11465,34 @@ function goAffiliate(){ showView('v-affiliate'); }
 // ── ADMIN DASHBOARD ──────────────────────────────────────────────────
 function goAdmin(){
   showView('v-admin');
-  // If secret already stored, skip the auth box.
   const cached = sessionStorage.getItem('rf_admin_secret');
   if (cached) {
     document.getElementById('admin-secret-input').value = cached;
     adminAuthenticate();
+  } else {
+    // Fresh entry — show the auth box
+    document.getElementById('admin-auth-box').style.display='block';
+    document.getElementById('admin-content').style.display='none';
   }
 }
 
 async function adminAuthenticate(){
   const secret = document.getElementById('admin-secret-input').value.trim();
   const errEl = document.getElementById('admin-auth-err');
+  errEl.style.display='none';
   if (!secret) { errEl.style.display='block'; errEl.textContent='Enter your admin secret'; return; }
-  // Verify by attempting a templates fetch
   try {
     const r = await fetch(BACKEND_URL + '/api/admin/templates', { headers: { 'X-Admin-Secret': secret } });
     const d = await r.json();
-    if (!d.ok) { errEl.style.display='block'; errEl.textContent=d.error || 'Unauthorized'; return; }
+    if (!d.ok) {
+      // Cached secret is stale — clear it and show the auth box.
+      sessionStorage.removeItem('rf_admin_secret');
+      errEl.style.display='block';
+      errEl.textContent = d.error || 'Unauthorized — check your ADMIN_SECRET';
+      document.getElementById('admin-auth-box').style.display='block';
+      document.getElementById('admin-content').style.display='none';
+      return;
+    }
     sessionStorage.setItem('rf_admin_secret', secret);
     document.getElementById('admin-auth-box').style.display='none';
     document.getElementById('admin-content').style.display='block';
@@ -11488,6 +11500,14 @@ async function adminAuthenticate(){
   } catch(e) {
     errEl.style.display='block'; errEl.textContent='Network error: ' + e.message;
   }
+}
+
+function adminLogout(){
+  sessionStorage.removeItem('rf_admin_secret');
+  document.getElementById('admin-secret-input').value = '';
+  document.getElementById('admin-auth-box').style.display='block';
+  document.getElementById('admin-content').style.display='none';
+  showToast('Admin session cleared');
 }
 
 function _adminSecret(){ return sessionStorage.getItem('rf_admin_secret') || ''; }
