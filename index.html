@@ -5288,6 +5288,19 @@ window._showVerifyBanner = function(user){
 </div>
 
 <!-- ══ AFFILIATE PAGE VIEW ═══════════════════════════════════════= -->
+<!-- ══ PLAYER PROFILE VIEW ═══════════════════════════════════════ -->
+<div id="v-player-profile" class="view" style="display:none;overflow-y:auto;min-height:100vh;background:#08080D;color:#fff;padding:32px;font-family:Montserrat,sans-serif">
+  <div style="max-width:900px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;margin-bottom:24px">
+      <button class="btn btn-ghost btn-sm" onclick="goLobby()">← Lobby</button>
+      <div id="player-profile-share" style="font-size:10px;color:var(--txd);letter-spacing:1.5px"></div>
+    </div>
+    <div id="player-profile-body">
+      <div style="text-align:center;padding:80px 0;color:var(--txd)">Loading…</div>
+    </div>
+  </div>
+</div>
+
 <div id="v-affiliate" class="view" style="display:none;overflow-y:auto;min-height:100vh">
   <div class="trust-page">
     <div class="trust-nav">
@@ -11412,6 +11425,89 @@ function updatePWStrength(val) {
 }
 function goReferral(){ showView('v-referral'); }
 function goAffiliate(){ showView('v-affiliate'); }
+
+// ── PUBLIC PLAYER PROFILE ──────────────────────────────────────────
+function goPlayerProfile(username) {
+  if (!username) return;
+  showView('v-player-profile');
+  const shareEl = document.getElementById('player-profile-share');
+  if (shareEl) shareEl.textContent = window.location.origin + '/#player/' + encodeURIComponent(username);
+  window.location.hash = '#player/' + encodeURIComponent(username);
+  _fetchPlayerProfile(username);
+}
+
+async function _fetchPlayerProfile(username) {
+  const body = document.getElementById('player-profile-body');
+  body.innerHTML = '<div style="text-align:center;padding:80px 0;color:var(--txd)">Loading…</div>';
+  try {
+    const r = await fetch(BACKEND_URL + '/api/players/' + encodeURIComponent(username));
+    const d = await r.json();
+    if (!d.ok) { body.innerHTML = '<div style="text-align:center;padding:80px 0;color:#E87070">' + (d.error||'Not found') + '</div>'; return; }
+    const p = d.player;
+    const initials = p.username.slice(0,2).toUpperCase();
+    const memberSince = p.memberSince ? new Date(p.memberSince).toLocaleDateString('en-US',{month:'long',year:'numeric'}) : '—';
+    const cashNet = p.cash.net;
+    const mttNet = p.mtt.totalWon - p.mtt.totalBought;
+    body.innerHTML =
+        '<div style="display:flex;align-items:center;gap:20px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:24px">'
+      +   '<div style="width:80px;height:80px;border-radius:50%;background:#3A2A5A;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff">'+escHtml(initials)+'</div>'
+      +   '<div>'
+      +     '<div style="font-family:\'Cormorant Garamond\',serif;font-size:34px;color:var(--gold)">'+escHtml(p.username)+'</div>'
+      +     '<div style="font-size:11px;color:var(--txd);letter-spacing:1px">Member since '+memberSince+'</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+      +   '<div style="background:#0E1520;border:1px solid rgba(255,255,255,.05);border-radius:6px;padding:20px">'
+      +     '<div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:12px">CASH GAMES</div>'
+      +     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:12px">'
+      +       _statRow('Hands played', p.cash.handsPlayed.toLocaleString())
+      +       _statRow('Hands won', p.cash.handsWon.toLocaleString())
+      +       _statRow('SD win rate', p.cash.showdownWinRate + '%')
+      +       _statRow('Net', (cashNet>=0?'+$':'-$') + Math.abs(cashNet).toFixed(2), cashNet>=0?'var(--grn)':'#E87070')
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="background:#0E1520;border:1px solid rgba(255,255,255,.05);border-radius:6px;padding:20px">'
+      +     '<div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:12px">🏆 TOURNAMENTS</div>'
+      +     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:12px">'
+      +       _statRow('Played', p.mtt.played.toLocaleString())
+      +       _statRow('Wins', p.mtt.wins.toLocaleString(), 'var(--gold)')
+      +       _statRow('ITM', p.mtt.itmCount + ' (' + p.mtt.itmPct + '%)')
+      +       _statRow('Best finish', (p.mtt.bestFinish==null || p.mtt.bestFinish>=999999) ? '—' : (p.mtt.bestFinish===1?'🥇 1st':_mttOrdinal(p.mtt.bestFinish)))
+      +       _statRow('Biggest cash', '$'+p.mtt.biggestCash.toFixed(2), 'var(--gold)')
+      +       _statRow('ROI', (mttNet>=0?'+$':'-$') + Math.abs(mttNet).toFixed(2), mttNet>=0?'var(--grn)':'#E87070')
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + (p.recentCashes?.length
+          ? '<div style="background:#0E1520;border:1px solid rgba(255,255,255,.05);border-radius:6px;padding:20px;margin-top:20px">'
+              + '<div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:12px">TOP CASHES</div>'
+              + p.recentCashes.map(c =>
+                    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px">'
+                  + '<span>'+escHtml(c.tournName)+'</span>'
+                  + '<span style="color:var(--gold);font-weight:600">$'+Number(c.prize).toFixed(2)+'</span>'
+                  + '</div>'
+                ).join('')
+            + '</div>'
+          : '');
+  } catch(e) {
+    body.innerHTML = '<div style="text-align:center;padding:80px 0;color:#E87070">Load failed: '+e.message+'</div>';
+  }
+}
+
+function _statRow(label, value, color) {
+  return '<div style="color:var(--txd)">'+label+'</div>'
+    + '<div style="text-align:right;color:'+(color||'var(--tx)')+';font-weight:600">'+value+'</div>';
+}
+
+// Route #player/USERNAME to the profile view.
+(function _initPlayerRoute(){
+  function tryRoute(){
+    const m = (window.location.hash || '').match(/^#player\/(.+)$/);
+    if (m) goPlayerProfile(decodeURIComponent(m[1]));
+  }
+  window.addEventListener('hashchange', tryRoute);
+  setTimeout(tryRoute, 400);
+})();
 
 // Redirect legacy #admin fragment to the dedicated admin.html page.
 if (window.location.hash === '#admin') window.location.replace('/admin.html');
