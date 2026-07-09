@@ -10136,6 +10136,22 @@ function updateSeats(){
       sstack.textContent = stackText;
     }
 
+    // AFK/DC badge — small indicator on seats whose player is absent.
+    // 'DC' = network drop (server flagged disconnected). 'AFK' = deliberate sit-out.
+    let afkEl = el.querySelector('.seat-afk-badge');
+    if (s.disconnected || (s.sitOut && !s.folded)) {
+      if (!afkEl) {
+        afkEl = document.createElement('div');
+        afkEl.className = 'seat-afk-badge';
+        afkEl.style.cssText = 'position:absolute;top:-8px;right:-8px;background:rgba(232,112,112,.85);color:#fff;font-size:8px;font-weight:800;letter-spacing:1px;padding:2px 5px;border-radius:3px;font-family:Montserrat,sans-serif;text-transform:uppercase;box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none';
+        el.style.position = 'relative';
+        el.appendChild(afkEl);
+      }
+      afkEl.textContent = s.disconnected ? 'DC' : 'AFK';
+    } else if (afkEl) {
+      afkEl.remove();
+    }
+
     // Fold: hide felt-hole cards without animation flicker
     const holeEl=document.getElementById(`felt-hole-${i}`);
     if(holeEl){
