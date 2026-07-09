@@ -11097,8 +11097,12 @@ function openMTT(id){
     +'</div>';
 
   const canReg=!regd&&(t.status==='upcoming'||t.status==='late'||t.status==='registering');
+  const canUnreg = regd && t.status !== 'running' && t.status !== 'finished';
   const btnHtml=canReg
     ?'<button class="btn btn-gold" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px" onclick="registerForMTT(\''+t.id+'\')">Register — '+sym+t.buyin+'</button>'
+    :canUnreg
+      ?'<div style="text-align:center;font-size:10px;color:var(--grn);letter-spacing:2px;margin-bottom:10px">&#10003; YOU ARE REGISTERED</div>'
+       +'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px;color:#E87070;border-color:rgba(232,112,112,.3)" onclick="if(confirm(\'Unregister and refund '+sym+t.buyin+'?\')) unregisterFromMTT(\''+t.id+'\')">Unregister &amp; Refund</button>'
     :regd?'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px" disabled>&#10003; You are Registered</button>'
     :'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px" disabled>Registration Closed</button>';
 
