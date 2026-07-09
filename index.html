@@ -10983,7 +10983,7 @@ function renderMTT(){
     const activeBuyin = isGold ? (t.goldBuyin||t.buyin*200) : t.buyin;
   const activeGuarantee = isGold ? (t.goldGuarantee||t.guarantee*200) : t.guarantee;
   const grossPool=Math.max(activeGuarantee, (t.registered||0)*activeBuyin);
-  const pool=Math.floor(grossPool*(1-(t.rake||.07))); // rake taken from pot
+  const pool=Math.floor(grossPool*(1-(t.rake||.07))*100)/100; // rake taken from pot
     const poolStr=pool>=1000?sym+(pool/1000).toFixed(0)+'K':sym+pool.toLocaleString();
     const regd=_mttRegistered[t.id];
     const remaining=t.startTime-now;
@@ -11027,7 +11027,7 @@ function openMTT(id){
   const activeBuyin    = isGold ? (t.goldBuyin||t.buyin*200)       : t.buyin;
   const activeGuarantee= isGold ? (t.goldGuarantee||t.guarantee*200): t.guarantee;
   const grossPool=Math.max(activeGuarantee, (t.registered||0)*activeBuyin);
-  const pool=Math.floor(grossPool*(1-(t.rake||.07))); // rake deducted from pot at payout
+  const pool=Math.floor(grossPool*(1-(t.rake||.07))*100)/100; // rake deducted from pot at payout
   const regd=_mttRegistered[t.id];
   const now=Date.now();
   const remaining=t.startTime-now;
@@ -13646,7 +13646,15 @@ socket.on('tournState', (state) => {
   t.registered = state.registered;
   t._serverStatus = state.status;
   t.status = _mttMapStatus(state.status);
+  if (Array.isArray(state.prizes)) {
+    t.prizes = state.prizes.map(p => ({ place: _mttOrdinal(p.place), pct: p.pct }));
+  }
   if (typeof renderMTT === 'function') renderMTT();
+  // If the detail modal for this tournament is open, refresh it so pool + prizes update live.
+  if (document.getElementById('ov-mtt')?.classList.contains('open') &&
+      document.getElementById('ov-mtt-title')?.textContent === t.name) {
+    openMTT(t.id);
+  }
 });
 
 socket.on('sngEliminated', ({ place, prize, remainingPlayers }) => {
