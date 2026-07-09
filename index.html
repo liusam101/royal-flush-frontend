@@ -13756,6 +13756,24 @@ socket.on('tournReentered', ({ tournId, reentryCount, balance }) => {
   addNotif('game','🔄','gold','Re-entered tournament');
 });
 
+// Server auto-restored a tournament seat after this socket reconnected (Phase 3).
+socket.on('tournReconnected', ({ tournId, tableId, seat, state }) => {
+  _connectedTableId  = tableId;
+  _activeSNGTournId  = tournId;
+  _activeSNGTableId  = tableId;
+  _sngMode           = true;
+  _backendActive     = true;
+  _mySocketSeat      = seat;
+  if (state?.blinds) {
+    SB_AMT = state.blinds.sb;
+    BB_AMT = state.blinds.bb;
+  }
+  const t = MTTS.find(m => m.id === tournId);
+  showToast('🔗 Reconnected to ' + (t?.name || 'tournament'));
+  addNotif('game','🔗','green','Reconnected to tournament ' + (t?.name || tournId));
+  showView('vg');
+});
+
 // Multi-table balancing — server moved us to a new table.
 socket.on('tournTableMove', ({ tournId, fromTableId, toTableId, newSeatIdx, reason }) => {
   _connectedTableId = toTableId;
