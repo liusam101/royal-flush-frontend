@@ -13621,8 +13621,12 @@ socket.on('handResult', (result) => {
       if(meSeat) addNotif('game','🃏','green','Showdown — <b>'+escHtml(result.winner)+'</b> wins with '+escHtml(result.hand));
     }
   }
-  // Rabbit hunt: show button if board < 5 and it was a fold (not showdown)
-  if(result?.reason==='others folded'){
+  // Rabbit hunt: cache the would-be board and show the reveal button when hand ended via fold before river.
+  if ((result?.reason==='others folded' || result?.reason==='opponent left') && Array.isArray(result.rabbitBoard) && result.rabbitBoard.length) {
+    _rabbitCache = { rabbitBoard: result.rabbitBoard, fullBoard: [...(ALL_COMM||[]).filter(c=>c.r&&c.s), ...result.rabbitBoard] };
+    _showRabbitButton();
+  } else if (result?.reason==='others folded') {
+    _rabbitCache = null;
     const boardLen=(ALL_COMM||[]).filter(c=>c.r&&c.s).length;
     if(boardLen<5) _showRabbitButton();
   }
@@ -14643,13 +14647,34 @@ socket.on('cardsMucked', ({ player }) => {
 // ══════════════════════════════════════════════════════════════════════════
 // ── RABBIT HUNTING ────────────────────────────────────────────────────────
 var _rabbitAvailable = false;
+var _rabbitCache = null; // { rabbitBoard: [{r,s,red}, ...], fullBoard: [...] }
 
 function doRabbitHunt() {
-  if (!_rabbitAvailable || !_connectedTableId) { showToast('No rabbit available'); return; }
-  socket.emit('rabbitHunt', { tableId: _connectedTableId });
+  if (!_rabbitAvailable) { showToast('No rabbit available'); return; }
   _rabbitAvailable = false;
   const btn = document.getElementById('rabbit-btn');
   if (btn) btn.style.display = 'none';
+  // Reveal from cached handResult.rabbitBoard (no server round-trip needed).
+  if (_rabbitCache?.rabbitBoard?.length) {
+    _revealRabbitCards(_rabbitCache.rabbitBoard, _rabbitCache.fullBoard);
+  } else {
+    showToast('No rabbit available');
+  }
+}
+
+function _revealRabbitCards(rabbitCards, fullBoard) {
+  const fmtCard = c => `<span style="color:${c.red?'#E87070':'#fff'};font-size:18px;font-weight:700">${c.r}${c.s}</span>`;
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:500;background:#0E1520;border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:16px 24px;text-align:center;min-width:220px';
+  toast.innerHTML = `
+    <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">🐇 RABBIT HUNT</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:8px">
+      ${(rabbitCards||[]).map(c=>`<div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:4px;padding:8px 10px">${fmtCard(c)}</div>`).join('')}
+    </div>
+    <div style="font-size:9px;color:var(--txd)">What would have come</div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
+  addLog(`🐇 Rabbit: ${(rabbitCards||[]).map(c=>c.r+c.s).join(' ')}`, '');
 }
 
 socket.on('rabbitResult', ({ ok, rabbitCards, fullBoard }) => {
