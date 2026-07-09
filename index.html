@@ -11088,7 +11088,7 @@ function openMTT(id){
 
   // Prizes
   const prizesHTML=t.prizes.map(function(p){
-    const amt=Math.round(pool*p.pct/100);
+    const amt=Math.floor(pool*p.pct)/100; // cents precision — Math.round rounded micro-stakes to $0
     const barW=Math.min(100,p.pct*3);
     return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">'
       +'<div style="min-width:80px;font-size:9px;color:var(--txd)">'+p.place+'</div>'
