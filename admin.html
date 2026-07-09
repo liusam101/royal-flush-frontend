@@ -184,6 +184,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <div class="nav-item" onclick="nav('tables',this)"><span class="nav-icon">▣</span>Cash Tables</div>
       <div class="nav-section">Tournaments</div>
       <div class="nav-item" onclick="nav('tournaments',this)"><span class="nav-icon">◉</span>Manage MTTs</div>
+      <div class="nav-item" onclick="nav('templates',this)"><span class="nav-icon">⊞</span>Recurring Templates</div>
       <div class="nav-item" onclick="nav('create-tourn',this)"><span class="nav-icon">⊕</span>Create MTT</div>
       <div class="nav-section">Platform</div>
       <div class="nav-item" onclick="nav('broadcast',this)"><span class="nav-icon">◎</span>Broadcast</div>
@@ -238,6 +239,20 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
         <div class="card">
           <div class="card-title">All Tournaments</div>
           <div id="tourns-list" style="display:flex;flex-direction:column;gap:12px;margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- Recurring Templates -->
+      <div class="panel" id="panel-templates">
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Recurring Tournament Templates</span>
+            <button class="btn btn-green btn-sm" onclick="openTemplateModal()">+ NEW TEMPLATE</button>
+          </div>
+          <div style="color:var(--txd);font-family:var(--mono);font-size:11px;margin-bottom:12px">
+            Templates auto-generate tournament instances up to 8 days ahead. Edit fields inline, or click a row to open the editor.
+          </div>
+          <div id="templates-list" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
 
@@ -649,6 +664,7 @@ function refresh() {
   if (active==='panel-dashboard') renderDashboard();
   if (active==='panel-tables') renderTables();
   if (active==='panel-tournaments') renderTournaments();
+  if (active==='panel-templates')  renderTemplates();
   if (active==='panel-create-tourn') renderBlindPreview();
 }
 
@@ -746,10 +762,11 @@ function renderTournaments() {
         </div>`).join('')}
       </div>` : ''}
       <div class="tourn-actions">
-        ${t.status==='registering' ? `<button class="btn btn-green" onclick="startTournament('${t.id}')">▶ START</button>` : ''}
+        ${(t.status==='registering'||t.status==='scheduled') ? `<button class="btn btn-cyan btn-sm" onclick="addBotsToTournament('${t.id}')">+ BOTS</button>` : ''}
+        ${(t.status==='registering'||t.status==='scheduled') ? `<button class="btn btn-green" onclick="startTournament('${t.id}')">▶ START</button>` : ''}
         ${t.status==='running'     ? `<button class="btn btn-gold"  onclick="pauseTournament('${t.id}')">⏸ PAUSE</button>` : ''}
         ${t.status==='paused'      ? `<button class="btn btn-cyan"  onclick="resumeTournament('${t.id}')">▶ RESUME</button>` : ''}
-        ${t.status!=='finished'&&t.status!=='cancelled' ? `<button class="btn btn-red btn-sm" onclick="cancelTournament('${t.id}')">✕ CANCEL</button>` : ''}
+        ${t.status!=='finished'&&t.status!=='cancelled' ? `<button class="btn btn-red btn-sm" onclick="cancelTournament('${t.id}')">✕ CANCEL & REFUND</button>` : ''}
         <button class="btn btn-sm" onclick="deleteTournament('${t.id}')" style="border-color:var(--border);color:var(--txd)">DELETE</button>
       </div>
     </div>`).join('');
@@ -804,15 +821,183 @@ function resumeTournament(id) {
     .then(r=>r.json()).then(()=>{ toast('Resumed','success'); fetchState(); });
 }
 function cancelTournament(id) {
-  if (!confirm('Cancel this tournament?')) return;
-  fetch(`${BACKEND}/admin/tournaments/${id}/cancel`, { method:'POST', headers:{'x-admin-key':adminKey} })
-    .then(()=>{ toast('Cancelled','info'); fetchState(); });
+  if (!confirm('Cancel this tournament? All active entries will be refunded.')) return;
+  // Use the socket handler which runs _cancelAndRefundTournament (proper refund + table cleanup).
+  socket.emit('adminCancelTournament', { secret: adminKey, tournId: id });
+  toast('Cancelling...','info');
+  setTimeout(fetchState, 800);
+}
+
+function addBotsToTournament(id) {
+  const n = parseInt(prompt('How many bots to add?', '5'), 10);
+  if (isNaN(n) || n <= 0) return;
+  socket.emit('adminFillWithBots', { secret: adminKey, tournId: id, count: n });
+  toast('Adding '+n+' bots...','info');
+  setTimeout(fetchState, 600);
 }
 function deleteTournament(id) {
   if (!confirm('Delete tournament?')) return;
   fetch(`${BACKEND}/admin/tournaments/${id}`, { method:'DELETE', headers:{'x-admin-key':adminKey} })
     .then(()=>{ state.tournaments=state.tournaments.filter(t=>t.id!==id); renderTournaments(); toast('Deleted','info'); });
 }
+
+// ── Recurring Templates (Phase 4 REST endpoints) ─────────────────────
+function _tplHeaders(){ return { 'X-Admin-Secret': adminKey, 'Content-Type': 'application/json' }; }
+
+async function renderTemplates() {
+  const el = document.getElementById('templates-list');
+  el.innerHTML = '<div style="color:var(--txd);font-family:var(--mono);font-size:11px">Loading…</div>';
+  try {
+    const r = await fetch(`${BACKEND}/api/admin/templates`, { headers: _tplHeaders() });
+    const d = await r.json();
+    if (!d.ok) { el.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:11px">${d.error||'Failed'}</div>`; return; }
+    state.templates = d.templates || [];
+    if (!state.templates.length) {
+      el.innerHTML = '<div style="color:var(--txd);font-family:var(--mono);font-size:11px">No templates yet — click NEW TEMPLATE.</div>';
+      return;
+    }
+    el.innerHTML = state.templates.map(t => {
+      const rec = t.recurrence_type + (t.recurrence_interval ? ' × ' + t.recurrence_interval : '') + (t.recurrence_time ? ' @ ' + t.recurrence_time : '');
+      return `
+        <div class="tourn-card" style="border-left:3px solid ${t.enabled?'var(--green)':'var(--red)'}">
+          <div class="tourn-card-header">
+            <div class="tourn-name">${escapeHtml(t.name)} <span style="color:var(--txd);font-family:var(--mono);font-size:11px">${t.id}</span></div>
+            <span class="badge ${t.enabled?'running':'cancelled'}">${t.enabled?'ENABLED':'DISABLED'}</span>
+          </div>
+          <div class="tourn-meta">
+            <div class="tourn-meta-item"><div class="tourn-meta-label">BUY-IN</div><div class="tourn-meta-val">$${Number(t.buy_in).toFixed(2)}</div></div>
+            <div class="tourn-meta-item"><div class="tourn-meta-label">STACK</div><div class="tourn-meta-val">${Number(t.starting_stack).toLocaleString()}</div></div>
+            <div class="tourn-meta-item"><div class="tourn-meta-label">BLIND MINS</div><div class="tourn-meta-val">${t.blind_mins}</div></div>
+            <div class="tourn-meta-item"><div class="tourn-meta-label">MAX PLAYERS</div><div class="tourn-meta-val">${t.max_players}</div></div>
+            <div class="tourn-meta-item"><div class="tourn-meta-label">GUARANTEE</div><div class="tourn-meta-val">$${Number(t.guarantee).toFixed(2)}</div></div>
+            <div class="tourn-meta-item"><div class="tourn-meta-label">RECURRENCE</div><div class="tourn-meta-val" style="font-family:var(--mono);font-size:10px">${rec}</div></div>
+            <div class="tourn-meta-item"><div class="tourn-meta-label">LATE REG</div><div class="tourn-meta-val">${t.late_reg_mins||0}m</div></div>
+            <div class="tourn-meta-item"><div class="tourn-meta-label">RE-ENTRIES</div><div class="tourn-meta-val">${t.reentries_allowed||0}</div></div>
+          </div>
+          <div class="tourn-actions">
+            <button class="btn btn-cyan btn-sm" onclick='openTemplateModal(${JSON.stringify(t).replace(/'/g,"&apos;")})'>EDIT</button>
+            <button class="btn btn-sm" onclick="toggleTemplate('${t.id}', ${!t.enabled})" style="border-color:var(--border);color:var(--txd)">${t.enabled?'DISABLE':'ENABLE'}</button>
+            <button class="btn btn-red btn-sm" onclick="deleteTemplate('${t.id}')">DELETE</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:11px">Load failed: ${e.message}</div>`;
+  }
+}
+
+function openTemplateModal(existing) {
+  const t = existing || null;
+  document.getElementById('template-modal')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'template-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(6,10,15,.92);display:flex;align-items:center;justify-content:center;padding:20px';
+  const f = (id, label, value, type='text', step, readonly) => `
+    <div class="field">
+      <label>${label}</label>
+      <input id="tpl-${id}" type="${type}"${step?` step="${step}"`:''}${readonly?' readonly':''} value="${String(value??'').replace(/"/g,'&quot;')}">
+    </div>`;
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:640px;max-height:90vh;overflow-y:auto">
+      <div class="card-title">${t?'Edit Template':'New Template'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+        ${f('id','ID (kebab-case)',t?.id||'','text',null,!!t)}
+        ${f('name','Name',t?.name||'')}
+        ${f('buy_in','Buy-in ($)',t?.buy_in||'1.00','number','0.01')}
+        ${f('starting_stack','Starting Stack',t?.starting_stack||3000,'number')}
+        ${f('blind_mins','Blind Minutes',t?.blind_mins||10,'number')}
+        ${f('max_players','Max Players',t?.max_players||100,'number')}
+        ${f('guarantee','Guarantee ($)',t?.guarantee||0,'number','0.01')}
+        <div class="field">
+          <label>Recurrence Type</label>
+          <select id="tpl-recurrence_type" style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:8px;color:var(--tx);font-family:var(--mono);font-size:12px">
+            <option value="once"${t?.recurrence_type==='once'?' selected':''}>Once</option>
+            <option value="hourly"${t?.recurrence_type==='hourly'?' selected':''}>Hourly</option>
+            <option value="daily"${t?.recurrence_type==='daily'?' selected':''}>Daily</option>
+            <option value="weekly"${t?.recurrence_type==='weekly'?' selected':''}>Weekly</option>
+          </select>
+        </div>
+        ${f('recurrence_interval','Interval (hourly)',t?.recurrence_interval||'','number')}
+        ${f('recurrence_time','Time (HH:MM or DOW-HH:MM)',t?.recurrence_time||'')}
+        ${f('late_reg_mins','Late Reg Mins',t?.late_reg_mins??60,'number')}
+        ${f('reentries_allowed','Re-entries Allowed',t?.reentries_allowed??0,'number')}
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Prize Structure (JSON array of %)</label>
+        <input id="tpl-prize_structure_json" type="text" value='${JSON.stringify(t?.prize_structure||[65,35]).replace(/'/g,"&apos;")}'>
+      </div>
+      <div style="margin-top:10px">
+        <label style="display:flex;align-items:center;gap:8px;color:var(--txd);font-family:var(--mono);font-size:12px">
+          <input type="checkbox" id="tpl-enabled"${t?.enabled!==false?' checked':''}> Enabled
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+        <button class="btn btn-sm" onclick="document.getElementById('template-modal').remove()" style="border-color:var(--border);color:var(--txd)">CANCEL</button>
+        <button class="btn btn-green btn-sm" onclick="_submitTemplate(${t?'true':'false'},'${t?.id||''}')">SAVE</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function _submitTemplate(isEdit, existingId) {
+  const val = id => document.getElementById('tpl-' + id)?.value;
+  const t = {
+    id:                  val('id'),
+    name:                val('name'),
+    buy_in:              parseFloat(val('buy_in')),
+    starting_stack:      parseInt(val('starting_stack'), 10),
+    blind_mins:          parseInt(val('blind_mins'), 10),
+    max_players:         parseInt(val('max_players'), 10),
+    guarantee:           parseFloat(val('guarantee'))||0,
+    recurrence_type:     val('recurrence_type'),
+    recurrence_interval: val('recurrence_interval')?parseInt(val('recurrence_interval'),10):null,
+    recurrence_time:     val('recurrence_time')||null,
+    late_reg_mins:       parseInt(val('late_reg_mins'),10),
+    reentries_allowed:   parseInt(val('reentries_allowed'),10),
+    enabled:             document.getElementById('tpl-enabled').checked,
+  };
+  try { t.prize_structure = JSON.parse(val('prize_structure_json')); }
+  catch(e) { toast('Prize structure must be valid JSON array','error'); return; }
+  const url = isEdit==='true' ? `${BACKEND}/api/admin/templates/${encodeURIComponent(existingId)}` : `${BACKEND}/api/admin/templates`;
+  const method = isEdit==='true' ? 'PUT' : 'POST';
+  try {
+    const r = await fetch(url, { method, headers: _tplHeaders(), body: JSON.stringify(t) });
+    const d = await r.json();
+    if (!d.ok) { toast('Save failed: ' + (d.error||'unknown'), 'error'); return; }
+    document.getElementById('template-modal').remove();
+    toast(isEdit==='true'?'Template updated':'Template created','success');
+    renderTemplates();
+  } catch(e) { toast('Save failed: '+e.message,'error'); }
+}
+
+async function toggleTemplate(id, enabled) {
+  const t = state.templates?.find(x => x.id === id);
+  if (!t) return;
+  t.enabled = enabled;
+  try {
+    const r = await fetch(`${BACKEND}/api/admin/templates/${encodeURIComponent(id)}`, {
+      method:'PUT', headers: _tplHeaders(), body: JSON.stringify(t),
+    });
+    const d = await r.json();
+    if (!d.ok) { toast('Toggle failed','error'); return; }
+    renderTemplates();
+  } catch(e) { toast('Toggle failed: '+e.message,'error'); }
+}
+
+async function deleteTemplate(id) {
+  if (!confirm(`Delete template "${id}"? Already-generated instances are unaffected.`)) return;
+  try {
+    const r = await fetch(`${BACKEND}/api/admin/templates/${encodeURIComponent(id)}`, {
+      method:'DELETE', headers: _tplHeaders(),
+    });
+    const d = await r.json();
+    if (!d.ok) { toast('Delete failed','error'); return; }
+    toast('Template deleted','info');
+    renderTemplates();
+  } catch(e) { toast('Delete failed: '+e.message,'error'); }
+}
+
+function escapeHtml(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── Player controls ───────────────────────────────────────────────
 function kickPlayer() {
