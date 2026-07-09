@@ -10123,11 +10123,17 @@ function updateSeats(){
       if(oldBet) oldBet.remove();
     }
 
-    // Stack
+    // Stack (with BB counter for tournaments)
     const sstack=el.querySelector('.sstack');
     if(sstack){
       sstack.style.color=s.folded?'var(--txd)':'var(--gold)';
-      sstack.textContent=_mode==='gold'?s.stack.toLocaleString()+'🟡':'$'+s.stack.toLocaleString();
+      let stackText = _mode==='gold' ? s.stack.toLocaleString()+'🟡' : '$'+s.stack.toLocaleString();
+      // In tournament mode, append "· NBB" so players can see pressure at a glance.
+      if (_sngMode && BB_AMT > 0 && s.stack > 0) {
+        const bbCount = Math.floor(s.stack / BB_AMT);
+        stackText += ' · ' + bbCount + 'BB';
+      }
+      sstack.textContent = stackText;
     }
 
     // Fold: hide felt-hole cards without animation flicker
@@ -13691,6 +13697,22 @@ socket.on('tournStarted', ({ tournId, tableId, state }) => {
     showToast('🏆 Tournament started! Good luck');
     showView('vg');
   }
+});
+
+// Multi-table balancing — server moved us to a new table.
+socket.on('tournTableMove', ({ tournId, fromTableId, toTableId, newSeatIdx, reason }) => {
+  _connectedTableId = toTableId;
+  _activeSNGTableId = toTableId;
+  _mySocketSeat = newSeatIdx;
+  const reasonLabel = reason === 'final_table' ? 'Final table!' : reason === 'table_broken' ? 'Your table broke — moved you' : 'Table balancing';
+  showToast('🔀 ' + reasonLabel);
+  addNotif('game', '🔀', 'gold', reasonLabel);
+});
+
+// ITM banner when your bust puts you in the money.
+socket.on('tournITM', ({ place, prize }) => {
+  showToast(`💰 In the Money! Finished ${_mttOrdinal(place)} — Won $${Number(prize).toFixed(2)}`);
+  addNotif('game', '💰', 'gold', 'In the Money — ' + _mttOrdinal(place) + ' place, $' + Number(prize).toFixed(2));
 });
 
 socket.on('tournCancelled', ({ tournId, reason }) => {
