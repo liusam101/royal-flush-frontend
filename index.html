@@ -5287,6 +5287,54 @@ window._showVerifyBanner = function(user){
   </div>
 </div>
 
+<!-- ══ ADMIN DASHBOARD VIEW ═══════════════════════════════════════ -->
+<div id="v-admin" class="view" style="display:none;overflow-y:auto;min-height:100vh;background:#080B12;color:#eee;font-family:Montserrat,sans-serif;padding:24px">
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold);letter-spacing:2px">Admin Dashboard</div>
+        <div style="font-size:11px;color:var(--txd);letter-spacing:1px">Tournaments · Templates · Live Controls</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="adminRefresh()">↻ Refresh</button>
+        <button class="btn btn-ghost btn-sm" onclick="goLobby()">← Lobby</button>
+      </div>
+    </div>
+
+    <div id="admin-auth-box" style="background:#0E1520;border:1px solid rgba(201,168,76,.3);border-radius:6px;padding:20px;margin-bottom:24px">
+      <div style="font-size:11px;letter-spacing:1.5px;color:var(--txd);margin-bottom:10px">ADMIN SECRET</div>
+      <div style="display:flex;gap:8px">
+        <input id="admin-secret-input" type="password" placeholder="Paste ADMIN_SECRET" style="flex:1;background:#050810;border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:10px 12px;color:#fff;font-family:monospace;font-size:12px">
+        <button class="btn btn-gold" style="padding:0 20px;font-size:11px;letter-spacing:1.5px" onclick="adminAuthenticate()">Enter</button>
+      </div>
+      <div id="admin-auth-err" style="color:#E87070;font-size:10px;margin-top:8px;display:none"></div>
+    </div>
+
+    <div id="admin-content" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr;gap:20px">
+        <div style="background:#0E1520;border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold);letter-spacing:1.5px">Tournaments</div>
+            <button class="btn btn-ghost btn-sm" onclick="adminLoadTournaments()">↻</button>
+          </div>
+          <div id="admin-tournaments-table" style="overflow-x:auto"><div style="font-size:11px;color:var(--txd);text-align:center;padding:20px">Loading…</div></div>
+        </div>
+
+        <div style="background:#0E1520;border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold);letter-spacing:1.5px">Templates</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" onclick="adminLoadTemplates()">↻</button>
+              <button class="btn btn-gold" style="padding:6px 14px;font-size:10px;letter-spacing:1.5px" onclick="adminOpenTemplateModal()">+ New Template</button>
+            </div>
+          </div>
+          <div id="admin-templates-table" style="overflow-x:auto"><div style="font-size:11px;color:var(--txd);text-align:center;padding:20px">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ AFFILIATE PAGE VIEW ═══════════════════════════════════════= -->
 <div id="v-affiliate" class="view" style="display:none;overflow-y:auto;min-height:100vh">
   <div class="trust-page">
@@ -8410,7 +8458,7 @@ const ALL_COMM=[
 ];
 const PHASES=['Pre-Flop','Flop','Turn','River'];
 const PHASE_CARDS=[0,3,4,5];
-let SB_AMT=5, BB_AMT=10;
+let SB_AMT=5, BB_AMT=10, ANTE_AMT=0;
 
 // Rake config: pct = percentage (0–1), cap = max rake in dollars
 const RAKE_CONFIG={
@@ -11367,6 +11415,249 @@ function updatePWStrength(val) {
 function goReferral(){ showView('v-referral'); }
 function goAffiliate(){ showView('v-affiliate'); }
 
+// ── ADMIN DASHBOARD ──────────────────────────────────────────────────
+function goAdmin(){
+  showView('v-admin');
+  // If secret already stored, skip the auth box.
+  const cached = sessionStorage.getItem('rf_admin_secret');
+  if (cached) {
+    document.getElementById('admin-secret-input').value = cached;
+    adminAuthenticate();
+  }
+}
+
+async function adminAuthenticate(){
+  const secret = document.getElementById('admin-secret-input').value.trim();
+  const errEl = document.getElementById('admin-auth-err');
+  if (!secret) { errEl.style.display='block'; errEl.textContent='Enter your admin secret'; return; }
+  // Verify by attempting a templates fetch
+  try {
+    const r = await fetch(BACKEND_URL + '/api/admin/templates', { headers: { 'X-Admin-Secret': secret } });
+    const d = await r.json();
+    if (!d.ok) { errEl.style.display='block'; errEl.textContent=d.error || 'Unauthorized'; return; }
+    sessionStorage.setItem('rf_admin_secret', secret);
+    document.getElementById('admin-auth-box').style.display='none';
+    document.getElementById('admin-content').style.display='block';
+    adminRefresh();
+  } catch(e) {
+    errEl.style.display='block'; errEl.textContent='Network error: ' + e.message;
+  }
+}
+
+function _adminSecret(){ return sessionStorage.getItem('rf_admin_secret') || ''; }
+function _adminHeaders(){ return { 'X-Admin-Secret': _adminSecret(), 'Content-Type': 'application/json' }; }
+
+function adminRefresh(){ adminLoadTournaments(); adminLoadTemplates(); }
+
+async function adminLoadTournaments(){
+  const el = document.getElementById('admin-tournaments-table');
+  try {
+    const r = await fetch(BACKEND_URL + '/api/admin/tournaments', { headers: _adminHeaders() });
+    const d = await r.json();
+    if (!d.ok) { el.innerHTML = '<div style="color:#E87070;font-size:11px;text-align:center;padding:12px">'+(d.error||'Failed to load')+'</div>'; return; }
+    const rows = (d.tournaments||[]).map(t => {
+      const startsIn = t.msUntilStart == null ? '—' : (t.msUntilStart > 0 ? Math.round(t.msUntilStart/60000)+'m' : '(past)');
+      const statusColor = t.status==='running'?'#5DC896':t.status==='registering'?'#FFB800':t.status==='finished'?'#888':t.status==='cancelled'?'#E87070':'#eee';
+      const actions =
+          (t.status==='scheduled' || t.status==='registering')
+            ? '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:4px 8px" onclick="adminAddBots(\''+t.id+'\')">+ Bots</button> '
+            + '<button class="btn btn-gold btn-sm" style="font-size:9px;padding:4px 8px" onclick="adminForceStart(\''+t.id+'\')">Start</button> '
+          : '';
+      const cancel = (t.status !== 'finished' && t.status !== 'cancelled')
+        ? '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:4px 8px;color:#E87070;border-color:rgba(232,112,112,.3)" onclick="adminCancelTournament(\''+t.id+'\')">Cancel</button>'
+        : '';
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">'
+        + '<td style="padding:8px;font-family:monospace;font-size:10px;color:var(--txd)">'+t.id.slice(-16)+'</td>'
+        + '<td style="padding:8px">'+escHtml(t.name)+'</td>'
+        + '<td style="padding:8px;color:'+statusColor+';font-weight:600;font-size:10px;text-transform:uppercase">'+t.status+'</td>'
+        + '<td style="padding:8px;text-align:right">'+t.humansRegistered+' + '+t.botsRegistered+'🤖</td>'
+        + '<td style="padding:8px;text-align:right">$'+Number(t.buyIn).toFixed(2)+'</td>'
+        + '<td style="padding:8px;text-align:right">'+startsIn+'</td>'
+        + '<td style="padding:8px;text-align:right">$'+Number(t.prizePool||0).toFixed(2)+'</td>'
+        + '<td style="padding:8px;text-align:right">'+actions+cancel+'</td>'
+        + '</tr>';
+    }).join('');
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead style="background:rgba(255,255,255,.03)"><tr>'
+      + '<th style="padding:8px;text-align:left;color:var(--txd);font-size:9px;letter-spacing:1px">ID</th>'
+      + '<th style="padding:8px;text-align:left;color:var(--txd);font-size:9px;letter-spacing:1px">NAME</th>'
+      + '<th style="padding:8px;text-align:left;color:var(--txd);font-size:9px;letter-spacing:1px">STATUS</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">PLAYERS</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">BUY-IN</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">STARTS</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">POOL</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">ACTIONS</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table>';
+  } catch(e) { el.innerHTML = '<div style="color:#E87070;font-size:11px;text-align:center">Load failed: '+e.message+'</div>'; }
+}
+
+async function adminLoadTemplates(){
+  const el = document.getElementById('admin-templates-table');
+  try {
+    const r = await fetch(BACKEND_URL + '/api/admin/templates', { headers: _adminHeaders() });
+    const d = await r.json();
+    if (!d.ok) { el.innerHTML = '<div style="color:#E87070;font-size:11px;text-align:center;padding:12px">'+(d.error||'Failed')+'</div>'; return; }
+    const rows = (d.templates||[]).map(t => {
+      const rec = t.recurrence_type + (t.recurrence_interval ? ' × ' + t.recurrence_interval : '') + (t.recurrence_time ? ' @ ' + t.recurrence_time : '');
+      const enabledColor = t.enabled ? '#5DC896' : '#888';
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">'
+        + '<td style="padding:8px;font-family:monospace;font-size:10px;color:var(--txd)">'+t.id+'</td>'
+        + '<td style="padding:8px">'+escHtml(t.name)+'</td>'
+        + '<td style="padding:8px;text-align:right">$'+Number(t.buy_in).toFixed(2)+'</td>'
+        + '<td style="padding:8px;text-align:right">'+t.max_players+'</td>'
+        + '<td style="padding:8px;text-align:right;font-size:10px">'+rec+'</td>'
+        + '<td style="padding:8px;text-align:right">'+(t.late_reg_mins||0)+'m</td>'
+        + '<td style="padding:8px;text-align:right">'+(t.reentries_allowed||0)+'</td>'
+        + '<td style="padding:8px;text-align:center;color:'+enabledColor+';font-weight:600;font-size:10px">'+(t.enabled?'ON':'OFF')+'</td>'
+        + '<td style="padding:8px;text-align:right">'
+          + '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:4px 8px" onclick=\'adminOpenTemplateModal('+JSON.stringify(t).replace(/\'/g,"\\\'")+')\'>Edit</button> '
+          + '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:4px 8px" onclick="adminToggleTemplate(\''+t.id+'\','+(!t.enabled)+')">'+(t.enabled?'Disable':'Enable')+'</button> '
+          + '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:4px 8px;color:#E87070;border-color:rgba(232,112,112,.3)" onclick="adminDeleteTemplate(\''+t.id+'\')">Delete</button>'
+        + '</td>'
+        + '</tr>';
+    }).join('');
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead style="background:rgba(255,255,255,.03)"><tr>'
+      + '<th style="padding:8px;text-align:left;color:var(--txd);font-size:9px;letter-spacing:1px">ID</th>'
+      + '<th style="padding:8px;text-align:left;color:var(--txd);font-size:9px;letter-spacing:1px">NAME</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">BUY-IN</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">MAX</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">SCHEDULE</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">LATE REG</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">RE-ENTRY</th>'
+      + '<th style="padding:8px;text-align:center;color:var(--txd);font-size:9px;letter-spacing:1px">ENABLED</th>'
+      + '<th style="padding:8px;text-align:right;color:var(--txd);font-size:9px;letter-spacing:1px">ACTIONS</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table>';
+  } catch(e) { el.innerHTML = '<div style="color:#E87070;font-size:11px;text-align:center">Load failed: '+e.message+'</div>'; }
+}
+
+function adminAddBots(tournId){
+  const n = parseInt(prompt('How many bots to add?', '5'), 10);
+  if (isNaN(n) || n <= 0) return;
+  socket.emit('adminFillWithBots', { secret: _adminSecret(), tournId, count: n });
+  setTimeout(adminLoadTournaments, 500);
+}
+function adminForceStart(tournId){
+  if (!confirm('Force-start ' + tournId + '?')) return;
+  socket.emit('adminStartTournament', { secret: _adminSecret(), tournId });
+  setTimeout(adminLoadTournaments, 500);
+}
+function adminCancelTournament(tournId){
+  if (!confirm('Cancel ' + tournId + '? All entries will be refunded.')) return;
+  socket.emit('adminCancelTournament', { secret: _adminSecret(), tournId });
+  setTimeout(adminLoadTournaments, 500);
+}
+
+function adminOpenTemplateModal(existing){
+  const t = existing || null;
+  const overlay = document.createElement('div');
+  overlay.id = 'admin-tpl-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(6,10,15,.9);display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML =
+      '<div style="background:#0E1520;border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:24px;width:520px;max-height:85vh;overflow-y:auto">'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--gold);margin-bottom:16px">' + (t ? 'Edit Template' : 'New Template') + '</div>'
+    + _adminTplField('id', 'ID (kebab-case)', t?.id || '', !t)
+    + _adminTplField('name', 'Name', t?.name || '')
+    + _adminTplField('buy_in', 'Buy-in ($)', t?.buy_in || '1.00', false, 'number', '0.01')
+    + _adminTplField('starting_stack', 'Starting Stack', t?.starting_stack || 3000, false, 'number')
+    + _adminTplField('blind_mins', 'Blind Minutes', t?.blind_mins || 10, false, 'number')
+    + _adminTplField('max_players', 'Max Players', t?.max_players || 100, false, 'number')
+    + _adminTplField('guarantee', 'Guarantee ($)', t?.guarantee || 0, false, 'number', '0.01')
+    + '<div style="margin-bottom:14px">'
+      + '<div style="font-size:10px;color:var(--txd);margin-bottom:4px;letter-spacing:1px">RECURRENCE TYPE</div>'
+      + '<select id="tpl-recurrence_type" style="width:100%;background:#050810;border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:8px;color:#fff;font-family:monospace;font-size:12px">'
+      + '<option value="once"'+(t?.recurrence_type==='once'?' selected':'')+'>Once</option>'
+      + '<option value="hourly"'+(t?.recurrence_type==='hourly'?' selected':'')+'>Hourly</option>'
+      + '<option value="daily"'+(t?.recurrence_type==='daily'?' selected':'')+'>Daily</option>'
+      + '<option value="weekly"'+(t?.recurrence_type==='weekly'?' selected':'')+'>Weekly</option>'
+      + '</select></div>'
+    + _adminTplField('recurrence_interval', 'Recurrence Interval (hourly only)', t?.recurrence_interval || '', false, 'number')
+    + _adminTplField('recurrence_time', 'Recurrence Time (HH:MM or DOW-HH:MM)', t?.recurrence_time || '')
+    + _adminTplField('prize_structure_json', 'Prize % array (JSON)', JSON.stringify(t?.prize_structure || [65,35]))
+    + _adminTplField('late_reg_mins', 'Late Reg Minutes', t?.late_reg_mins ?? 60, false, 'number')
+    + _adminTplField('reentries_allowed', 'Re-entries Allowed', t?.reentries_allowed ?? 0, false, 'number')
+    + '<div style="margin-bottom:14px"><label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--txd)"><input type="checkbox" id="tpl-enabled"'+(t?.enabled!==false?' checked':'')+'> Enabled</label></div>'
+    + '<div style="display:flex;gap:8px;margin-top:8px">'
+      + '<button class="btn btn-ghost" style="flex:1;padding:12px" onclick="document.getElementById(\'admin-tpl-modal\').remove()">Cancel</button>'
+      + '<button class="btn btn-gold" style="flex:1;padding:12px" onclick="_adminSubmitTemplate('+(t?"true":"false")+',\''+(t?.id||'')+'\')">Save</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+}
+
+function _adminTplField(id, label, value, readonly, type, step){
+  return '<div style="margin-bottom:10px">'
+    + '<div style="font-size:10px;color:var(--txd);margin-bottom:4px;letter-spacing:1px">'+label.toUpperCase()+'</div>'
+    + '<input id="tpl-'+id+'" type="'+(type||'text')+'"'+(step?' step="'+step+'"':'')+' value="'+String(value).replace(/"/g,'&quot;')+'"'+(readonly?' readonly':'')+' style="width:100%;background:#050810;border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:8px;color:#fff;font-family:monospace;font-size:12px'+(readonly?';opacity:.6':'')+'">'
+    + '</div>';
+}
+
+async function _adminSubmitTemplate(isEdit, existingId){
+  const val = id => {
+    const el = document.getElementById('tpl-' + id);
+    return el ? el.value : '';
+  };
+  const t = {
+    id:                  val('id'),
+    name:                val('name'),
+    buy_in:              parseFloat(val('buy_in')),
+    starting_stack:      parseInt(val('starting_stack'), 10),
+    blind_mins:          parseInt(val('blind_mins'), 10),
+    max_players:         parseInt(val('max_players'), 10),
+    guarantee:           parseFloat(val('guarantee')) || 0,
+    recurrence_type:     val('recurrence_type'),
+    recurrence_interval: val('recurrence_interval') ? parseInt(val('recurrence_interval'), 10) : null,
+    recurrence_time:     val('recurrence_time') || null,
+    late_reg_mins:       parseInt(val('late_reg_mins'), 10),
+    reentries_allowed:   parseInt(val('reentries_allowed'), 10),
+    enabled:             document.getElementById('tpl-enabled').checked,
+  };
+  try {
+    t.prize_structure = JSON.parse(val('prize_structure_json'));
+  } catch(e) { alert('Prize structure must be valid JSON array'); return; }
+  try {
+    const url = isEdit==='true' ? BACKEND_URL + '/api/admin/templates/' + encodeURIComponent(existingId)
+                                : BACKEND_URL + '/api/admin/templates';
+    const method = isEdit==='true' ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers: _adminHeaders(), body: JSON.stringify(t) });
+    const d = await r.json();
+    if (!d.ok) { alert('Save failed: ' + (d.error || 'unknown')); return; }
+    document.getElementById('admin-tpl-modal').remove();
+    adminLoadTemplates();
+  } catch(e) { alert('Save failed: ' + e.message); }
+}
+
+async function adminToggleTemplate(id, enabled){
+  try {
+    // Fetch existing to preserve other fields
+    const listRes = await fetch(BACKEND_URL + '/api/admin/templates', { headers: _adminHeaders() });
+    const listD = await listRes.json();
+    const t = (listD.templates || []).find(x => x.id === id);
+    if (!t) return alert('Template not found');
+    t.enabled = enabled;
+    const r = await fetch(BACKEND_URL + '/api/admin/templates/' + encodeURIComponent(id), {
+      method: 'PUT', headers: _adminHeaders(), body: JSON.stringify(t),
+    });
+    const d = await r.json();
+    if (!d.ok) return alert('Toggle failed: ' + (d.error || 'unknown'));
+    adminLoadTemplates();
+  } catch(e) { alert('Toggle failed: ' + e.message); }
+}
+
+async function adminDeleteTemplate(id){
+  if (!confirm('Delete template ' + id + '? Already-generated instances are unaffected.')) return;
+  try {
+    const r = await fetch(BACKEND_URL + '/api/admin/templates/' + encodeURIComponent(id), {
+      method: 'DELETE', headers: _adminHeaders(),
+    });
+    const d = await r.json();
+    if (!d.ok) return alert('Delete failed: ' + (d.error || 'unknown'));
+    adminLoadTemplates();
+  } catch(e) { alert('Delete failed: ' + e.message); }
+}
+
+// Route to admin dashboard when URL hash is #admin
+if (window.location.hash === '#admin') setTimeout(goAdmin, 500);
+window.addEventListener('hashchange', () => { if (window.location.hash === '#admin') goAdmin(); });
+
 // ══ AUTH ════════════════════════════════════════════════════════════
 async function doLogin(){
   const emailEl = document.getElementById('login-email') || document.getElementById('l-email');
@@ -13532,6 +13823,10 @@ socket.on('tableState', (state) => {
   // Only sync if we actually joined this table via backend (prevents demo seat wipes)
   if (!_backendActive || !_connectedTableId) return;
   console.log('[Socket] tableState phase=' + state.phase + ' pot=' + state.pot + ' seats=' + state.seats.length);
+  // Keep blind/ante amounts fresh from server (blinds up mid-hand handled here).
+  if (typeof state.sb === 'number') SB_AMT = state.sb;
+  if (typeof state.bb === 'number') BB_AMT = state.bb;
+  if (typeof state.ante === 'number') ANTE_AMT = state.ante;
   syncTableState(state);
 });
 
@@ -13680,10 +13975,11 @@ socket.on('sngTableReady', ({ tournId, tableId, state }) => {
   if(state?.blinds) addNotif('game','🏆','gold','SNG started — Blinds '+state.blinds.sb+'/'+state.blinds.bb);
 });
 
-socket.on('tournBlindUp', ({ tournId, level, sb, bb }) => {
-  showToast('⬆ Blinds up: '+sb+'/'+bb);
-  addNotif('game','⬆','gold','Blind level '+(level+1)+' — '+sb+'/'+bb);
-  BB_AMT=bb; SB_AMT=sb;
+socket.on('tournBlindUp', ({ tournId, level, sb, bb, ante }) => {
+  const anteLabel = ante ? ' (ante '+ante+')' : '';
+  showToast('⬆ Blinds up: '+sb+'/'+bb+anteLabel);
+  addNotif('game','⬆','gold','Blind level '+(level+1)+' — '+sb+'/'+bb+anteLabel);
+  BB_AMT=bb; SB_AMT=sb; ANTE_AMT=ante||0;
 });
 
 // ── MTT: server-driven registration lifecycle ───────────────────────────
@@ -13756,8 +14052,10 @@ function _renderTournLeaderboard(state){
       + '<span>'+Number(p.chips).toLocaleString()+'</span>'
       + '</div>';
   }).join('');
+  const blindLine = 'Blinds ' + SB_AMT + '/' + BB_AMT + (ANTE_AMT > 0 ? ' · Ante ' + ANTE_AMT : '');
   panel.innerHTML =
       '<div style="font-family:\'Cormorant Garamond\',serif;font-size:14px;color:var(--gold);margin-bottom:6px;letter-spacing:1.5px">Chip Leaders</div>'
+    + '<div style="font-size:9px;color:var(--gold);margin-bottom:4px">' + blindLine + '</div>'
     + '<div style="font-size:9px;color:var(--txd);margin-bottom:6px">' + remaining + ' left · avg ' + Number(state.avgStack||0).toLocaleString() + ' · ' + paid + ' paid</div>'
     + rows
     + (state.onBubble ? '<div style="margin-top:6px;padding:4px 6px;background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);border-radius:3px;font-size:9px;color:var(--gold);text-align:center">🫧 BUBBLE</div>' : '');
@@ -13797,6 +14095,7 @@ socket.on('tournReconnected', ({ tournId, tableId, seat, state }) => {
   if (state?.blinds) {
     SB_AMT = state.blinds.sb;
     BB_AMT = state.blinds.bb;
+    ANTE_AMT = state.blinds.ante || 0;
   }
   const t = MTTS.find(m => m.id === tournId);
   showToast('🔗 Reconnected to ' + (t?.name || 'tournament'));
