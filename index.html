@@ -11102,7 +11102,7 @@ function openMTT(id){
     ?'<button class="btn btn-gold" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px" onclick="registerForMTT(\''+t.id+'\')">Register — '+sym+t.buyin+'</button>'
     :canUnreg
       ?'<div style="text-align:center;font-size:10px;color:var(--grn);letter-spacing:2px;margin-bottom:10px">&#10003; YOU ARE REGISTERED</div>'
-       +'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px;color:#E87070;border-color:rgba(232,112,112,.3)" onclick="if(confirm(\'Unregister and refund '+sym+t.buyin+'?\')) unregisterFromMTT(\''+t.id+'\')">Unregister &amp; Refund</button>'
+       +'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px;color:#E87070;border-color:rgba(232,112,112,.3)" onclick="confirmUnregisterMTT(\''+t.id+'\')">Unregister &amp; Refund</button>'
     :regd?'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px" disabled>&#10003; You are Registered</button>'
     :'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px" disabled>Registration Closed</button>';
 
@@ -11159,6 +11159,32 @@ function unregisterFromMTT(id){
   if (!t) return;
   backendConnect();
   socket.emit('tournUnregister', { tournId: t.id });
+}
+
+function confirmUnregisterMTT(id){
+  const t = MTTS.find(m => m.id === id);
+  if (!t) return;
+  const sym = _mode === 'gold' ? '🟡 ' : '$';
+  const overlay = document.createElement('div');
+  overlay.id = 'mtt-unreg-confirm';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(6,10,15,.85);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Montserrat,sans-serif';
+  overlay.innerHTML =
+    '<div style="background:#0E1520;border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:28px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)">'
+    + '<div style="font-size:28px;margin-bottom:10px">↩</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:600;color:var(--gold);margin-bottom:6px">Unregister?</div>'
+    + '<div style="font-size:12px;color:var(--txd);margin-bottom:6px;line-height:1.5">You will be unregistered from</div>'
+    + '<div style="font-size:13px;color:var(--tx);margin-bottom:18px;font-weight:600">' + escHtml(t.name) + '</div>'
+    + '<div style="font-size:11px;color:var(--grn);margin-bottom:22px;letter-spacing:1px">' + sym + t.buyin + ' will be refunded</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button id="mtt-unreg-cancel" class="btn btn-ghost" style="flex:1;padding:12px;font-size:10px;letter-spacing:2px">Cancel</button>'
+    + '<button id="mtt-unreg-ok" class="btn" style="flex:1;padding:12px;font-size:10px;letter-spacing:2px;background:linear-gradient(135deg,#8B3535,#E87070);color:#fff;border:none">Unregister</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  document.getElementById('mtt-unreg-cancel').onclick = close;
+  document.getElementById('mtt-unreg-ok').onclick = () => { close(); unregisterFromMTT(id); };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 
