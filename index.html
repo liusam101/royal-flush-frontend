@@ -13699,6 +13699,63 @@ socket.on('tournStarted', ({ tournId, tableId, state }) => {
   }
 });
 
+// Phase 2B state — break, bubble, and leaderboard tracking
+let _tournBreakUntil = null;
+let _tournLeaderboard = [];
+let _tournReentryOffered = false;
+let _lastTournState = null;
+
+// Compact live leaderboard rendered as a floating panel while in tournament game view.
+function _renderTournLeaderboard(state){
+  _lastTournState = state;
+  if (!_sngMode) { const p=document.getElementById('tourn-lb-panel'); if(p) p.remove(); return; }
+  let panel = document.getElementById('tourn-lb-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'tourn-lb-panel';
+    panel.style.cssText = 'position:fixed;top:70px;right:16px;z-index:400;background:rgba(14,21,32,.92);border:1px solid rgba(201,168,76,.25);border-radius:6px;padding:10px 12px;font-family:Montserrat,sans-serif;min-width:200px;max-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4);font-size:10px;letter-spacing:.5px;color:#fff';
+    document.body.appendChild(panel);
+  }
+  const lb = (state.leaderboard || []).slice(0, 8);
+  const remaining = state.remaining || 0;
+  const paid = (state.prizes || []).length;
+  const rows = lb.map((p, i) => {
+    const isMe = p.name === (localStorage.getItem('rf_username') || '');
+    return '<div style="display:flex;justify-content:space-between;padding:3px 0;'+(isMe?'color:var(--gold);font-weight:600':'')+'">'
+      + '<span>'+(i+1)+'. '+escHtml(p.name)+'</span>'
+      + '<span>'+Number(p.chips).toLocaleString()+'</span>'
+      + '</div>';
+  }).join('');
+  panel.innerHTML =
+      '<div style="font-family:\'Cormorant Garamond\',serif;font-size:14px;color:var(--gold);margin-bottom:6px;letter-spacing:1.5px">Chip Leaders</div>'
+    + '<div style="font-size:9px;color:var(--txd);margin-bottom:6px">' + remaining + ' left · avg ' + Number(state.avgStack||0).toLocaleString() + ' · ' + paid + ' paid</div>'
+    + rows
+    + (state.onBubble ? '<div style="margin-top:6px;padding:4px 6px;background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);border-radius:3px;font-size:9px;color:var(--gold);text-align:center">🫧 BUBBLE</div>' : '');
+}
+
+// Scheduled break + resume banners
+socket.on('tournBreak', ({ tournId, breakUntil, breakMins }) => {
+  _tournBreakUntil = breakUntil;
+  showToast('☕ Break: ' + breakMins + ' minutes');
+  addNotif('game','☕','gold','Tournament break: ' + breakMins + ' min');
+});
+socket.on('tournResume', ({ tournId }) => {
+  _tournBreakUntil = null;
+  showToast('▶ Back from break');
+  addNotif('game','▶','green','Tournament resumed');
+});
+// Bubble hand-for-hand notification
+socket.on('tournBubbleSync', ({ tournId, tableId, waiting }) => {
+  if (waiting) addNotif('game','🫧','gold','Bubble — waiting for other tables to finish this hand');
+});
+// Successful re-entry confirmation
+socket.on('tournReentered', ({ tournId, reentryCount, balance }) => {
+  if (typeof balance === 'number') { _balRoyal = balance; updBal(); }
+  _tournReentryOffered = false;
+  showToast('🔄 Re-entered! (entry #' + (reentryCount + 1) + ')');
+  addNotif('game','🔄','gold','Re-entered tournament');
+});
+
 // Multi-table balancing — server moved us to a new table.
 socket.on('tournTableMove', ({ tournId, fromTableId, toTableId, newSeatIdx, reason }) => {
   _connectedTableId = toTableId;
@@ -13743,6 +13800,11 @@ socket.on('tournState', (state) => {
   if (Array.isArray(state.prizes)) {
     t.prizes = state.prizes.map(p => ({ place: _mttOrdinal(p.place), pct: p.pct, amount: Number(p.amount || 0) }));
   }
+  // Live leaderboard from server (top-10 by chips).
+  if (_activeSNGTournId === state.id && Array.isArray(state.leaderboard)) {
+    _tournLeaderboard = state.leaderboard;
+    _renderTournLeaderboard(state);
+  }
   if (typeof renderMTT === 'function') renderMTT();
   // If the detail modal for this tournament is open, refresh it so pool + prizes update live.
   if (document.getElementById('ov-mtt')?.classList.contains('open') &&
@@ -13752,15 +13814,59 @@ socket.on('tournState', (state) => {
 });
 
 socket.on('sngEliminated', ({ place, prize, remainingPlayers }) => {
-  showToast(`You finished ${place}${['st','nd','rd'][place-1]||'th'}${prize ? ' — Won $'+prize.toFixed(2) : ''}!`);
+  showToast('You finished ' + place + (['st','nd','rd'][place-1]||'th') + (prize ? ' — Won $'+prize.toFixed(2) : '') + '!');
+  // Check re-entry eligibility from cached tournament state.
+  const tournId = _activeSNGTournId;
+  const t = MTTS.find(m => m.id === tournId);
+  const canReenter = t && (t._serverStatus === 'running')
+    && ((_lastTournState?.reentriesAllowed ?? 0) > 0)
+    && (t.startTime + (_lastTournState?.lateRegMins ?? 60) * 60000 > Date.now());
+  if (canReenter && !_tournReentryOffered) {
+    _tournReentryOffered = true;
+    _showReentryPrompt(tournId, t);
+    return; // don't return to lobby yet — let user decide
+  }
   _sngMode = false;
-  // Clear backend state before goLobby so it doesn't emit a redundant leaveTable
   _backendActive = false;
   _connectedTableId = null;
   _mySocketSeat = null;
+  const lbPanel = document.getElementById('tourn-lb-panel');
+  if (lbPanel) lbPanel.remove();
   if (typeof stopSessionClock === 'function') stopSessionClock();
   setTimeout(() => goLobby(), 3000);
 });
+
+// Prompt the user with a re-entry modal after bust (if allowed by tournament rules).
+function _showReentryPrompt(tournId, t){
+  const buyIn = t?.buyin || 0;
+  const overlay = document.createElement('div');
+  overlay.id = 'tourn-reenter-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:800;background:rgba(6,10,15,.9);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Montserrat,sans-serif';
+  overlay.innerHTML =
+      '<div style="background:#0E1520;border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:32px;max-width:360px;width:100%;text-align:center">'
+    + '<div style="font-size:36px;margin-bottom:8px">🔄</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:600;color:var(--gold);margin-bottom:6px">Busted — Re-enter?</div>'
+    + '<div style="font-size:12px;color:var(--txd);margin-bottom:20px;line-height:1.5">Take another shot at ' + escHtml(t?.name || 'the tournament') + ' for $' + buyIn.toFixed(2) + '.</div>'
+    + '<div style="display:flex;gap:8px">'
+    +   '<button id="reenter-no"  class="btn btn-ghost" style="flex:1;padding:12px;font-size:10px;letter-spacing:2px">No thanks</button>'
+    +   '<button id="reenter-yes" class="btn btn-gold"  style="flex:1;padding:12px;font-size:10px;letter-spacing:2px">Re-enter</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('reenter-no').onclick = () => {
+    overlay.remove();
+    _tournReentryOffered = false;
+    _sngMode = false;
+    _backendActive = false;
+    _connectedTableId = null;
+    _mySocketSeat = null;
+    goLobby();
+  };
+  document.getElementById('reenter-yes').onclick = () => {
+    overlay.remove();
+    socket.emit('tournReenter', { tournId, playerName: localStorage.getItem('rf_username') || 'sam' });
+  };
+}
 
 socket.on('sngResult', ({ results, myResult }) => {
   // Show results overlay
