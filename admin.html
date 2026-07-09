@@ -826,7 +826,8 @@ function renderTournaments() {
         ${t.status!=='finished'&&t.status!=='cancelled' ? `<button class="btn btn-red btn-sm" onclick="cancelTournament('${t.id}')">✕ CANCEL & REFUND</button>` : ''}
         <button class="btn btn-sm" onclick="deleteTournament('${t.id}')" style="border-color:var(--border);color:var(--txd)">DELETE</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── Create Tournament ─────────────────────────────────────────────
