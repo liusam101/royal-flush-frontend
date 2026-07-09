@@ -8453,6 +8453,28 @@ function renderHole(){
 }
 function renderYHole(){ renderHole(); }
 
+function renderComm(){
+  const commEl = document.getElementById('comm-cards');
+  if(!commEl) return;
+  if(!Array.isArray(ALL_COMM) || !ALL_COMM.length){
+    commEl.innerHTML = Array(5).fill('<div class="card empty"></div>').join('');
+    return;
+  }
+  commEl.innerHTML = ALL_COMM.map((card, i) => {
+    if(!card || !card.r){
+      return '<div class="card empty"></div>';
+    }
+    const cls = 'card ' + (card.red?'red':'black') + ' dealt'
+      + (card.win?' winner':'')
+      + (card.kicker?' kicker':'');
+    return '<div class="'+cls+'" style="animation-delay:'+(i*0.1)+'s">'
+      + '<div class="ct">'+card.r+'<div class="cs">'+card.s+'</div></div>'
+      + '<div class="cm">'+card.s+'</div>'
+      + '<div class="cb">'+card.r+'<div class="cs">'+card.s+'</div></div>'
+      + '</div>';
+  }).join('');
+}
+
 function startHand(){ if(_backendActive) return; // backend controls hand flow
   _timeBankUsed = false;
   clearPendingAction();
