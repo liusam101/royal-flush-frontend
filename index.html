@@ -11134,11 +11134,15 @@ function openMTT(id){
 
   const canReg=!regd&&(t.status==='upcoming'||t.status==='late'||t.status==='registering');
   const canUnreg = regd && t.status !== 'running' && t.status !== 'finished';
+  const canRejoin = regd && t.status === 'running'; // running tournament with active registration → rejoin
   const btnHtml=canReg
     ?'<button class="btn btn-gold" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px" onclick="registerForMTT(\''+t.id+'\')">Register — '+sym+t.buyin+'</button>'
     :canUnreg
       ?'<div style="text-align:center;font-size:10px;color:var(--grn);letter-spacing:2px;margin-bottom:10px">&#10003; YOU ARE REGISTERED</div>'
        +'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px;color:#E87070;border-color:rgba(232,112,112,.3)" onclick="confirmUnregisterMTT(\''+t.id+'\')">Unregister &amp; Refund</button>'
+    :canRejoin
+      ?'<div style="text-align:center;font-size:10px;color:var(--grn);letter-spacing:2px;margin-bottom:10px">&#10003; YOU ARE REGISTERED</div>'
+       +'<button class="btn btn-gold" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px" onclick="rejoinMTT(\''+t.id+'\')">Rejoin Tournament</button>'
     :regd?'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px" disabled>&#10003; You are Registered</button>'
     :'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px" disabled>Registration Closed</button>';
 
@@ -11188,6 +11192,14 @@ function registerForMTT(id){
   backendConnect();
   socket.emit('tournRegister', { tournId: t.id, playerName: getMyName() });
   // UI feedback + confirmation happen when the server emits 'tournRegistered'.
+}
+
+function rejoinMTT(id){
+  const t = MTTS.find(m => m.id === id);
+  if (!t) return;
+  backendConnect();
+  socket.emit('rejoinTournament', { tournId: t.id });
+  closeOv('ov-mtt');
 }
 
 function unregisterFromMTT(id){
@@ -13284,6 +13296,8 @@ async function _restoreSession(){
       _updateHeader(data.user.username);
       localStorage.setItem('rf_username', data.user.username);
       localStorage.setItem('rf_registered', '1');
+      // Open the socket so the server can auto-restore any live tournament seats via tournReconnected.
+      if (typeof backendConnect === 'function') backendConnect();
       // Already on lobby — no showView needed
     } else {
       // Token truly invalid — clear everything and go to login
