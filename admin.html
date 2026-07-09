@@ -237,8 +237,28 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <!-- Tournaments -->
       <div class="panel" id="panel-tournaments">
         <div class="card">
-          <div class="card-title">All Tournaments</div>
-          <div id="tourns-list" style="display:flex;flex-direction:column;gap:12px;margin-top:4px"></div>
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <span>Tournaments</span>
+            <div style="display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:11px;color:var(--txd)">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" id="tourn-filter-scheduled" checked onchange="renderTournaments()"> Upcoming
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" id="tourn-filter-running" checked onchange="renderTournaments()"> Running
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" id="tourn-filter-finished" onchange="renderTournaments()"> Finished
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" id="tourn-filter-cancelled" onchange="renderTournaments()"> Cancelled
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding-left:8px;border-left:1px solid var(--border)">
+                <input type="checkbox" id="tourn-group-templates" checked onchange="renderTournaments()"> Collapse recurring
+              </label>
+              <input id="tourn-search" oninput="renderTournaments()" placeholder="Filter by name…" style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:4px 8px;color:var(--tx);font-family:var(--mono);font-size:11px;width:160px">
+            </div>
+          </div>
+          <div id="tourns-list" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div>
         </div>
       </div>
 
@@ -733,10 +753,47 @@ function renderTables() {
 function renderTournaments() {
   const el = document.getElementById('tourns-list');
   if (!state.tournaments.length) { el.innerHTML='<div style="color:var(--txd);font-family:var(--mono);font-size:12px">No tournaments created yet</div>'; return; }
-  el.innerHTML = state.tournaments.map(t=>`
+  // Apply filters
+  const showSched = document.getElementById('tourn-filter-scheduled')?.checked !== false;
+  const showRun   = document.getElementById('tourn-filter-running')?.checked   !== false;
+  const showFin   = document.getElementById('tourn-filter-finished')?.checked  === true;
+  const showCanc  = document.getElementById('tourn-filter-cancelled')?.checked === true;
+  const collapse  = document.getElementById('tourn-group-templates')?.checked  !== false;
+  const search    = (document.getElementById('tourn-search')?.value || '').toLowerCase().trim();
+  const wantStatus = (s) =>
+       ((s==='scheduled'||s==='registering'||s==='paused') && showSched)
+    || (s==='running' && showRun)
+    || (s==='finished' && showFin)
+    || (s==='cancelled' && showCanc);
+
+  let list = state.tournaments.filter(t => wantStatus(t.status));
+  if (search) list = list.filter(t => (t.name||'').toLowerCase().includes(search) || (t.id||'').toLowerCase().includes(search));
+  list.sort((a,b) => (a.startTime||0) - (b.startTime||0));
+
+  // Collapse recurring — keep only the earliest upcoming instance per template (running/finished stay expanded).
+  if (collapse) {
+    const seen = {};
+    list = list.filter(t => {
+      const key = (t.templateId || t.id) + ':' + t.status;
+      if (t.status === 'running' || t.status === 'finished' || t.status === 'cancelled') return true;
+      // For scheduled/registering group by templateId only (across statuses)
+      const groupKey = t.templateId || t.id;
+      if (seen[groupKey]) { seen[groupKey].count++; return false; }
+      seen[groupKey] = { count: 1 };
+      t._collapsedGroup = seen[groupKey];
+      return true;
+    });
+  }
+
+  if (!list.length) { el.innerHTML='<div style="color:var(--txd);font-family:var(--mono);font-size:12px">No tournaments match the filters.</div>'; return; }
+  el.innerHTML = list.map(t=>{
+    const moreLabel = t._collapsedGroup && t._collapsedGroup.count > 1
+      ? `<span style="color:var(--txd);font-family:var(--mono);font-size:10px;margin-left:6px">+${t._collapsedGroup.count - 1} more upcoming</span>`
+      : '';
+    return `
     <div class="tourn-card">
       <div class="tourn-card-header">
-        <div class="tourn-name">${t.name}</div>
+        <div class="tourn-name">${t.name}${moreLabel}</div>
         <span class="badge ${t.status}">${t.status.toUpperCase()}</span>
       </div>
       <div class="tourn-meta">
