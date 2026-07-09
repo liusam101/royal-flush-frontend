@@ -6372,6 +6372,18 @@ window._showVerifyBanner = function(user){
         <div class="stat-bar-bg"><div class="stat-bar-fill" id="stat-sdwr-bar" style="background:linear-gradient(to right,#2A8B6B,#4ACB8B)"></div></div>
       </div>
       <div style="margin-top:14px;padding:12px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.05)">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">🏆 TOURNAMENTS (MTT)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:11px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--txd)">Played</span><span id="stat-mtt-played" style="color:var(--tx)">0</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--txd)">Wins</span><span id="stat-mtt-wins" style="color:var(--gold)">0</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--txd)">ITM</span><span id="stat-mtt-itm" style="color:var(--tx)">0 (0%)</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--txd)">Best</span><span id="stat-mtt-best" style="color:var(--tx)">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--txd)">Biggest Cash</span><span id="stat-mtt-biggest" style="color:var(--gold)">$0.00</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--txd)">Total Won</span><span id="stat-mtt-won" style="color:var(--grn)">$0.00</span></div>
+          <div style="display:flex;justify-content:space-between;grid-column:span 2"><span style="color:var(--txd)">Net (ROI)</span><span id="stat-mtt-roi" style="color:var(--tx)">$0.00</span></div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.05)">
         <div style="font-size:9px;letter-spacing:2px;color:var(--txd);margin-bottom:8px">CURRENT SESSION</div>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tx)">
           <span>Balance</span><span id="stat-balance">$0.00</span>
@@ -8506,23 +8518,51 @@ function renderYHole(){ renderHole(); }
 function renderComm(){
   const commEl = document.getElementById('comm-cards');
   if(!commEl) return;
+  // If nothing dealt yet, show 5 empty placeholders.
   if(!Array.isArray(ALL_COMM) || !ALL_COMM.length){
     commEl.innerHTML = Array(5).fill('<div class="card empty"></div>').join('');
     return;
   }
-  commEl.innerHTML = ALL_COMM.map((card, i) => {
-    if(!card || !card.r){
-      return '<div class="card empty"></div>';
+  // If the container is empty (fresh render), populate everything at once with staggered animation.
+  const existing = commEl.children;
+  if (existing.length !== 5) {
+    commEl.innerHTML = Array(5).fill('<div class="card empty"></div>').join('');
+  }
+  // Diff each slot — only animate newly-dealt cards, preserve already-dealt ones.
+  for (let i = 0; i < 5; i++) {
+    const card = ALL_COMM[i];
+    const slot = commEl.children[i];
+    if (!slot) continue;
+    const isDealt = !!(card && card.r);
+    const wasDealt = slot.classList.contains('dealt');
+    // If already showing this same card, only update winner/kicker highlights (no re-animation).
+    if (isDealt && wasDealt) {
+      slot.classList.toggle('winner', !!card.win);
+      slot.classList.toggle('kicker', !!card.kicker);
+      continue;
     }
-    const cls = 'card ' + (card.red?'red':'black') + ' dealt'
-      + (card.win?' winner':'')
-      + (card.kicker?' kicker':'');
-    return '<div class="'+cls+'" style="animation-delay:'+(i*0.1)+'s">'
-      + '<div class="ct">'+card.r+'<div class="cs">'+card.s+'</div></div>'
-      + '<div class="cm">'+card.s+'</div>'
-      + '<div class="cb">'+card.r+'<div class="cs">'+card.s+'</div></div>'
-      + '</div>';
-  }).join('');
+    // Card removed / hand reset
+    if (!isDealt && wasDealt) {
+      slot.className = 'card empty';
+      slot.innerHTML = '';
+      slot.style.animationDelay = '';
+      continue;
+    }
+    // Newly dealt — replace this slot with an animated card.
+    if (isDealt && !wasDealt) {
+      const cls = 'card ' + (card.red?'red':'black') + ' dealt' + (card.win?' winner':'') + (card.kicker?' kicker':'');
+      const html = '<div class="ct">'+card.r+'<div class="cs">'+card.s+'</div></div>'
+                 + '<div class="cm">'+card.s+'</div>'
+                 + '<div class="cb">'+card.r+'<div class="cs">'+card.s+'</div></div>';
+      // Small stagger only for the flop (first three all-at-once); turn/river are single cards.
+      const isFlop = i < 3 && ALL_COMM[0]?.r && ALL_COMM[1]?.r && ALL_COMM[2]?.r && !ALL_COMM[3]?.r;
+      slot.className = cls;
+      slot.style.animationDelay = isFlop ? (i * 0.1) + 's' : '0s';
+      slot.innerHTML = html;
+      continue;
+    }
+    // Both empty — nothing to do.
+  }
 }
 
 function startHand(){ if(_backendActive) return; // backend controls hand flow
@@ -9389,8 +9429,14 @@ function appendChat(name,text,isYou){
 function sendChat(){
   const input=document.getElementById('chat-input');
   if(!input||!input.value.trim()) return;
-  appendChat(getMyName(),input.value.trim(),true);
+  const text = input.value.trim();
   input.value='';
+  // Broadcast via socket if we're at a real backend table (cash or tournament); else local demo echo.
+  if (_backendActive && _connectedTableId) {
+    socket.emit('chatMessage', { tableId: _connectedTableId, playerName: getMyName(), message: text });
+  } else {
+    appendChat(getMyName(), text, true);
+  }
 }
 
 function toggleEmotePanel(){
@@ -13252,6 +13298,24 @@ async function renderStats(){
     const sdwr = s.showdownWinRate||0;
     document.getElementById('stat-sdwr-pct').textContent = sdwr+'%';
     document.getElementById('stat-sdwr-bar').style.transform = 'scaleX('+Math.min(sdwr,100)/100+')';
+    // MTT stats block
+    const mp = s.mttPlayed||0;
+    const mi = s.mttItmCount||0;
+    const mw = s.mttWins||0;
+    const mb = s.mttBestFinish;
+    const mCash = s.mttBiggestCash||0;
+    const mWon = s.mttTotalWon||0;
+    const mBought = s.mttTotalBought||0;
+    const itmPct = mp>0 ? Math.round(mi/mp*100) : 0;
+    document.getElementById('stat-mtt-played').textContent = mp.toLocaleString();
+    document.getElementById('stat-mtt-wins').textContent   = mw.toLocaleString();
+    document.getElementById('stat-mtt-itm').textContent    = mi.toLocaleString() + ' (' + itmPct + '%)';
+    document.getElementById('stat-mtt-best').textContent   = (mb==null||mb>=999999) ? '—' : (mb===1 ? '🥇 1st' : _mttOrdinal(mb));
+    document.getElementById('stat-mtt-biggest').textContent = '$' + Number(mCash).toFixed(2);
+    document.getElementById('stat-mtt-won').textContent    = '$' + Number(mWon).toFixed(2);
+    const roi = mWon - mBought;
+    document.getElementById('stat-mtt-roi').textContent = (roi>=0?'+':'') + '$' + Math.abs(roi).toFixed(2) + (mBought>0 ? ' (' + Math.round(roi/mBought*100) + '%)' : '');
+    document.getElementById('stat-mtt-roi').style.color = roi >= 0 ? 'var(--grn)' : '#E87070';
     // Balance
     document.getElementById('stat-balance').textContent = '$'+(u.chips||_balRoyal||0).toFixed(2);
     document.getElementById('stat-gold').textContent    = (u.goldChips||_balGold||0).toLocaleString();
@@ -14529,9 +14593,15 @@ function syncTableState(state) {
   if (potEl) {
     if (state.phase === 'waiting' || state.phase === 'starting') {
       potEl.textContent = '$0';
+      // Clear any stale pot chip graphics between hands.
+      renderPotChips();
     } else if (_pot > 0) {
       // Mid-hand reconnect — render current pot immediately so it's not stuck at $0
       renderPotChips();
+    } else {
+      // Preflop/flop/turn/river but pot is $0 (impossible except at fresh hand start with no blinds yet)
+      const potChipsEl = document.getElementById('pot-chips');
+      if (potChipsEl) potChipsEl.innerHTML = '';
     }
   }
 
