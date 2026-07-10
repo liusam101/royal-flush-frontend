@@ -6944,9 +6944,9 @@ const TIERS_ROYAL=[
 ];
 // Gold Chips tiers (free play, ~200x Royal stakes to match 250k GC balance)
 const TIERS_GOLD=[
-  {id:'micro',name:'Micro Stakes',sb:50,   bb:100,  min:2000,  max:20000,  bg:'#0D3B2E',seats:6,backendId:'midnight-velvet',tables:[{name:'Midnight Velvet',fill:0,players:0}]},
-  {id:'low',  name:'Low Stakes',  sb:100,  bb:200,  min:4000,  max:40000,  bg:'#0D2B3B',seats:6,backendId:'cursed-domain',  tables:[{name:'Cursed Domain',  fill:0,players:0}]},
-  {id:'high', name:'High Stakes', sb:500,  bb:1000, min:20000, max:200000, bg:'#2A0D1A',seats:9,backendId:'grand-royal',   tables:[{name:'Grand BRL',    fill:0,players:0}]},
+  {id:'micro',name:'Micro Stakes',sb:50,   bb:100,  min:2000,  max:20000,  bg:'#0D3B2E',seats:6,backendId:'midnight-velvet-g',tables:[{name:'Midnight Velvet',fill:0,players:0}]},
+  {id:'low',  name:'Low Stakes',  sb:100,  bb:200,  min:4000,  max:40000,  bg:'#0D2B3B',seats:6,backendId:'cursed-domain-g',  tables:[{name:'Cursed Domain',  fill:0,players:0}]},
+  {id:'high', name:'High Stakes', sb:500,  bb:1000, min:20000, max:200000, bg:'#2A0D1A',seats:9,backendId:'grand-royal-g',   tables:[{name:'Grand BRL',    fill:0,players:0}]},
 ];
 function getTiers(){ return _mode==="gold" ? TIERS_GOLD : TIERS_ROYAL; }
 function getMyName(){ return localStorage.getItem('rf_username') || 'Player'; }
@@ -8625,7 +8625,7 @@ function renderPotChips(){
   const el=document.getElementById('pot-chips');
   if(!el) return;
   if(_pot<=0){ el.innerHTML=''; return; }
-  const potVal=_mode==='gold'?Math.max(1,Math.round(_pot/100)):_pot;
+  const potVal=_pot;
   const stacks=_potToStacks(potVal);
 
   // Build columns: one column per denomination that has chips, up to 6 cols
@@ -8712,7 +8712,7 @@ function animateRakeAndWin(rake, winnings, onDone, winnerName){
   const allPotChips=Array.from(el.querySelectorAll('.pot-chip-col,.pot-chip'));
 
   // Step 1: a few chips flash off to represent rake
-  let rakeRem=_mode==='gold'?Math.max(1,Math.round(rake/100)):rake;
+  let rakeRem=rake;
   let rakeCount=0;
   for(const denom of CHIP_DENOMS){
     while(rakeRem>=denom.val && rakeCount<allPotChips.length){
@@ -10971,7 +10971,7 @@ function openBuyin(tierId, tableName){
   document.getElementById('buyin-title').textContent = _buyinTable;
   document.getElementById('buyin-sub').textContent = isGold ? 'Gold Chips buy-in — free play' : 'Select your buy-in amount';
   document.getElementById('buyin-table-name').textContent = _buyinTable;
-  document.getElementById('buyin-blinds').textContent = `${isGold?tier.sb*200+'/'+tier.bb*200+' 🟡':sym+tier.sb+'/'+sym+tier.bb} · ${tier.seats}-max · No Limit Hold'em`;
+  document.getElementById('buyin-blinds').textContent = `${isGold ? tier.sb+'/'+tier.bb+' 🟡' : sym+tier.sb+'/'+sym+tier.bb} · ${tier.seats}-max · No Limit Hold'em`;
   document.getElementById('buyin-range').textContent = `${sym}${min.toLocaleString()} – ${sym}${max.toLocaleString()}`;
   document.getElementById('buyin-min-lbl').textContent = `Min: ${sym}${min.toLocaleString()}`;
   document.getElementById('buyin-max-lbl').textContent = `Max: ${sym}${max.toLocaleString()}`;
@@ -11052,10 +11052,9 @@ function confirmBuyin(){
 
   const playerName = getMyName();
   const token = localStorage.getItem('rf_token');
-  // Gold-mode tables live at the same backend under a '-g' suffix so the
-  // server can route settlement to the gold_chips column.
-  const rawBackendId = window._bustReturnTableId || _buyinBackendId || tier.backendId || 'midnight-velvet';
-  const backendId = (_mode === 'gold' && !rawBackendId.endsWith('-g')) ? (rawBackendId + '-g') : rawBackendId;
+  // TIERS_ROYAL / TIERS_GOLD each carry the correct backend ID (gold tiers use
+  // the '-g' variant), so lookups are consistent everywhere.
+  const backendId = window._bustReturnTableId || _buyinBackendId || tier.backendId || 'midnight-velvet';
   window._bustReturnTableId = null;
 
   if(token){
@@ -11652,14 +11651,20 @@ function mgResetAll(){
 function collectActiveGames(){
   const items = [];
   if (_connectedTableId) {
-    const tier = (typeof getTiers === 'function')
-      ? getTiers().find(t => (t.backendId || t.id) === _connectedTableId)
-      : null;
+    // Search both tier arrays — the user might be at a gold table while _mode
+    // is currently 'royal' (or vice-versa) if they've switched modes since sitting down.
+    const allTiers = [
+      ...(typeof TIERS_ROYAL !== 'undefined' ? TIERS_ROYAL : []),
+      ...(typeof TIERS_GOLD  !== 'undefined' ? TIERS_GOLD  : []),
+    ];
+    const tier = allTiers.find(t => (t.backendId || t.id) === _connectedTableId);
+    const isGoldTable = _connectedTableId.endsWith('-g');
+    const stakes = tier ? (isGoldTable ? (tier.sb + '/' + tier.bb + ' 🟡') : ('$' + tier.sb + '/$' + tier.bb)) : '';
     items.push({
       kind: 'cash',
       id: _connectedTableId,
       name: tier?.tables?.[0]?.name || _buyinTable || 'Cash table',
-      sub:  tier ? (chip(tier.sb) + '/' + chip(tier.bb)) : '',
+      sub:  stakes,
       go:   () => { showView('vg'); if (typeof returnToTable === 'function') returnToTable(); },
     });
   }
