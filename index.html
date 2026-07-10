@@ -11052,10 +11052,13 @@ function confirmBuyin(){
 
   const playerName = getMyName();
   const token = localStorage.getItem('rf_token');
-  const backendId = window._bustReturnTableId || _buyinBackendId || tier.backendId || 'midnight-velvet';
+  // Gold-mode tables live at the same backend under a '-g' suffix so the
+  // server can route settlement to the gold_chips column.
+  const rawBackendId = window._bustReturnTableId || _buyinBackendId || tier.backendId || 'midnight-velvet';
+  const backendId = (_mode === 'gold' && !rawBackendId.endsWith('-g')) ? (rawBackendId + '-g') : rawBackendId;
   window._bustReturnTableId = null;
 
-  if(token && !(_mode === 'gold')){
+  if(token){
     // Logged-in: show only player's own seat (server provides real table state)
     const navAv = document.getElementById('nav-av');
     const playerCol = (navAv?.style.background || '#4A2A6A').trim();
@@ -14139,16 +14142,20 @@ function backendLeaveTable() {
 
 const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-socket.on('chipsReturned', ({ balance }) => {
-  // Sync UI balance to authoritative server value (covers off-table + returned stack)
-  if (typeof balance === 'number' && balance >= 0) {
+socket.on('chipsReturned', ({ balance, currency }) => {
+  // Sync UI balance to authoritative server value (covers off-table + returned stack).
+  // Server tags the currency so we credit the right wallet.
+  if (typeof balance !== 'number' || balance < 0) return;
+  if (currency === 'gold') {
+    _balGold = balance;
+    localStorage.setItem('rf_gold_cache', _balGold);
+    if (_mode === 'gold') _bal = _balGold;
+  } else {
     _balRoyal = balance;
     localStorage.setItem('rf_chips_cache', _balRoyal);
-    if (_mode !== 'gold') {
-      _bal = _balRoyal;
-    }
-    updBal();
+    if (_mode !== 'gold') _bal = _balRoyal;
   }
+  updBal();
 });
 
 // Seat confirmed
