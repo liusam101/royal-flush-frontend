@@ -11491,7 +11491,12 @@ function mgAdd(slotIdx){
   const tournOptions = (MTTS || [])
     .filter(m => m._serverStatus === 'running' && _mttRegistered[m.id])
     .map(m => ({ id: m.id + '_table0', name: m.name, kind: 'mtt', stakes: 'Tourney' }));
-  const options = [...tournOptions, ...cashOptions].filter(o => !_mgSlots.some(s => s && s.tableId === o.id));
+  // Exclude tables already tiled in the grid *and* the cash table currently open
+  // in the regular game view (_connectedTableId) — a user cannot occupy the
+  // same table twice, either in this grid or across grid+lobby views.
+  const taken = new Set(_mgSlots.filter(s => s).map(s => s.tableId));
+  if (_connectedTableId) taken.add(_connectedTableId);
+  const options = [...tournOptions, ...cashOptions].filter(o => !taken.has(o.id));
   // Cache option list so mgAskBuyIn can read min/max from it.
   window._mgOptions = options;
   const overlay = document.createElement('div');
