@@ -11466,7 +11466,8 @@ function mgRender(){
         + '  <button class="btn btn-ghost" style="padding:14px 24px;font-size:11px;letter-spacing:2px" onclick="mgAdd(' + idx + ')">+ Add table</button>'
         + '</div>';
     }
-    const src = window.location.origin + '/index.html?embed=1&table=' + encodeURIComponent(slot.tableId);
+    const biParam = slot.buyIn > 0 ? '&bi=' + slot.buyIn : '';
+    const src = window.location.origin + '/index.html?embed=1&table=' + encodeURIComponent(slot.tableId) + biParam;
     return '<div style="position:relative;background:#000;border-radius:4px;overflow:hidden">'
       + '  <div style="position:absolute;top:4px;left:6px;right:6px;z-index:5;display:flex;justify-content:space-between;align-items:center;pointer-events:none">'
       + '    <div style="background:rgba(0,0,0,.7);color:var(--gold);font-family:Montserrat,sans-serif;font-size:9px;letter-spacing:1.5px;padding:3px 8px;border-radius:2px">' + escHtml(slot.name || slot.tableId) + '</div>'
@@ -11480,12 +11481,19 @@ function mgRender(){
 function mgAdd(slotIdx){
   // Show a compact picker with cash tables + registered/live tournaments the user could open.
   const cashOptions = (typeof getTiers === 'function')
-    ? getTiers().flatMap(t => t.tables.map(tb => ({ id: t.backendId || t.id, name: tb.name, kind: 'cash', stakes: chip(t.sb) + '/' + chip(t.bb) })))
+    ? getTiers().flatMap(t => t.tables.map(tb => ({
+        id: t.backendId || t.id, name: tb.name, kind: 'cash',
+        stakes: chip(t.sb) + '/' + chip(t.bb),
+        min: t.min || (t.bb * 20), max: t.max || (t.bb * 200),
+        bb: t.bb,
+      })))
     : [];
   const tournOptions = (MTTS || [])
     .filter(m => m._serverStatus === 'running' && _mttRegistered[m.id])
     .map(m => ({ id: m.id + '_table0', name: m.name, kind: 'mtt', stakes: 'Tourney' }));
   const options = [...tournOptions, ...cashOptions].filter(o => !_mgSlots.some(s => s && s.tableId === o.id));
+  // Cache option list so mgAskBuyIn can read min/max from it.
+  window._mgOptions = options;
   const overlay = document.createElement('div');
   overlay.id = 'mg-picker';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
@@ -11495,7 +11503,7 @@ function mgAdd(slotIdx){
     + (!options.length ? '<div style="color:var(--txd);font-size:11px;padding:12px 0">No tables available. Register for a tournament or make sure cash tables aren\'t all already tiled.</div>'
         : '<div style="display:flex;flex-direction:column;gap:6px">'
           + options.map(o =>
-              '<button onclick="mgSelect(' + slotIdx + ',\'' + o.id + '\',\'' + o.name.replace(/\'/g,"\\'") + '\',\'' + o.kind + '\')" style="text-align:left;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;cursor:pointer;color:var(--tx);display:flex;justify-content:space-between;align-items:center;font-family:Montserrat,sans-serif;font-size:11px">'
+              '<button onclick="mgPickOption(' + slotIdx + ',\'' + o.id + '\')" style="text-align:left;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;cursor:pointer;color:var(--tx);display:flex;justify-content:space-between;align-items:center;font-family:Montserrat,sans-serif;font-size:11px">'
               + '<span>' + (o.kind === 'mtt' ? '🏆 ' : '') + escHtml(o.name) + '</span>'
               + '<span style="color:var(--txd);font-size:10px">' + o.stakes + '</span>'
               + '</button>'
@@ -11506,8 +11514,59 @@ function mgAdd(slotIdx){
   document.body.appendChild(overlay);
 }
 
-function mgSelect(slotIdx, tableId, name, kind){
-  _mgSlots[slotIdx] = { tableId, name, kind };
+// User picked an option — tournaments seat immediately; cash tables ask for buy-in.
+function mgPickOption(slotIdx, tableId){
+  const opt = (window._mgOptions || []).find(o => o.id === tableId);
+  if (!opt) return;
+  if (opt.kind === 'mtt') {
+    mgSelect(slotIdx, opt.id, opt.name, opt.kind, 0);
+    return;
+  }
+  // Cash table — collect a buy-in in [min, max].
+  document.getElementById('mg-picker')?.remove();
+  mgAskBuyIn(slotIdx, opt);
+}
+
+function mgAskBuyIn(slotIdx, opt){
+  const cached = parseFloat(sessionStorage.getItem('rf_last_buyin_' + opt.id)) || 0;
+  const defaultBI = cached >= opt.min && cached <= opt.max ? cached : opt.min;
+  const overlay = document.createElement('div');
+  overlay.id = 'mg-buyin';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  overlay.innerHTML =
+      '<div style="background:#0E1520;border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:24px;width:340px">'
+    + '  <div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--gold);margin-bottom:4px">Buy in — ' + escHtml(opt.name) + '</div>'
+    + '  <div style="font-size:11px;color:var(--txd);margin-bottom:16px">Stakes ' + opt.stakes + ' · Min $' + opt.min + ' · Max $' + opt.max + '</div>'
+    + '  <input id="mg-buyin-input" type="number" step="1" min="' + opt.min + '" max="' + opt.max + '" value="' + defaultBI + '" style="width:100%;background:#050810;border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:12px;color:#fff;font-family:monospace;font-size:16px;text-align:center">'
+    + '  <div id="mg-buyin-err" style="color:#E87070;font-size:10px;margin-top:6px;display:none"></div>'
+    + '  <div style="display:flex;gap:8px;margin-top:16px">'
+    + '    <button onclick="document.getElementById(\'mg-buyin\').remove();mgAdd(' + slotIdx + ')" class="btn btn-ghost" style="flex:1;padding:11px;font-size:10px">Back</button>'
+    + '    <button onclick="mgConfirmBuyIn(' + slotIdx + ',\'' + opt.id + '\',\'' + opt.name.replace(/\'/g,"\\'") + '\',' + opt.min + ',' + opt.max + ')" class="btn btn-gold" style="flex:1;padding:11px;font-size:10px">Sit down</button>'
+    + '  </div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('mg-buyin-input')?.focus(), 50);
+}
+
+function mgConfirmBuyIn(slotIdx, tableId, name, min, max){
+  const input = document.getElementById('mg-buyin-input');
+  const err   = document.getElementById('mg-buyin-err');
+  const val   = parseFloat(input?.value);
+  if (!Number.isFinite(val) || val < min || val > max) {
+    if (err) { err.style.display = 'block'; err.textContent = 'Enter an amount between $' + min + ' and $' + max; }
+    return;
+  }
+  if (val > _balRoyal) {
+    if (err) { err.style.display = 'block'; err.textContent = 'Insufficient balance ($' + _balRoyal.toFixed(2) + ' available)'; }
+    return;
+  }
+  sessionStorage.setItem('rf_last_buyin_' + tableId, val);
+  document.getElementById('mg-buyin')?.remove();
+  mgSelect(slotIdx, tableId, name, 'cash', val);
+}
+
+function mgSelect(slotIdx, tableId, name, kind, buyIn){
+  _mgSlots[slotIdx] = { tableId, name, kind, buyIn: buyIn || 0 };
   document.getElementById('mg-picker')?.remove();
   mgRender();
 }
@@ -11643,7 +11702,11 @@ function _statRow(label, value, color) {
       // Cash table — need buy-in to join. Use last-known buy-in from sessionStorage,
       // or default (min for that stakes tier). Player must have joined this table
       // at least once from the main lobby so the seat exists on the server.
-      const savedBI = parseFloat(sessionStorage.getItem('rf_last_buyin_' + window._embedTable)) || 10;
+      // Prefer explicit URL buy-in (chosen in the multi-grid picker), fall back to cached, then to 10.
+      const urlBI = parseFloat(params.get('bi'));
+      const savedBI = Number.isFinite(urlBI) && urlBI > 0
+        ? urlBI
+        : (parseFloat(sessionStorage.getItem('rf_last_buyin_' + window._embedTable)) || 10);
       const playerName = localStorage.getItem('rf_username') || 'Player';
       if (typeof backendConnect === 'function') backendConnect();
       setTimeout(() => {
