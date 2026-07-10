@@ -3008,6 +3008,13 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 
   <div class="nav-user-wrap" id="nav-wrap">
+    <!-- Active games pill: hidden until user has at least one live seat/entry -->
+    <div class="active-games-pill" id="ag-pill" style="display:none;position:relative">
+      <button id="ag-trig" onclick="toggleActiveGames(event)" style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.28);color:var(--gold);border-radius:2px;padding:6px 12px;font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;gap:8px;text-transform:uppercase">
+        <span>▦</span><span>My Games</span><span id="ag-count" style="background:rgba(201,168,76,.25);color:var(--gold);border-radius:8px;padding:1px 7px;font-size:9px;font-weight:700">0</span>
+      </button>
+      <div id="ag-dd" style="display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:280px;max-width:340px;background:#0E1520;border:1px solid rgba(201,168,76,.3);border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:900;overflow:hidden"></div>
+    </div>
     <div class="notif-bell" id="notif-bell" onclick="toggleNotif()">
       🔔
       <div class="notif-badge" id="notif-badge">4</div>
@@ -11585,6 +11592,118 @@ function mgResetAll(){
   _mgSlots = [null, null, null, null];
   mgRender();
 }
+
+// ── ACTIVE GAMES DROPDOWN ─────────────────────────────────────────
+// Aggregates the current cash-table seat, multi-grid slots, and running
+// tournaments the user is registered in. Rendered as a compact list so the
+// player can jump back to any live game from anywhere in the app.
+function collectActiveGames(){
+  const items = [];
+  if (_connectedTableId) {
+    const tier = (typeof getTiers === 'function')
+      ? getTiers().find(t => (t.backendId || t.id) === _connectedTableId)
+      : null;
+    items.push({
+      kind: 'cash',
+      id: _connectedTableId,
+      name: tier?.tables?.[0]?.name || _buyinTable || 'Cash table',
+      sub:  tier ? (chip(tier.sb) + '/' + chip(tier.bb)) : '',
+      go:   () => { showView('vg'); if (typeof returnToTable === 'function') returnToTable(); },
+    });
+  }
+  const filledSlots = (_mgSlots || []).filter(s => s);
+  if (filledSlots.length) {
+    items.push({
+      kind: 'multi',
+      id: 'multi-grid',
+      name: 'Multi-Table View',
+      sub:  filledSlots.length + ' active tile' + (filledSlots.length === 1 ? '' : 's'),
+      go:   () => goMultiGrid(),
+    });
+  }
+  if (typeof MTTS !== 'undefined' && typeof _mttRegistered !== 'undefined') {
+    (MTTS || []).forEach(m => {
+      if (!_mttRegistered[m.id]) return;
+      if (m._serverStatus !== 'running') return;
+      items.push({
+        kind: 'mtt',
+        id: m.id,
+        name: m.name,
+        sub: 'Tournament · running',
+        go:   () => {
+          if (typeof socket !== 'undefined') socket.emit('rejoinTournament', { tournId: m.id });
+          if (typeof showView === 'function') showView('vg');
+        },
+      });
+    });
+  }
+  return items;
+}
+
+function refreshActiveGamesPill(){
+  const pill = document.getElementById('ag-pill');
+  const cnt  = document.getElementById('ag-count');
+  if (!pill || !cnt) return;
+  const items = collectActiveGames();
+  if (!items.length) { pill.style.display = 'none'; return; }
+  pill.style.display = 'block';
+  cnt.textContent = items.length;
+}
+
+function renderActiveGamesDD(){
+  const dd = document.getElementById('ag-dd');
+  if (!dd) return;
+  const items = collectActiveGames();
+  window._agItems = items;
+  if (!items.length) {
+    dd.innerHTML = '<div style="padding:16px;text-align:center;color:var(--txd);font-size:11px">No active games</div>';
+    return;
+  }
+  const rowStyle = 'display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s';
+  dd.innerHTML =
+      '<div style="padding:10px 14px;background:rgba(201,168,76,.06);border-bottom:1px solid rgba(201,168,76,.15);font-family:\'Cormorant Garamond\',serif;font-size:13px;color:var(--gold);letter-spacing:1px">Active Games</div>'
+    + items.map((it, i) =>
+        '<div onclick="_agJump(' + i + ')" onmouseenter="this.style.background=\'rgba(255,255,255,.03)\'" onmouseleave="this.style.background=\'transparent\'" style="' + rowStyle + '">'
+        + '  <div style="display:flex;align-items:center;gap:10px;min-width:0">'
+        + '    <span style="font-size:14px">' + (it.kind === 'cash' ? '♠' : it.kind === 'mtt' ? '🏆' : '▦') + '</span>'
+        + '    <div style="min-width:0">'
+        + '      <div style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(it.name) + '</div>'
+        + '      <div style="font-size:9px;color:var(--txd);margin-top:2px">' + escHtml(it.sub) + '</div>'
+        + '    </div>'
+        + '  </div>'
+        + '  <span style="color:var(--gold);font-size:10px;letter-spacing:1px">RETURN →</span>'
+        + '</div>'
+      ).join('');
+}
+
+function _agJump(idx){
+  const item = (window._agItems || [])[idx];
+  document.getElementById('ag-dd').style.display = 'none';
+  if (item && typeof item.go === 'function') item.go();
+}
+
+function toggleActiveGames(e){
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('ag-dd');
+  if (!dd) return;
+  const open = dd.style.display === 'block';
+  if (open) { dd.style.display = 'none'; return; }
+  renderActiveGamesDD();
+  dd.style.display = 'block';
+}
+
+// Close on outside click
+document.addEventListener('click', (e) => {
+  const pill = document.getElementById('ag-pill');
+  if (!pill || pill.style.display === 'none') return;
+  if (!pill.contains(e.target)) {
+    const dd = document.getElementById('ag-dd');
+    if (dd) dd.style.display = 'none';
+  }
+});
+
+// Poll: cheap enough — only counts + one dom write on change
+setInterval(refreshActiveGamesPill, 1500);
 
 // ── PUBLIC PLAYER PROFILE ──────────────────────────────────────────
 function goPlayerProfile(username) {
