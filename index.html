@@ -11598,13 +11598,16 @@ function mgPickOption(slotIdx, tableId){
 function mgAskBuyIn(slotIdx, opt){
   const cached = parseFloat(sessionStorage.getItem('rf_last_buyin_' + opt.id)) || 0;
   const defaultBI = cached >= opt.min && cached <= opt.max ? cached : opt.min;
+  const isGold = opt.id.endsWith('-g');
+  const sym    = isGold ? '' : '$';
+  const suffix = isGold ? ' 🟡' : '';
   const overlay = document.createElement('div');
   overlay.id = 'mg-buyin';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
   overlay.innerHTML =
       '<div style="background:#0E1520;border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:24px;width:340px">'
     + '  <div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--gold);margin-bottom:4px">Buy in — ' + escHtml(opt.name) + '</div>'
-    + '  <div style="font-size:11px;color:var(--txd);margin-bottom:16px">Stakes ' + opt.stakes + ' · Min $' + opt.min + ' · Max $' + opt.max + '</div>'
+    + '  <div style="font-size:11px;color:var(--txd);margin-bottom:16px">Stakes ' + opt.stakes + ' · Min ' + sym + opt.min.toLocaleString() + suffix + ' · Max ' + sym + opt.max.toLocaleString() + suffix + '</div>'
     + '  <input id="mg-buyin-input" type="number" step="1" min="' + opt.min + '" max="' + opt.max + '" value="' + defaultBI + '" style="width:100%;background:#050810;border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:12px;color:#fff;font-family:monospace;font-size:16px;text-align:center">'
     + '  <div id="mg-buyin-err" style="color:#E87070;font-size:10px;margin-top:6px;display:none"></div>'
     + '  <div style="display:flex;gap:8px;margin-top:16px">'
@@ -11620,12 +11623,17 @@ function mgConfirmBuyIn(slotIdx, tableId, name, min, max){
   const input = document.getElementById('mg-buyin-input');
   const err   = document.getElementById('mg-buyin-err');
   const val   = parseFloat(input?.value);
+  const isGold = tableId.endsWith('-g');
+  const sym    = isGold ? '' : '$';
+  const suffix = isGold ? ' 🟡' : '';
+  const balance = isGold ? _balGold : _balRoyal;
+  const balDisplay = isGold ? _balGold.toLocaleString() : ('$' + _balRoyal.toFixed(2));
   if (!Number.isFinite(val) || val < min || val > max) {
-    if (err) { err.style.display = 'block'; err.textContent = 'Enter an amount between $' + min + ' and $' + max; }
+    if (err) { err.style.display = 'block'; err.textContent = 'Enter an amount between ' + sym + min.toLocaleString() + suffix + ' and ' + sym + max.toLocaleString() + suffix; }
     return;
   }
-  if (val > _balRoyal) {
-    if (err) { err.style.display = 'block'; err.textContent = 'Insufficient balance ($' + _balRoyal.toFixed(2) + ' available)'; }
+  if (val > balance) {
+    if (err) { err.style.display = 'block'; err.textContent = 'Insufficient balance (' + balDisplay + (isGold ? ' 🟡' : '') + ' available)'; }
     return;
   }
   sessionStorage.setItem('rf_last_buyin_' + tableId, val);
