@@ -12163,6 +12163,44 @@ var _rgSelectedCooloffHours = 168; // 7 days default
 var _rgSelectedExcludeDays  = 180; // 6 months default
 var _rgSessionMins          = 60;
 
+// Pre-fill RG panel inputs with the user's current limits so they can see
+// what's active and adjust from there.
+async function loadRGSettings(){
+  const token = localStorage.getItem('rf_token');
+  if (!token) return;
+  try {
+    const r = await fetch(BACKEND_URL + '/api/auth/rg', { headers: { 'Authorization': 'Bearer ' + token }});
+    const d = await r.json();
+    if (!d.ok || !d.rg) return;
+    const rgState = d.rg;
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
+    setVal('rg-daily',   rgState.depositDaily);
+    setVal('rg-weekly',  rgState.depositWeekly);
+    setVal('rg-monthly', rgState.depositMonthly);
+    setVal('rg-loss-daily', rgState.lossDaily);
+    // Show any active cool-off / self-exclusion state as a banner
+    const usageEl = document.getElementById('rg-usage');
+    if (usageEl) {
+      const parts = [];
+      if (rgState.selfExcludedUntil && rgState.selfExcludedUntil > Date.now()) {
+        parts.push('🚫 Self-excluded until ' + new Date(rgState.selfExcludedUntil).toLocaleDateString());
+      }
+      if (rgState.cooloffUntil && rgState.cooloffUntil > Date.now()) {
+        parts.push('⏸ Cool-off until ' + new Date(rgState.cooloffUntil).toLocaleString());
+      }
+      if (rgState.depositsToday != null) {
+        parts.push('Deposited today: $' + Number(rgState.depositsToday).toFixed(2)
+          + (rgState.depositDaily ? ' / $' + Number(rgState.depositDaily).toFixed(2) : ''));
+      }
+      if (parts.length) {
+        usageEl.innerHTML = parts.map(p =>
+          '<div style="font-size:10px;color:var(--txd);padding:6px 0;letter-spacing:.5px">' + p + '</div>'
+        ).join('');
+      }
+    }
+  } catch(_) { /* silent — panel still works with empty inputs */ }
+}
+
 async function rgSave(type){
   const token = localStorage.getItem('rf_token');
   if(!token){ showRGConfirm('Please log in to save settings.'); return; }
@@ -13718,15 +13756,46 @@ socket.on('joinedTable', ({ tableId, seat }) => {
 
 // Full table state — update names, stacks, pot, acting seat
 socket.on('tableState', (state) => {
-  // Only sync if we actually joined this table via backend (prevents demo seat wipes)
   if (!_backendActive || !_connectedTableId) return;
+  const tid = state.id;
+  // Multi-tabling: cache state per table and update tab turn-indicators.
+  if (tid && _tables[tid]) {
+    _tables[tid].state = state;
+    _updateTableTabIndicator(tid, state);
+  }
+  // Only re-render the currently active table.
+  if (tid && tid !== _connectedTableId) return;
   console.log('[Socket] tableState phase=' + state.phase + ' pot=' + state.pot + ' seats=' + state.seats.length);
-  // Keep blind/ante amounts fresh from server (blinds up mid-hand handled here).
   if (typeof state.sb === 'number') SB_AMT = state.sb;
   if (typeof state.bb === 'number') BB_AMT = state.bb;
   if (typeof state.ante === 'number') ANTE_AMT = state.ante;
   syncTableState(state);
 });
+
+// Multi-tabling: update the tab's badge with "your turn" and BB counter indicators.
+function _updateTableTabIndicator(tableId, state) {
+  const tab = document.querySelector('.mt-tab[data-tid="' + tableId + '"]');
+  if (!tab) return;
+  const meSeat = state.seats?.find(s => s.socketId === socket.id) || state.seats?.[_tables[tableId]?.mySocketSeat];
+  const myTurn = meSeat?.acting === true;
+  let dot = tab.querySelector('.mt-tab-dot');
+  if (myTurn) {
+    if (!dot) {
+      dot = document.createElement('span');
+      dot.className = 'mt-tab-dot';
+      dot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:#5DC896;margin-left:8px;box-shadow:0 0 8px #5DC896;animation:pulse 1s infinite';
+      tab.appendChild(dot);
+    }
+    tab.style.borderTop = '2px solid #5DC896';
+    // If tab isn't active, make sure the player knows.
+    if (tab.dataset.tid !== _activeTableId) {
+      if (typeof playSound === 'function') playSound('turn');
+    }
+  } else {
+    if (dot) dot.remove();
+    tab.style.borderTop = '';
+  }
+}
 
 // Hand result — show winner toast and update stacks
 socket.on('handResult', (result) => {
@@ -13907,6 +13976,24 @@ socket.on('tournUnregistered', ({ tournId, balance }) => {
   showToast('Unregistered — buy-in refunded');
 });
 
+// Ensure this tournament table appears as a tab and is tracked for multi-tabling.
+function _registerTournamentTable(tournId, tableId, seat) {
+  const t = MTTS.find(m => m.id === tournId);
+  const name = (t?.name || 'Tournament').slice(0, 14);
+  if (!_tables[tableId]) {
+    _tables[tableId] = { state: null, myCards: [], mySocketSeat: seat, active: true, name };
+  } else {
+    _tables[tableId].mySocketSeat = seat;
+    _tables[tableId].name = name;
+  }
+  _addTableTab(tableId, name);
+  _activeTableId = tableId;
+  // Mark this tab as active visually.
+  document.querySelectorAll('.mt-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.querySelector('.mt-tab[data-tid="' + tableId + '"]');
+  if (tab) tab.classList.add('active');
+}
+
 socket.on('tournStarted', ({ tournId, tableId, state }) => {
   const t = MTTS.find(m => m.id === tournId);
   if (t) t._serverStatus = 'running';
@@ -13924,6 +14011,9 @@ socket.on('tournStarted', ({ tournId, tableId, state }) => {
     _sngMode = true;
     showToast('🏆 Tournament started! Good luck');
     showView('vg');
+    // Multi-tabling: register this tournament table.
+    const mySeat = state?.seats?.findIndex?.(s => s.socketId === socket.id) ?? 0;
+    _registerTournamentTable(tournId, tableId, mySeat);
   }
 });
 
@@ -14022,6 +14112,7 @@ socket.on('tournReconnected', ({ tournId, tableId, seat, state }) => {
   showToast('🔗 Reconnected to ' + (t?.name || 'tournament'));
   addNotif('game','🔗','green','Reconnected to tournament ' + (t?.name || tournId));
   showView('vg');
+  _registerTournamentTable(tournId, tableId, seat);
 });
 
 // Multi-table balancing — server moved us to a new table.
