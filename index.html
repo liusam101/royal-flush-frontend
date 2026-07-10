@@ -6227,7 +6227,8 @@ window._showVerifyBanner = function(user){
 <div id="vg" class="view" style="display:none">
   <div class="gtop">
     <div style="display:flex;align-items:center;gap:14px">
-      <button class="bk" onclick="goLobbyFromTable()">← Lobby</button>
+      <button class="bk" onclick="goLobbyFromTable()" title="Return to lobby — keeps your seat">← Lobby</button>
+      <button class="bk" onclick="leaveTableAndCashOut()" title="Cash out and leave this table" style="border-color:rgba(232,112,112,.35);color:#E88888">🚪 Leave</button>
       <div><div class="gtitle">Midnight Velvet</div><div class="gstakes" id="g-stakes">$0.25/$0.50 No Limit Hold'em</div></div>
     </div>
     <div class="pills">
@@ -11353,8 +11354,28 @@ function goLobby(){
 // ── Sit-out and return to lobby (keeps seat) ──────────────────────
 var _sittingOut = false;
 
+// ← Lobby button: keep the seat but sit out on the server and show a persistent
+// "still seated" banner. Use the Leave button (or the banner's Leave button)
+// to actually cash out and free the seat.
 function goLobbyFromTable(){
-  goLobby(); // goLobby override handles backend leave + balance update
+  if (_backendActive && _connectedTableId) {
+    _sittingOut = true;
+    socket.emit('sitOut', { tableId: _connectedTableId });
+    showView('vl');
+    _showReturnBanner();
+    setTimeout(() => { if (typeof renderLeaderboard === 'function') renderLeaderboard(); }, 300);
+    return;
+  }
+  // No live seat — behave like a plain back-to-lobby navigation.
+  goLobby();
+}
+
+// Explicit "cash out + leave" — used by the Leave button on the game view and
+// on the return banner. Actually frees the seat server-side.
+function leaveTableAndCashOut(){
+  if (!_connectedTableId) { showView('vl'); return; }
+  goLobby(); // the overridden goLobby (line ~15075) does backendLeaveTable() + cash-out
+  _hideReturnBanner();
 }
 
 function returnToTable(){
@@ -11375,9 +11396,12 @@ function _showReturnBanner(){
     banner.innerHTML = '<div style="display:flex;align-items:center;gap:12px">'
       + '<div style="width:8px;height:8px;border-radius:50%;background:#FFB800;animation:pulse 1s infinite"></div>'
       + '<span style="font-size:11px;letter-spacing:1px;color:#fff">You are still seated at <b style="color:#FFB800" id="return-table-name">' + tname + '</b></span>'
-      + '<span style="font-size:10px;color:rgba(255,255,255,.5)">&nbsp;· Your hand will auto-fold if action comes to you</span>'
+      + '<span style="font-size:10px;color:rgba(255,255,255,.5)">&nbsp;· Sitting out — you won\'t be dealt in</span>'
       + '</div>'
-      + '<button onclick="returnToTable()" style="background:linear-gradient(135deg,#B8942E,#FFB800);border:none;border-radius:3px;color:#000;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:8px 18px;cursor:pointer;text-transform:uppercase">Return to Table</button>';
+      + '<div style="display:flex;gap:6px">'
+      + '  <button onclick="leaveTableAndCashOut()" style="background:rgba(232,112,112,.1);border:1px solid rgba(232,112,112,.4);border-radius:3px;color:#E88888;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:8px 14px;cursor:pointer;text-transform:uppercase">Leave Table</button>'
+      + '  <button onclick="returnToTable()" style="background:linear-gradient(135deg,#B8942E,#FFB800);border:none;border-radius:3px;color:#000;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:8px 18px;cursor:pointer;text-transform:uppercase">Return to Table</button>'
+      + '</div>';
     document.body.appendChild(banner);
   }
   banner.style.display = 'flex';
