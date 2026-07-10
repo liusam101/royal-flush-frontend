@@ -11376,21 +11376,6 @@ function leaveTableAndCashOut(){
   socket.emit('requestLeave', { tableId: _connectedTableId });
 }
 
-// Server confirms: leaving after the current hand ends.
-if (typeof socket !== 'undefined') {
-  socket.on('leavePending', ({ tableId }) => {
-    if (tableId !== _connectedTableId) return;
-    _leavingPending = true;
-    _showLeavingBanner();
-  });
-  socket.on('leaveConfirmed', () => {
-    _leavingPending = false;
-    _hideLeavingBanner();
-    // Finalize local cleanup — goLobby's overridden flow expects _backendActive
-    goLobby();
-  });
-}
-
 var _leavingPending = false;
 function _showLeavingBanner(){
   let b = document.getElementById('leaving-banner');
@@ -14170,6 +14155,31 @@ socket.on('chipsReturned', ({ balance }) => {
 // When a new overflow table is created, refresh the lobby
 socket.on('tableListUpdated', () => {
   if(typeof refreshLobbyFromBackend==='function') refreshLobbyFromBackend();
+});
+
+// Deferred-leave lifecycle events from the server.
+socket.on('leavePending', ({ tableId }) => {
+  if (tableId !== _connectedTableId) return;
+  _leavingPending = true;
+  _showLeavingBanner();
+});
+socket.on('leaveConfirmed', () => {
+  _leavingPending = false;
+  _hideLeavingBanner();
+  // Server has already freed the seat + returned chips. Clean up client state
+  // (mirrors backendLeaveTable minus the redundant leaveTable emit) and route home.
+  _connectedTableId = null;
+  _mySocketSeat     = null;
+  _backendActive    = false;
+  if (typeof stopSessionClock === 'function') stopSessionClock();
+  sessionStorage.removeItem('rf_last_table');
+  sessionStorage.removeItem('rf_last_buyin');
+  if (typeof _origGoLobby === 'function') _origGoLobby();
+  else showView('vl');
+});
+socket.on('leaveCancelled', () => {
+  _leavingPending = false;
+  _hideLeavingBanner();
 });
 
 socket.on('joinedTable', ({ tableId, seat }) => {
