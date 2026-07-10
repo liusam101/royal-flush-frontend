@@ -13243,6 +13243,29 @@ async function renderAchievements(){
   body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txd);font-size:11px">Loading...</div>';
   const token = localStorage.getItem('rf_token');
   if(!token){ body.innerHTML='<div style="padding:24px;text-align:center;color:var(--txd)">Log in to see achievements</div>'; return; }
+  // Try the new /api/me/achievements first (Phase 6 system with unlocked flag);
+  // fall back to the legacy /api/auth/achievements format.
+  try {
+    const rNew = await fetch(BACKEND_URL+'/api/me/achievements', { headers: { 'Authorization': 'Bearer ' + token }});
+    const dNew = await rNew.json();
+    if (dNew.ok && Array.isArray(dNew.achievements) && dNew.achievements.length && dNew.achievements[0].unlocked !== undefined) {
+      const list = dNew.achievements;
+      const earned = list.filter(a => a.unlocked).length;
+      const total  = list.length;
+      const subEl = document.getElementById('ach-sub');
+      if (subEl) subEl.textContent = earned + '/' + total + ' unlocked';
+      body.innerHTML = list.map(a => (
+        '<div style="display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.04);' + (a.unlocked?'':'opacity:.4') + '">'
+        + '<div style="font-size:26px">' + a.icon + '</div>'
+        + '<div style="flex:1">'
+        + '  <div style="font-family:Montserrat,sans-serif;font-size:11px;color:' + (a.unlocked?'var(--gold)':'var(--txd)') + ';letter-spacing:1.5px">' + escHtml(a.name) + (a.unlocked?'':' 🔒') + '</div>'
+        + '  <div style="font-size:11px;color:var(--txd);margin-top:4px">' + escHtml(a.description) + '</div>'
+        + '  ' + (a.unlockedAt ? '<div style="font-size:9px;color:var(--grn);margin-top:4px">Unlocked ' + new Date(a.unlockedAt).toLocaleDateString() + '</div>' : '')
+        + '</div></div>'
+      )).join('');
+      return;
+    }
+  } catch(_) { /* fall through to legacy */ }
   try {
     const res  = await fetch(BACKEND_URL+'/api/auth/achievements',{headers:{'Authorization':'Bearer '+token}});
     const data = await res.json();
@@ -13961,6 +13984,25 @@ socket.on('tournReentered', ({ tournId, reentryCount, balance }) => {
   _tournReentryOffered = false;
   showToast('🔄 Re-entered! (entry #' + (reentryCount + 1) + ')');
   addNotif('game','🔄','gold','Re-entered tournament');
+});
+
+// Achievement unlocked — pop a celebratory toast for each newly-earned badge.
+socket.on('achievementsUnlocked', ({ achievements }) => {
+  if (!Array.isArray(achievements) || !achievements.length) return;
+  achievements.forEach((a, i) => {
+    setTimeout(() => {
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:900;background:linear-gradient(135deg,#0E1520,#1a1030);border:1px solid rgba(201,168,76,.5);border-radius:8px;padding:16px 22px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;gap:12px;align-items:center;min-width:280px;font-family:Montserrat,sans-serif';
+      toast.innerHTML = '<div style="font-size:32px">' + a.icon + '</div>'
+        + '<div>'
+        + '  <div style="font-size:9px;letter-spacing:2px;color:var(--gold)">ACHIEVEMENT UNLOCKED</div>'
+        + '  <div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:var(--tx);margin-top:2px">' + escHtml(a.name) + '</div>'
+        + '  <div style="font-size:10px;color:var(--txd);margin-top:2px">' + escHtml(a.description) + '</div>'
+        + '</div>';
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.transition='opacity .3s'; toast.style.opacity='0'; setTimeout(()=>toast.remove(),300); }, 4500);
+    }, i * 900);
+  });
 });
 
 // Server auto-restored a tournament seat after this socket reconnected (Phase 3).
