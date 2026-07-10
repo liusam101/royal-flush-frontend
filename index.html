@@ -11354,28 +11354,68 @@ function goLobby(){
 // ── Sit-out and return to lobby (keeps seat) ──────────────────────
 var _sittingOut = false;
 
-// ← Lobby button: keep the seat but sit out on the server and show a persistent
-// "still seated" banner. Use the Leave button (or the banner's Leave button)
-// to actually cash out and free the seat.
+// ← Lobby: navigate to lobby without touching the seat. Player stays in the
+// hand — use the Sit Out button to skip hands, or Leave Table to cash out.
 function goLobbyFromTable(){
   if (_backendActive && _connectedTableId) {
-    _sittingOut = true;
-    socket.emit('sitOut', { tableId: _connectedTableId });
     showView('vl');
     _showReturnBanner();
     setTimeout(() => { if (typeof renderLeaderboard === 'function') renderLeaderboard(); }, 300);
     return;
   }
-  // No live seat — behave like a plain back-to-lobby navigation.
   goLobby();
 }
 
-// Explicit "cash out + leave" — used by the Leave button on the game view and
-// on the return banner. Actually frees the seat server-side.
+// Leave Table (GGPoker-style): if you're mid-hand and still in it, request a
+// deferred leave so you finish the hand first. Otherwise leave immediately.
 function leaveTableAndCashOut(){
   if (!_connectedTableId) { showView('vl'); return; }
-  goLobby(); // the overridden goLobby (line ~15075) does backendLeaveTable() + cash-out
-  _hideReturnBanner();
+  // Ask server: it decides immediate vs pending. Server will emit
+  // 'leavePending' if deferred, or the usual chipsReturned + tableState if
+  // it leaves you right away.
+  socket.emit('requestLeave', { tableId: _connectedTableId });
+}
+
+// Server confirms: leaving after the current hand ends.
+if (typeof socket !== 'undefined') {
+  socket.on('leavePending', ({ tableId }) => {
+    if (tableId !== _connectedTableId) return;
+    _leavingPending = true;
+    _showLeavingBanner();
+  });
+  socket.on('leaveConfirmed', () => {
+    _leavingPending = false;
+    _hideLeavingBanner();
+    // Finalize local cleanup — goLobby's overridden flow expects _backendActive
+    goLobby();
+  });
+}
+
+var _leavingPending = false;
+function _showLeavingBanner(){
+  let b = document.getElementById('leaving-banner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'leaving-banner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:600;background:linear-gradient(90deg,#2a1010,#3a1a1a);border-bottom:1px solid rgba(232,112,112,.5);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;font-family:Montserrat,sans-serif';
+    b.innerHTML = '<div style="display:flex;align-items:center;gap:12px">'
+      + '<div style="width:8px;height:8px;border-radius:50%;background:#E88888;animation:pulse 1s infinite"></div>'
+      + '<span style="font-size:11px;letter-spacing:1px;color:#fff">You will leave the table after this hand ends</span>'
+      + '</div>'
+      + '<button onclick="cancelLeave()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:3px;color:#fff;font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;padding:8px 14px;cursor:pointer;text-transform:uppercase">Cancel</button>';
+    document.body.appendChild(b);
+  }
+  b.style.display = 'flex';
+}
+function _hideLeavingBanner(){
+  const b = document.getElementById('leaving-banner');
+  if (b) b.style.display = 'none';
+}
+function cancelLeave(){
+  if (!_connectedTableId) return;
+  socket.emit('cancelLeave', { tableId: _connectedTableId });
+  _leavingPending = false;
+  _hideLeavingBanner();
 }
 
 function returnToTable(){
@@ -11396,7 +11436,7 @@ function _showReturnBanner(){
     banner.innerHTML = '<div style="display:flex;align-items:center;gap:12px">'
       + '<div style="width:8px;height:8px;border-radius:50%;background:#FFB800;animation:pulse 1s infinite"></div>'
       + '<span style="font-size:11px;letter-spacing:1px;color:#fff">You are still seated at <b style="color:#FFB800" id="return-table-name">' + tname + '</b></span>'
-      + '<span style="font-size:10px;color:rgba(255,255,255,.5)">&nbsp;· Sitting out — you won\'t be dealt in</span>'
+      + '<span style="font-size:10px;color:rgba(255,255,255,.5)">&nbsp;· You\'ll auto-fold if action reaches you</span>'
       + '</div>'
       + '<div style="display:flex;gap:6px">'
       + '  <button onclick="leaveTableAndCashOut()" style="background:rgba(232,112,112,.1);border:1px solid rgba(232,112,112,.4);border-radius:3px;color:#E88888;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:8px 14px;cursor:pointer;text-transform:uppercase">Leave Table</button>'
