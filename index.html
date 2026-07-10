@@ -11675,15 +11675,55 @@ function _statRow(label, value, color) {
   // Inject CSS overrides to hide chrome and shrink the game view for the small iframe.
   const style = document.createElement('style');
   style.textContent = `
+    /* Hide every piece of surrounding chrome — the multi-grid frame already
+       shows the table name and provides a close button, so the iframe just
+       needs the felt + seats + action buttons. */
     .embed-mode nav, .embed-mode footer, .embed-mode .lp-footer,
     .embed-mode #nav-wrap, .embed-mode #tourn-lb-panel,
     .embed-mode #chat-panel, .embed-mode #rf-cursor,
-    .embed-mode #mt-tab-bar, .embed-mode .nav, .embed-mode #rotate-prompt {
+    .embed-mode #mt-tab-bar, .embed-mode .nav, .embed-mode #rotate-prompt,
+    .embed-mode .logo, .embed-mode .mode-bal-pill,
+    .embed-mode .gtop, .embed-mode .pills,
+    .embed-mode .g-topbar, .embed-mode #vg > .gtop,
+    .embed-mode .lp-nav, .embed-mode #rf-lp-nav,
+    .embed-mode #vl-nav, .embed-mode .sb-nav-wrap {
       display: none !important;
     }
-    .embed-mode body { overflow: hidden !important; }
-    .embed-mode #vg { transform-origin: top left; }
+    /* Body/html fill the iframe with no scroll. */
+    .embed-mode, .embed-mode body {
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      height: 100vh !important;
+      width: 100vw !important;
+      background: #050810 !important;
+    }
+    /* Game view fills the whole iframe. */
+    .embed-mode #vg {
+      position: fixed !important;
+      inset: 0 !important;
+      height: 100vh !important;
+      width: 100vw !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: block !important;
+      overflow: hidden !important;
+    }
     .embed-mode .view { min-height: 100vh; }
+    /* Table shell fills the iframe (no top-bar to subtract). */
+    .embed-mode #table-wrap, .embed-mode .table-wrap,
+    .embed-mode #poker-table, .embed-mode .poker-table {
+      height: 100vh !important;
+      max-height: 100vh !important;
+      top: 0 !important;
+      margin-top: 0 !important;
+    }
+    /* Shrink action-button row slightly so it stays inside small tiles. */
+    .embed-mode .actions, .embed-mode #action-bar,
+    .embed-mode .action-row {
+      transform: scale(.85);
+      transform-origin: bottom center;
+    }
   `;
   document.head.appendChild(style);
   // Once auth restore + socket connect complete, route to the target table.
