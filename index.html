@@ -11406,7 +11406,12 @@ function cancelLeave(){
 }
 
 function returnToTable(){
-  if (!_connectedTableId) return;
+  if (!_connectedTableId || !_backendActive) {
+    // Seat already gone (leave completed, session ended). Just clear the banner.
+    _hideReturnBanner();
+    if (typeof showToast === 'function') showToast('You are no longer seated at that table.');
+    return;
+  }
   _sittingOut = false;
   socket.emit('returnToTable', { tableId: _connectedTableId });
   showView('vg');
@@ -14178,16 +14183,19 @@ socket.on('leavePending', ({ tableId }) => {
 socket.on('leaveConfirmed', () => {
   _leavingPending = false;
   _hideLeavingBanner();
-  // Server has already freed the seat + returned chips. Clean up client state
-  // (mirrors backendLeaveTable minus the redundant leaveTable emit) and route home.
+  _hideReturnBanner();
+  // Server has already freed the seat + returned chips. Clean up local state.
   _connectedTableId = null;
   _mySocketSeat     = null;
   _backendActive    = false;
   if (typeof stopSessionClock === 'function') stopSessionClock();
   sessionStorage.removeItem('rf_last_table');
   sessionStorage.removeItem('rf_last_buyin');
-  if (typeof _origGoLobby === 'function') _origGoLobby();
-  else showView('vl');
+  // Only navigate if we're not already in the lobby (avoids the vl→vl flash
+  // when leaving from the lobby via the return banner's Leave Table button).
+  const inLobby = document.getElementById('vl')?.classList.contains('active');
+  if (!inLobby) showView('vl');
+  if (typeof renderLeaderboard === 'function') setTimeout(renderLeaderboard, 200);
 });
 socket.on('leaveCancelled', () => {
   _leavingPending = false;
