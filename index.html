@@ -9354,7 +9354,9 @@ var _sitOutPending = false;
 
 function _mySeatIsSittingOut(){
   const you = SEATS.find(s => s.you);
-  return !!you?.sitOut;
+  // pendingActive is set for players who joined mid-hand — they'll be dealt
+  // in next hand, so from the UX perspective they're not "sitting out".
+  return !!you?.sitOut && !you?.pendingActive;
 }
 
 function _renderSitOutBtn(){
@@ -14990,6 +14992,7 @@ function syncTableState(state) {
     dealer: !!s.isDealer,
     allIn:  !!s.allIn,
     sitOut: !!s.sitOut,
+    pendingActive: !!s.pendingActive,
     socketSeat: s.seat,
     avatarUrl: i === 0 ? (window._myAvatarDataUrl || null) : null,
   }));
