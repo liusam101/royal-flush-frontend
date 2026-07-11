@@ -7262,7 +7262,19 @@ function ddAct(a){
 }
 
 // ── DAILY BONUS STATE ──────────────────────────────────────────────────────
-var _bonusClaimed = false;
+// Rolling 24h cooldown. _nextBonusAt is a millis-epoch timestamp; the bonus is
+// claimable when now >= _nextBonusAt (or when it's null).
+var _bonusClaimed  = false;
+var _nextBonusAt   = null;
+
+function _fmtBonusCountdown(ms){
+  if (ms <= 0) return '';
+  const totalMin = Math.ceil(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h > 0) return h + 'h ' + m + 'm';
+  return m + 'm';
+}
 
 async function _loadBonusStatus(){
   const token = localStorage.getItem('rf_token');
@@ -7271,7 +7283,8 @@ async function _loadBonusStatus(){
     const res  = await fetch(BACKEND_URL+'/api/auth/daily-bonus/status',{headers:{'Authorization':'Bearer '+token}});
     const data = await res.json();
     if(!data.ok) return;
-    _bonusClaimed = data.claimed;
+    _bonusClaimed = !!data.claimed;
+    _nextBonusAt  = data.nextClaimAt || null;
     _renderBonusPanel();
   } catch(_){}
 }
@@ -7280,27 +7293,52 @@ function _renderBonusPanel(){
   const sub = document.getElementById('bonus-sub-text');
   const btn = document.getElementById('claim-chips-btn');
   const dots = document.getElementById('streak-dots');
+  const badge = document.getElementById('dd-badge');
   const _rcEligible = _balRoyal < RC_BALANCE_CAP;
+  const remainingMs = _nextBonusAt ? Math.max(0, _nextBonusAt - Date.now()) : 0;
+  const onCooldown  = _bonusClaimed && remainingMs > 0;
+  const countdown   = onCooldown ? _fmtBonusCountdown(remainingMs) : '';
+
   if(sub){
-    sub.textContent = _bonusClaimed
-      ? ('Come back tomorrow for 1,250 chips' + (_rcEligible ? ' + 1 RC!' : '!'))
+    sub.textContent = onCooldown
+      ? ('Next bonus in ' + countdown)
       : ('Claim 1,250 Gold Chips' + (_rcEligible ? ' + 1 Barrel Chip free' : ''));
   }
   if(btn){
-    btn.textContent = _bonusClaimed ? '✓ Claimed Today' : 'Claim Daily Bonus';
-    btn.disabled = _bonusClaimed;
-    btn.style.opacity = _bonusClaimed ? '0.5' : '1';
+    btn.textContent = onCooldown ? ('✓ Available in ' + countdown) : 'Claim Daily Bonus';
+    btn.disabled = onCooldown;
+    btn.style.opacity = onCooldown ? '0.5' : '1';
   }
-  // Replace streak dots with simple status indicator
   if(dots){
-    dots.innerHTML = _bonusClaimed
-      ? '<div style="font-size:10px;color:var(--grn);letter-spacing:.5px">✓ Claimed — see you tomorrow!</div>'
+    dots.innerHTML = onCooldown
+      ? '<div style="font-size:10px;color:var(--grn);letter-spacing:.5px">✓ Claimed — next in ' + countdown + '</div>'
       : '<div style="font-size:10px;color:var(--gold);letter-spacing:.5px">🎁 1,250 Gold' + (_rcEligible ? ' + ♦1 RC' : '') + ' available</div>';
+  }
+  if(badge){
+    if(onCooldown){
+      badge.textContent = countdown;
+      badge.style.display = '';
+      badge.style.animation = 'none';
+      badge.style.background = 'rgba(255,255,255,.06)';
+      badge.style.color = 'var(--txd)';
+      badge.style.borderColor = 'rgba(255,255,255,.1)';
+    } else {
+      badge.textContent = 'Claim!';
+      badge.style.display = '';
+      badge.style.animation = '';
+      badge.style.background = '';
+      badge.style.color = '';
+      badge.style.borderColor = '';
+    }
   }
 }
 
 async function claimBonus(){
-  if(_bonusClaimed){ showWB('Already Claimed!','Come back tomorrow for more free chips.',0); return; }
+  const remainingMs = _nextBonusAt ? Math.max(0, _nextBonusAt - Date.now()) : 0;
+  if(_bonusClaimed && remainingMs > 0){
+    showWB('Not Ready Yet','Next bonus available in ' + _fmtBonusCountdown(remainingMs) + '.', 0);
+    return;
+  }
   const token = localStorage.getItem('rf_token');
   if(!token){ showWB('Sign In Required','Log in to claim your daily bonus!',0); return; }
   try {
@@ -7310,26 +7348,31 @@ async function claimBonus(){
     const data = await res.json();
     if(data.ok){
       _bonusClaimed = true;
+      _nextBonusAt  = data.nextClaimAt || (Date.now() + 24*3600*1000);
       _balGold += 1250; updBal();
-      document.getElementById('dd-badge').style.display='none';
       playSound('win');
-      // Also give 1 RC if balance < $1
       let rcMsg = '';
       if(_balRoyal < RC_BALANCE_CAP){
         claimFreeRoyal();
         rcMsg = ' + 1 Barrel Chip';
       }
-      showWB('🎁 Daily Bonus!','1,250 Gold Chips'+rcMsg+' added — see you tomorrow!', 1250);
+      showWB('🎁 Daily Bonus!','1,250 Gold Chips'+rcMsg+' added — next bonus in 24h.', 1250);
       _renderBonusPanel();
       addNotif('social','🎁','gold','<b>Daily Bonus:</b> 1,250 Gold Chips'+rcMsg+' claimed!');
     } else {
-      showWB('Already Claimed','Come back tomorrow!',0);
-      _bonusClaimed=true; _renderBonusPanel();
+      _bonusClaimed = true;
+      _nextBonusAt  = data.nextClaimAt || _nextBonusAt;
+      _renderBonusPanel();
+      const rem = _nextBonusAt ? Math.max(0, _nextBonusAt - Date.now()) : 0;
+      showWB('Not Ready Yet','Next bonus available in ' + _fmtBonusCountdown(rem) + '.', 0);
     }
   } catch(e){
     showWB('Connection Error','Could not reach server. Try again.',0);
   }
 }
+
+// Refresh the countdown label every 30s so the badge stays accurate.
+setInterval(() => { if (_nextBonusAt) _renderBonusPanel(); }, 30000);
 
 // ══ PRE-ACTION QUEUE ═══════════════════════════════════════════════
 function setPendingAction(a){
