@@ -5297,7 +5297,7 @@ window._showVerifyBanner = function(user){
 
 <!-- ══ AFFILIATE PAGE VIEW ═══════════════════════════════════════= -->
 <!-- ══ MULTI-TABLE GRID VIEW (2x2 iframes) ═════════════════════════ -->
-<div id="v-multi-grid" class="view" style="display:none;background:#050810;color:#fff;font-family:Montserrat,sans-serif;height:100vh;overflow:hidden">
+<div id="v-multi-grid" class="view" style="display:none;background:#050810;color:#fff;font-family:Montserrat,sans-serif;position:fixed;top:62px;left:0;right:0;bottom:0;overflow:hidden">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:rgba(8,8,10,.95);border-bottom:1px solid rgba(201,168,76,.15);height:44px">
     <div style="display:flex;align-items:center;gap:12px">
       <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);letter-spacing:1.5px">Multi-Table View</div>
@@ -5308,7 +5308,7 @@ window._showVerifyBanner = function(user){
       <button class="btn btn-ghost btn-sm" style="font-size:9px;padding:6px 12px" onclick="showView('vl')">← Lobby</button>
     </div>
   </div>
-  <div id="mg-grid" style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:2px;height:calc(100vh - 44px);background:rgba(0,0,0,.4)">
+  <div id="mg-grid" style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:2px;height:calc(100vh - 62px - 44px);background:rgba(0,0,0,.4)">
     <!-- 4 slots injected by mgRender() -->
   </div>
 </div>
