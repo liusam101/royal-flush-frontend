@@ -2929,6 +2929,7 @@ async function fetchTournaments(){
       featured:      false,
       buyin:         Number(t.buyIn),
       guarantee:     Number(t.guarantee || 0),
+      currency:      t.currency || 'royal',
       rake:          0.05,
       registered:    t.registered,
       prizePool:     Number(t.prizePool || 0),
@@ -2941,8 +2942,6 @@ async function fetchTournaments(){
       playersLeft:   t.registered,
       prizes:        (t.prizes || []).map(p => ({ place: _mttOrdinal(p.place), pct: p.pct, amount: Number(p.amount || 0) })),
       blinds:        _DEFAULT_MTT_BLINDS,
-      goldBuyin:     Number(t.buyIn) * 200,
-      goldGuarantee: Number(t.guarantee || 0) * 200,
     }));
     if (typeof renderMTT === 'function') renderMTT();
   } catch(e) {
@@ -11184,20 +11183,27 @@ function fmtTournTime(ms){
 function renderMTT(){
   const el=document.getElementById('mtt-list');
   if(!el) return;
-  const isGold=_mode==='gold', isGoldMode=isGold, sym=isGold?'🟡 ':'$';
+  const isGold=_mode==='gold';
   const now=Date.now();
 
-  el.innerHTML=MTTS.map(t=>{
-    const activeBuyin = isGold ? (t.goldBuyin||t.buyin*200) : t.buyin;
-  const activeGuarantee = isGold ? (t.goldGuarantee||t.guarantee*200) : t.guarantee;
-  const grossPool=Math.max(activeGuarantee, (t.registered||0)*activeBuyin);
-  const pool=Math.floor(grossPool*(1-(t.rake||.07))*100)/100; // rake taken from pot
-    const poolStr=pool>=1000?sym+(pool/1000).toFixed(0)+'K':sym+pool.toLocaleString();
+  // Only show tournaments whose currency matches the active mode. Royal-mode
+  // players see Barrel-Chip tournaments; Gold-mode players see Gold-Chip ones.
+  const visible = MTTS.filter(t => (t.currency || 'royal') === (isGold ? 'gold' : 'royal'));
+
+  el.innerHTML=visible.map(t=>{
+    const tIsGold = (t.currency === 'gold');
+    const sym = tIsGold ? '' : '$';
+    const suffix = tIsGold ? ' 🟡' : '';
+    const grossPool=Math.max(t.guarantee, (t.registered||0)*t.buyin);
+    const pool=Math.floor(grossPool*(1-(t.rake||.07))*100)/100;
+    const poolStr = pool>=1000
+      ? sym+(pool/1000).toFixed(0)+'K'+suffix
+      : sym+pool.toLocaleString()+suffix;
     const regd=_mttRegistered[t.id];
     const remaining=t.startTime-now;
     let statusText=regd?'✓ Registered':t.status==='running'?'▶ Running':t.status==='late'?'Late Reg Open':t.status==='finished'?'Finished':remaining>0?fmtTournTime(remaining):'Starting';
     let badgeCls=regd?'registering':t.status;
-    return '<div class="mtt-card'+(t.featured?' featured':'')+'" onclick="openMTT(\'' +t.id+ '\')">' 
+    return '<div class="mtt-card'+(t.featured?' featured':'')+'" onclick="openMTT(\'' +t.id+ '\')">'
       +'<div class="mtt-header">'
       +'<div class="mtt-icon">'+t.icon+'</div>'
       +'<div class="mtt-info">'
@@ -11208,7 +11214,7 @@ function renderMTT(){
       +'<div class="mtt-prize-col">'
       +'<div class="mtt-prize-amt">'+poolStr+'</div>'
       +'<div class="mtt-prize-lbl">Guaranteed</div>'
-      +'<div style="margin-top:8px;font-size:9px;color:var(--txd)">'+sym+(isGoldMode?(t.goldBuyin||t.buyin*200):t.buyin)+' buy-in · '+Math.round((t.rake||.07)*100)+'% rake from pot</div>'
+      +'<div style="margin-top:8px;font-size:9px;color:var(--txd)">'+sym+t.buyin.toLocaleString()+suffix+' buy-in · '+Math.round((t.rake||.07)*100)+'% rake from pot</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -11231,9 +11237,13 @@ function renderMTT(){
 function openMTT(id){
   const t=MTTS.find(function(m){return m.id===id;});
   if(!t) return;
-  const isGold=_mode==='gold', isGoldMode=isGold, sym=isGold?'🟡 ':'$';
-  const activeBuyin    = isGold ? (t.goldBuyin||t.buyin*200)       : t.buyin;
-  const activeGuarantee= isGold ? (t.goldGuarantee||t.guarantee*200): t.guarantee;
+  const tIsGold = (t.currency === 'gold');
+  const sym = tIsGold ? '' : '$';
+  const suffix = tIsGold ? ' 🟡' : '';
+  // Tournament currency is server-authoritative; the buy-in/guarantee are stored
+  // in that currency's units already.
+  const activeBuyin     = t.buyin;
+  const activeGuarantee = t.guarantee;
   // For server-driven tournaments use the authoritative prizePool from the API (excludes bots).
   // Fall back to a client-side calculation only if the server didn't provide one.
   const pool = (typeof t.prizePool === 'number' && t.prizePool > 0)
@@ -11286,7 +11296,7 @@ function openMTT(id){
       +'<div style="min-width:80px;font-size:9px;color:var(--txd)">'+p.place+'</div>'
       +'<div style="flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px">'
       +'<div style="width:'+barW+'%;height:100%;background:linear-gradient(to right,var(--gold-dim),var(--gold));border-radius:2px"></div></div>'
-      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:15px;color:var(--gold);min-width:70px;text-align:right">'+sym+amt.toLocaleString()+'</div>'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:15px;color:var(--gold);min-width:70px;text-align:right">'+sym+amt.toLocaleString()+suffix+'</div>'
       +'</div>';
   }).join('');
 
@@ -11314,7 +11324,7 @@ function openMTT(id){
   const canUnreg = regd && t.status !== 'running' && t.status !== 'finished';
   const canRejoin = regd && t.status === 'running'; // running tournament with active registration → rejoin
   const btnHtml=canReg
-    ?'<button class="btn btn-gold" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px" onclick="registerForMTT(\''+t.id+'\')">Register — '+sym+t.buyin+'</button>'
+    ?'<button class="btn btn-gold" style="width:100%;padding:14px;font-size:11px;letter-spacing:2px" onclick="registerForMTT(\''+t.id+'\')">Register — '+sym+t.buyin.toLocaleString()+suffix+'</button>'
     :canUnreg
       ?'<div style="text-align:center;font-size:10px;color:var(--grn);letter-spacing:2px;margin-bottom:10px">&#10003; YOU ARE REGISTERED</div>'
        +'<button class="btn btn-ghost" style="width:100%;padding:14px;font-size:11px;color:#E87070;border-color:rgba(232,112,112,.3)" onclick="confirmUnregisterMTT(\''+t.id+'\')">Unregister &amp; Refund</button>'
@@ -11327,13 +11337,13 @@ function openMTT(id){
   const html='<div style="margin-bottom:16px">'+statusLine+'</div>'
     +liveStats
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px">'
-      +'<div style="background:var(--bg2);border:1px solid rgba(201,168,76,.08);border-radius:4px;padding:10px 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:var(--gold)">'+sym+pool.toLocaleString()+'</div><div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-top:2px">Prize Pool</div></div>'
+      +'<div style="background:var(--bg2);border:1px solid rgba(201,168,76,.08);border-radius:4px;padding:10px 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:var(--gold)">'+sym+pool.toLocaleString()+suffix+'</div><div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-top:2px">Prize Pool</div></div>'
       +'<div style="background:var(--bg2);border:1px solid rgba(201,168,76,.08);border-radius:4px;padding:10px 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:var(--tx)">'+(t.registered||0).toLocaleString()+'</div><div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-top:2px">Registered</div></div>'
       +'<div style="background:var(--bg2);border:1px solid rgba(201,168,76,.08);border-radius:4px;padding:10px 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:var(--tx)">'+(t.startingStack||0).toLocaleString()+'</div><div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-top:2px">Starting Stack</div></div>'
     +'</div>'
     +'<div style="font-size:9px;color:var(--txd);margin-bottom:6px;letter-spacing:1.5px;text-transform:uppercase">Structure</div>'
     +'<div style="font-size:11px;color:var(--tx);margin-bottom:4px">'+t.structure+'</div>'
-    +'<div style="font-size:10px;color:var(--txd);margin-bottom:18px">'+sym+activeBuyin+' buy-in · '+Math.round((t.rake||.07)*100)+'% rake from pot · '+t.blindMins+'min levels · '+t.lateRegMins+'min late reg · '+Math.ceil((t.registered||10)*0.15)+' places paid</div>'
+    +'<div style="font-size:10px;color:var(--txd);margin-bottom:18px">'+sym+activeBuyin.toLocaleString()+suffix+' buy-in · '+Math.round((t.rake||.07)*100)+'% rake from pot · '+t.blindMins+'min levels · '+t.lateRegMins+'min late reg · '+Math.ceil((t.registered||10)*0.15)+' places paid</div>'
     +'<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-bottom:8px">Prize Breakdown</div>'
     +'<div style="margin-bottom:18px">'+prizesHTML+'</div>'
     +'<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txd);margin-bottom:6px">Blind Structure</div>'
@@ -11354,19 +11364,15 @@ function openMTT(id){
 function registerForMTT(id){
   const t=MTTS.find(function(m){return m.id===id;});
   if(!t) return;
-  const isGoldMode=_mode==='gold';
-  // Phase 1: MTTs are Barrel Chips only (server-driven money). Gold mode -> show unsupported message.
-  if (isGoldMode) {
-    showRGConfirm('Gold Chip tournaments are coming soon. Switch to Barrel Chips to register.');
-    return;
-  }
   if (!localStorage.getItem('rf_token')) {
     showRGConfirm('Please sign in to register for tournaments.');
     return;
   }
-  const bal=_balRoyal;
-  const totalCost=t.buyin;
-  if(bal<totalCost){ showRGConfirm('Insufficient balance. Please add chips to register.'); return; }
+  // Currency is set on the tournament itself — check the matching wallet.
+  const isGoldTourn = (t.currency === 'gold');
+  const bal        = isGoldTourn ? _balGold : _balRoyal;
+  const totalCost  = t.buyin;
+  if (bal < totalCost) { showRGConfirm('Insufficient balance. Please add chips to register.'); return; }
   backendConnect();
   socket.emit('tournRegister', { tournId: t.id, playerName: getMyName() });
   // UI feedback + confirmation happen when the server emits 'tournRegistered'.
@@ -11390,7 +11396,9 @@ function unregisterFromMTT(id){
 function confirmUnregisterMTT(id){
   const t = MTTS.find(m => m.id === id);
   if (!t) return;
-  const sym = _mode === 'gold' ? '🟡 ' : '$';
+  const tIsGold = (t.currency === 'gold');
+  const sym = tIsGold ? '' : '$';
+  const suffix = tIsGold ? ' 🟡' : '';
   const overlay = document.createElement('div');
   overlay.id = 'mtt-unreg-confirm';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(6,10,15,.85);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Montserrat,sans-serif';
@@ -11400,7 +11408,7 @@ function confirmUnregisterMTT(id){
     + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:600;color:var(--gold);margin-bottom:6px">Unregister?</div>'
     + '<div style="font-size:12px;color:var(--txd);margin-bottom:6px;line-height:1.5">You will be unregistered from</div>'
     + '<div style="font-size:13px;color:var(--tx);margin-bottom:18px;font-weight:600">' + escHtml(t.name) + '</div>'
-    + '<div style="font-size:11px;color:var(--grn);margin-bottom:22px;letter-spacing:1px">' + sym + t.buyin + ' will be refunded</div>'
+    + '<div style="font-size:11px;color:var(--grn);margin-bottom:22px;letter-spacing:1px">' + sym + t.buyin.toLocaleString() + suffix + ' will be refunded</div>'
     + '<div style="display:flex;gap:8px">'
     + '<button id="mtt-unreg-cancel" class="btn btn-ghost" style="flex:1;padding:12px;font-size:10px;letter-spacing:2px">Cancel</button>'
     + '<button id="mtt-unreg-ok" class="btn" style="flex:1;padding:12px;font-size:10px;letter-spacing:2px;background:linear-gradient(135deg,#8B3535,#E87070);color:#fff;border:none">Unregister</button>'
