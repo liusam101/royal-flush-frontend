@@ -9348,25 +9348,54 @@ function sitOutBadge(){
   return '<div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:7px;letter-spacing:.5px;text-transform:uppercase;color:#E8C040;font-family:Montserrat,sans-serif;text-align:center;line-height:1.3">SIT<br>OUT</div>';
 }
 
-function toggleSitOut(){
-  _sitOut = !_sitOut;
+// True when we've asked the server to sit us out at the end of the hand but
+// the hand hasn't ended yet. Cleared on sitOutApplied / sitOutCancelled.
+var _sitOutPending = false;
+
+function _mySeatIsSittingOut(){
+  const you = SEATS.find(s => s.you);
+  return !!you?.sitOut;
+}
+
+function _renderSitOutBtn(){
   const btn = document.getElementById('sitout-btn');
-  if(_sitOut){
-    btn.textContent = 'Sitting Out';
+  if (!btn) return;
+  const sittingOut = _mySeatIsSittingOut();
+  if (_sitOutPending) {
+    btn.textContent = 'Sit Out (queued)';
     btn.style.color = '#E8C040';
     btn.style.borderColor = 'rgba(232,192,64,.4)';
     btn.style.background = 'rgba(232,192,64,.08)';
-    addLog('You will sit out next hand.', 'sys');
-    showRGConfirm('Sitting out — your seat is held. Click "Sitting Out" to return.');
+    btn.title = 'Will sit out after this hand — click to cancel';
+  } else if (sittingOut) {
+    btn.textContent = 'Return';
+    btn.style.color = '#5DC896';
+    btn.style.borderColor = 'rgba(93,200,150,.4)';
+    btn.style.background = 'rgba(93,200,150,.08)';
+    btn.title = 'Return to the game';
   } else {
     btn.textContent = 'Sit Out';
     btn.style.color = '';
     btn.style.borderColor = '';
     btn.style.background = '';
-    addLog('You are back in the game.', 'sys');
+    btn.title = 'Sit out after this hand';
   }
-  // Update your seat avatar to show sit-out indicator
-  updateSeats();
+}
+
+function toggleSitOut(){
+  if (!_backendActive || !_connectedTableId) return;
+  if (_sitOutPending) {
+    // Currently queued — cancel it.
+    socket.emit('cancelSitOut', { tableId: _connectedTableId });
+    return;
+  }
+  if (_mySeatIsSittingOut()) {
+    // Sitting out on the server — return to the game.
+    socket.emit('returnToTable', { tableId: _connectedTableId });
+    return;
+  }
+  // Fresh sit-out request. Server decides immediate vs deferred.
+  socket.emit('requestSitOut', { tableId: _connectedTableId });
 }
 
 // ══ TABLE CHAT ══════════════════════════════════════════════════════
@@ -14253,6 +14282,24 @@ socket.on('leaveCancelled', () => {
   _hideLeavingBanner();
 });
 
+// Deferred-sit-out lifecycle. Server emits sitOutPending when the request was
+// queued (mid-hand + still live) and sitOutApplied when it actually took
+// effect. sitOutCancelled fires if the user un-queues before the hand ends.
+socket.on('sitOutPending', () => {
+  _sitOutPending = true;
+  _renderSitOutBtn();
+  if (typeof addLog === 'function') addLog('You will sit out after this hand ends.', 'sys');
+});
+socket.on('sitOutApplied', () => {
+  _sitOutPending = false;
+  _renderSitOutBtn(); // tableState update will follow with actual seat.sitOut=true
+});
+socket.on('sitOutCancelled', () => {
+  _sitOutPending = false;
+  _renderSitOutBtn();
+  if (typeof addLog === 'function') addLog('Sit-out request cancelled — still in the game.', 'sys');
+});
+
 socket.on('joinedTable', ({ tableId, seat }) => {
   _mySocketSeat     = seat;
   _backendActive    = true;
@@ -14289,6 +14336,8 @@ socket.on('tableState', (state) => {
   if (typeof state.bb === 'number') BB_AMT = state.bb;
   if (typeof state.ante === 'number') ANTE_AMT = state.ante;
   syncTableState(state);
+  // Sit-out button reflects the seat's server-side sitOut flag.
+  if (typeof _renderSitOutBtn === 'function') _renderSitOutBtn();
 });
 
 // Multi-tabling: update the tab's badge with "your turn" and BB counter indicators.
@@ -14940,6 +14989,7 @@ function syncTableState(state) {
     folded: !!s.folded,
     dealer: !!s.isDealer,
     allIn:  !!s.allIn,
+    sitOut: !!s.sitOut,
     socketSeat: s.seat,
     avatarUrl: i === 0 ? (window._myAvatarDataUrl || null) : null,
   }));
