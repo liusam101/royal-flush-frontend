@@ -11722,13 +11722,37 @@ function mgSelect(slotIdx, tableId, name, kind, buyIn){
 }
 
 function mgRemove(slotIdx){
+  const slot = _mgSlots[slotIdx];
+  if (slot) {
+    // Ask the iframe to leave the server seat before we tear it down. If we
+    // just drop the iframe, the socket disconnect triggers a 60s grace period
+    // before the seat is freed. postMessage → iframe emits leaveTable → seat
+    // frees immediately.
+    const tile = document.getElementById('mg-grid')?.children?.[slotIdx];
+    const iframe = tile?.querySelector('iframe');
+    if (iframe?.contentWindow) {
+      try { iframe.contentWindow.postMessage({ type: 'mg-leave', tableId: slot.tableId }, '*'); } catch(_) {}
+    }
+    // Give the iframe a beat to send the emit before we destroy it.
+    setTimeout(() => { _mgSlots[slotIdx] = null; mgRender(); }, 120);
+    return;
+  }
   _mgSlots[slotIdx] = null;
   mgRender();
 }
 
 function mgResetAll(){
-  _mgSlots = [null, null, null, null];
-  mgRender();
+  // Same leave-first pattern as mgRemove — walk every filled iframe and ask
+  // it to leave before we destroy the DOM.
+  const grid = document.getElementById('mg-grid');
+  _mgSlots.forEach((slot, idx) => {
+    if (!slot) return;
+    const iframe = grid?.children?.[idx]?.querySelector('iframe');
+    if (iframe?.contentWindow) {
+      try { iframe.contentWindow.postMessage({ type: 'mg-leave', tableId: slot.tableId }, '*'); } catch(_) {}
+    }
+  });
+  setTimeout(() => { _mgSlots = [null, null, null, null]; mgRender(); }, 120);
 }
 
 // ── ACTIVE GAMES DROPDOWN ─────────────────────────────────────────
@@ -12025,6 +12049,18 @@ function _statRow(label, value, color) {
   }
   // Wait until token restore + socket setup are wired up before routing.
   window.addEventListener('load', () => setTimeout(tryRouteToTable, 900));
+
+  // Parent multi-grid may ask us to leave the seat before it tears the iframe
+  // down — frees the seat right away instead of waiting on the 60s disconnect
+  // grace period. Same-origin only; check origin to be safe.
+  window.addEventListener('message', (e) => {
+    if (e.origin !== window.location.origin) return;
+    if (!e.data || e.data.type !== 'mg-leave') return;
+    const tid = e.data.tableId || window._embedTable;
+    if (typeof socket !== 'undefined' && tid) {
+      try { socket.emit('leaveTable', { tableId: tid }); } catch(_) {}
+    }
+  });
 })();
 
 // Redirect legacy #admin fragment to the dedicated admin.html page.
