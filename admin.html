@@ -453,19 +453,15 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <!-- Preview + Editor -->
       <div class="panel" id="panel-seat-editor">
         <div class="card" style="padding:0;overflow:hidden">
-          <!-- Game view area — looks exactly like the player view -->
-          <div id="se-game-area" style="position:relative;width:100%;overflow:hidden;background:#080a10">
+          <!-- Game view area = mini client viewport (16:9).
+               The wooden table lives inside #se-table-area at ~84% width so the
+               spacing around it matches what real players see. This lets the
+               "at the edges in admin" feeling actually translate to "at the
+               edges on client". -->
+          <div id="se-game-area" style="position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#080a10">
             <!-- Background image layer (populated when BG asset is loaded) -->
             <div id="se-bg-layer" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;opacity:0.8;pointer-events:none"></div>
-            <!-- 3D table model-viewer -->
-            <div style="position:absolute;inset:0;z-index:1;pointer-events:none">
-              <div id="se-glb-wrap" style="display:none;position:absolute;inset:0;background:transparent">
-                <div id="se-glb-inner" style="width:100%;height:100%"></div>
-              </div>
-            </div>
-            <!-- Seat canvas — draggable markers overlaid on top of everything -->
-            <canvas id="seat-canvas" style="position:relative;z-index:10;width:100%;display:block;cursor:default"></canvas>
-            <!-- Top bar mockup -->
+            <!-- Top bar mockup — spans the full viewport, same as client -->
             <div style="position:absolute;top:0;left:0;right:0;height:46px;background:rgba(0,0,0,0.75);border-bottom:1px solid rgba(255,255,255,0.06);z-index:20;display:flex;align-items:center;padding:0 18px;gap:16px;pointer-events:none">
               <span style="font-family:var(--mono);font-size:11px;color:rgba(224,234,248,0.45)">&#8592; LOBBY</span>
               <div>
@@ -475,6 +471,15 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
               <div style="flex:1"></div>
               <span style="font-family:var(--mono);font-size:10px;color:rgba(224,234,248,0.5);border:1px solid rgba(255,255,255,0.1);padding:3px 10px;border-radius:2px">SIT OUT</span>
               <span style="font-family:var(--mono);font-size:10px;color:rgba(255,184,0,0.75);border:1px solid rgba(255,184,0,0.3);padding:3px 10px;border-radius:2px">+ CHIPS</span>
+            </div>
+            <!-- Table area = mirrors client's .table-wrap (84% viewport width,
+                 aspect-ratio 1000/700). Model + seat canvas live in here so
+                 they scale relative to this box, not the whole preview. -->
+            <div id="se-table-area" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:84%;aspect-ratio:1000/700;max-height:calc(100% - 60px)">
+              <div id="se-glb-wrap" style="display:none;position:absolute;inset:0;background:transparent;z-index:1">
+                <div id="se-glb-inner" style="width:100%;height:100%"></div>
+              </div>
+              <canvas id="seat-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:10;cursor:default"></canvas>
             </div>
             <!-- Hint -->
             <div style="position:absolute;bottom:5px;right:10px;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.15);z-index:20;pointer-events:none">drag seats · scale / tilt to match player view</div>
