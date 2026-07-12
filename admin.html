@@ -453,8 +453,11 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <!-- Preview + Editor -->
       <div class="panel" id="panel-seat-editor">
         <div class="card" style="padding:0;overflow:hidden">
-          <!-- Game view area — looks exactly like the player view -->
-          <div id="se-game-area" style="position:relative;width:100%;overflow:hidden;background:#080a10">
+          <!-- Game view area — looks exactly like the player view.
+               Aspect-ratio locks the shape; max-height keeps the whole card
+               visible even at high scale/tilt so seats never punch through the
+               admin nav or the mock top bar. -->
+          <div id="se-game-area" style="position:relative;width:100%;overflow:hidden;background:#080a10;aspect-ratio:700/490;max-height:calc(100vh - 260px);margin:0 auto">
             <!-- Background image layer (populated when BG asset is loaded) -->
             <div id="se-bg-layer" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;opacity:0.8;pointer-events:none"></div>
             <!-- 3D table model-viewer -->
@@ -1660,16 +1663,39 @@ function _seBindEvents(){
 function updateSeAngle(v){
   _seLayoutAngle=parseInt(v);
   document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°';
+  // The safe seat-radius cap depends on the tilt, so re-fit after every change
+  // (only if we have model dims — otherwise leave the manual layout alone).
+  if (window._glbTableDims) autoCalcSeats(true);
   _seDrawSeats();
   // Sync model-viewer camera to match tilt
   const mv=document.querySelector('#se-glb-inner model-viewer');
   if(mv){ const phi=Math.max(5,90-_seLayoutAngle); const r=window._seBaseRadius?`${window._seBaseRadius/_glbScale}m`:'auto'; mv.setAttribute('camera-orbit',`0deg ${phi}deg ${r}`); }
 }
 
+// Vertical safe-zone budget in the preview:
+//   ~46px mock top bar + ~30px name/stack label + ~26px avatar radius = 102px
+//   ~40px hint text + label/stack space at the bottom
+const _SE_SAFE_TOP_PX    = 102;
+const _SE_SAFE_BOTTOM_PX =  40;
+
+// Compute the max vertical seat-radius fraction that keeps top/bottom seats
+// inside the safe zone at the current tilt. Prevents seats from being clipped
+// by the mock top bar / hint row when the scale slider is turned up.
+function _seSafeRyCap(){
+  const tilt = Math.max(0.05, Math.sin((_seLayoutAngle||55) * Math.PI / 180));
+  const area = document.getElementById('se-game-area');
+  const H = area?.clientHeight || SE_H;
+  const mcy = (window._seModelCenter?.cy ?? 0.5);
+  const topRoom    = Math.max(0.02, mcy       - _SE_SAFE_TOP_PX    / H);
+  const bottomRoom = Math.max(0.02, (1 - mcy) - _SE_SAFE_BOTTOM_PX / H);
+  return Math.min(0.48, Math.min(topRoom, bottomRoom) / tilt);
+}
+
 function autoCalcSeats(silent){
   if(!window._glbTableDims){ if(!silent) toast('Drop a GLB file in the Assets panel first','warn'); return; }
+  const ryCap = _seSafeRyCap();
   _seTableRx=Math.max(0.05,Math.min(0.48, window._glbTableDims.rx * _glbScale));
-  _seTableRy=Math.max(0.05,Math.min(0.48, window._glbTableDims.ry * _glbScale));
+  _seTableRy=Math.max(0.05,Math.min(ryCap, window._glbTableDims.ry * _glbScale));
   const mcx=window._seModelCenter?.cx??0.5;
   const mcy=window._seModelCenter?.cy??0.5;
   const n=parseInt(document.getElementById('se-count').value)||6;
