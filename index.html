@@ -596,9 +596,13 @@ body.royal-mode nav{
 .pill b{color:var(--tx)}
 .garena{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%);overflow:visible;padding:0;position:relative;clip-path:none;perspective:1500px;z-index:1}
 .garena::after{display:none}
-/* translateY offset scales with the taller container so the table stays
-   vertically centered instead of drifting toward the arena bottom. */
-.table-wrap{position:relative;width:96vw;max-width:1800px;aspect-ratio:1000/700;overflow:visible;margin-top:0;margin-left:auto;margin-right:auto;transform:translateY(-6vh);}
+/* Size the container by whichever is smaller: viewport width, the absolute
+   cap, OR what the available arena height (viewport minus top bar) will
+   support given the 1000/700 aspect. That last term is what was missing —
+   without it the table's ideal height was larger than the arena, the flex
+   parent let it overflow, and it visually drifted low because the top nav
+   was clipping the top half. */
+.table-wrap{position:relative;width:min(96vw, 1800px, calc((100vh - 90px) * 1000 / 700));aspect-ratio:1000/700;overflow:visible;margin:0 auto;}
 .table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:perspective(1500px) rotateX(35deg);transform-origin:50% 60%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
