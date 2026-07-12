@@ -491,7 +491,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
               <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">SCALE</span>
-              <input type="range" id="glb-scale" min="0.5" max="1" value="1" step="0.05" oninput="updateGLBScale(this.value)" onchange="pushGLBScale(true)" style="flex:1;accent-color:var(--cyan);cursor:pointer">
+              <input type="range" id="glb-scale" min="0.5" max="2" value="1" step="0.05" oninput="updateGLBScale(this.value)" onchange="pushGLBScale(true)" style="flex:1;accent-color:var(--cyan);cursor:pointer">
               <span id="glb-scale-val" style="font-family:var(--mono);font-size:12px;color:var(--cyan);min-width:38px;text-align:right">1.00x</span>
               <button class="btn btn-sm" onclick="document.getElementById('glb-scale').value=1;updateGLBScale(1)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
             </div>
@@ -1786,18 +1786,14 @@ function renderActiveAssets() {
 let _glbScale = 1.0;
 
 function updateGLBScale(v) {
-  // Clamp: values above 1× make the model overflow the container (sides clip),
-  // so we treat 1× as the fitted maximum. Scale below 0.5× is unusably small.
-  _glbScale = Math.max(0.5, Math.min(1, parseFloat(v) || 1));
+  _glbScale = Math.max(0.5, Math.min(2, parseFloat(v) || 1));
   const valEl = document.getElementById('glb-scale-val');
   if (valEl) valEl.textContent = _glbScale.toFixed(2) + 'x';
-  // Seat editor: zoom camera closer/further — no CSS transform, no overflow
+  // Seat editor: CSS transform on the model-viewer directly — the wooden table
+  // visibly shrinks/grows with the slider, matches what players will see.
   const seMv = document.querySelector('#se-glb-inner model-viewer');
-  if (seMv && window._seBaseRadius) {
-    const phi = Math.max(5, 90 - _seLayoutAngle);
-    seMv.setAttribute('camera-orbit', `0deg ${phi}deg ${window._seBaseRadius / _glbScale}m`);
-  }
-  // Table Assets preview card: CSS transform is fine (fixed-size card, overflow hidden)
+  if (seMv) { seMv.style.transform = `scale(${_glbScale})`; seMv.style.transformOrigin = '50% 50%'; }
+  // Table Assets preview card
   const prevMv = document.querySelector('#glb-preview-inner model-viewer');
   if (prevMv) { prevMv.style.transform = `scale(${_glbScale})`; prevMv.style.transformOrigin = '50% 50%'; }
   if (window._glbTableDims) autoCalcSeats(true);
