@@ -289,7 +289,12 @@ body.gold-mode .ltf-link:hover{color:#F0C040}
 
 /* Game table — deep ocean blue felt */
 body.gold-mode .ptable{background:radial-gradient(ellipse at 50% 38%,#1A4A6E 0%,#0A2744 45%,#061628 100%);border-color:#040C1A;outline:none;box-shadow:inset 0 0 0 3px rgba(240,192,64,.25),0 0 0 1px #020810,0 0 0 4px #071220,0 40px 120px rgba(0,0,0,.95),inset 0 0 100px rgba(0,0,0,.5),inset 0 0 40px rgba(10,39,68,.5)}
-body.gold-mode .garena{background:radial-gradient(ellipse at 50% 40%,rgba(10,39,68,.3) 0%,transparent 65%),radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%)}
+/* Drop the blue tint overlay: with `ellipse at 50% 40%` sized farthest-corner,
+   the 65% transparency stop lands outside the viewport bottom on typical 16:9
+   monitors, so the blue never fades to transparent in the visible area and
+   shows as a thin bluish strip at the bottom. Use only the neutral dark
+   radial in gold mode too. */
+body.gold-mode .garena{background:radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%)}
 body.gold-mode .tlogo{color:rgba(240,192,64,.07)}
 body.gold-mode .pot-lbl{color:rgba(240,192,64,.5)}
 body.gold-mode .pot-val{color:#F0C040;text-shadow:0 0 14px rgba(240,192,64,.3)}
