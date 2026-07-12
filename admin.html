@@ -496,7 +496,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
               <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">SCALE</span>
-              <input type="range" id="glb-scale" min="0.5" max="2" value="1" step="0.05" oninput="updateGLBScale(this.value)" onchange="pushGLBScale(true)" style="flex:1;accent-color:var(--cyan);cursor:pointer">
+              <input type="range" id="glb-scale" min="0.5" max="1" value="1" step="0.05" oninput="updateGLBScale(this.value)" onchange="pushGLBScale(true)" style="flex:1;accent-color:var(--cyan);cursor:pointer">
               <span id="glb-scale-val" style="font-family:var(--mono);font-size:12px;color:var(--cyan);min-width:38px;text-align:right">1.00x</span>
               <button class="btn btn-sm" onclick="document.getElementById('glb-scale').value=1;updateGLBScale(1)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
             </div>
@@ -1791,7 +1791,8 @@ function renderActiveAssets() {
 let _glbScale = 1.0;
 
 function updateGLBScale(v) {
-  _glbScale = parseFloat(v);
+  // Clamp: >1 crops the model against .table-wrap, so 1 is the max.
+  _glbScale = Math.max(0.5, Math.min(1, parseFloat(v) || 1));
   const valEl = document.getElementById('glb-scale-val');
   if (valEl) valEl.textContent = _glbScale.toFixed(2) + 'x';
   // Seat editor: zoom camera closer/further — no CSS transform, no overflow
