@@ -596,12 +596,9 @@ body.royal-mode nav{
 .pill b{color:var(--tx)}
 .garena{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%);overflow:visible;padding:0;position:relative;clip-path:none;perspective:1500px;z-index:1}
 .garena::after{display:none}
-/* Table size scales with --gs (set by JS from the admin scale slider).
-   Base 46vw × 700/1000 stays well inside the viewport at gs=1; at gs=2 it
-   nearly fills the viewport but never overflows. max-width also scales so a
-   very wide monitor gets a proportionally larger max. Vertical constraint
-   keeps it within the visible area on shorter windows. */
-.table-wrap{position:relative;width:calc(46vw * var(--gs, 1));max-width:calc(900px * var(--gs, 1));aspect-ratio:1000/700;max-height:calc(100vh - 140px);overflow:visible;margin-top:0;transform:translateY(-55px);}
+/* Base size upped so the table is prominently sized on modern displays.
+   Height cap prevents it from overshooting the viewport on shorter windows. */
+.table-wrap{position:relative;width:92vw;max-width:1800px;aspect-ratio:1000/700;max-height:calc(100vh - 140px);overflow:visible;margin-top:0;transform:translateY(-55px);}
 .table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:perspective(1500px) rotateX(35deg);transform-origin:50% 60%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
@@ -15663,8 +15660,6 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
 
   try{const _r=localStorage.getItem('rf_admin_seat_positions');if(_r){const _d=JSON.parse(_r);if(_d.tilt!==undefined)_seatedTilt=_d.tilt;}}catch(_){}
   try{const _s=localStorage.getItem('rf_glb_scale');if(_s){_rfGlbScale=parseFloat(_s)||1;}}catch(_){}
-  // Apply the restored scale to the table-wrap CSS var so the initial paint is correctly sized.
-  try{ const _tw0=document.getElementById('table-wrap'); if(_tw0) _tw0.style.setProperty('--gs', String(_rfGlbScale)); }catch(_){}
   try{const _cr=localStorage.getItem('rf_glb_camera_radius');if(_cr){_mvCameraRadius=parseFloat(_cr)||null;}}catch(_){}
   try{const _l=localStorage.getItem('rf_lighting');if(_l){_rfLighting={..._rfLighting,...JSON.parse(_l)};}}catch(_){}
 
@@ -15824,10 +15819,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
-    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;`;
-    // Scale drives the container's width via --gs; the model fills 100% of
-    // that container so it grows/shrinks with it, without overflowing.
-    try { tableWrap.style.setProperty('--gs', String(_rfGlbScale || 1)); } catch(_) {}
+    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;transform-origin:50% 50%;transform:scale(${_rfGlbScale||1});`;
     tableWrap.insertBefore(mv, tableWrap.firstChild);
     const _show = () => { mv.style.opacity = '1'; _applyCommScale(_rfGlbScale); };
     mv.addEventListener('load', () => requestAnimationFrame(_show), { once: true });
@@ -15854,8 +15846,8 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
           if(a.type==='glbScale'&&a.dataUrl){
             _rfGlbScale=Math.max(0.5, Math.min(2, parseFloat(a.dataUrl)||1));
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
-            const _tw = document.getElementById('table-wrap');
-            if (_tw) _tw.style.setProperty('--gs', String(_rfGlbScale));
+            const _hmv=document.getElementById('t3-mv');
+            if(_hmv){ _hmv.style.transform = `scale(${_rfGlbScale})`; _hmv.style.transformOrigin = '50% 50%'; }
             _applyCommScale(_rfGlbScale);
           }
           if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
@@ -15934,8 +15926,8 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       if(data.type==='glbScale'&&data.dataUrl){
         _rfGlbScale = Math.max(0.5, Math.min(2, parseFloat(data.dataUrl) || 1));
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
-        const _tw = document.getElementById('table-wrap');
-        if (_tw) _tw.style.setProperty('--gs', String(_rfGlbScale));
+        const _mv = document.getElementById('t3-mv');
+        if(_mv){ _mv.style.transform = `scale(${_rfGlbScale})`; _mv.style.transformOrigin = '50% 50%'; }
         _applyCommScale(_rfGlbScale);
       }
       if(data.type==='lighting'&&data.dataUrl){
