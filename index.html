@@ -15972,6 +15972,16 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     if(document.getElementById('vg')?.classList.contains('active')){
       if(typeof placeSeats==='function') placeSeats();
     }
+    // Push tilt to the 3D model too — Push Tilt in admin was updating only
+    // seat positions, leaving the wooden table sitting at its old angle.
+    if(_seatedTilt !== null){
+      const _mv = document.getElementById('t3-mv');
+      if(_mv){
+        const _phi = Math.max(5, 90 - _seatedTilt);
+        const _r   = _mvCameraRadius ? `${_mvCameraRadius}m` : 'auto';
+        _mv.setAttribute('camera-orbit', `0deg ${_phi}deg ${_r}`);
+      }
+    }
   }
 
   function _saveSeatData(raw){
