@@ -453,11 +453,8 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <!-- Preview + Editor -->
       <div class="panel" id="panel-seat-editor">
         <div class="card" style="padding:0;overflow:hidden">
-          <!-- Game view area — looks exactly like the player view. Aspect ratio
-               locks the shape; max-height keeps the whole card visible so the
-               bottom seat + wooden edge don't get clipped when scale/tilt push
-               the model larger than the container. -->
-          <div id="se-game-area" style="position:relative;width:100%;overflow:hidden;background:#080a10;aspect-ratio:700/490;max-height:calc(100vh - 260px);margin:0 auto">
+          <!-- Game view area — looks exactly like the player view -->
+          <div id="se-game-area" style="position:relative;width:100%;overflow:hidden;background:#080a10">
             <!-- Background image layer (populated when BG asset is loaded) -->
             <div id="se-bg-layer" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;opacity:0.8;pointer-events:none"></div>
             <!-- 3D table model-viewer -->
