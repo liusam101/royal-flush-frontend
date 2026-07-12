@@ -585,11 +585,10 @@ body.royal-mode nav{
 .pot-chip.yellow{background:radial-gradient(circle at 50% 30%,rgba(255,255,255,0.9) 0%,transparent 70%) #f9a825;border:2px dashed #f57f17}
 
 /* ── GAME ── */
-/* Explicit dark background: in gold mode the body has a blue-navy gradient
-   (line 145) and if .garena for any reason doesn't paint to the very bottom
-   pixel of #vg, that blue leaks through as a strip at the bottom. Nailing
-   #vg's own background to the arena's darkest tone kills that leak. */
 #vg{padding-top:0;height:100vh;display:flex;flex-direction:column;overflow:clip;box-sizing:border-box;background:#050505}
+/* Override gold-mode body gradient while in-game so nothing bluish can peek
+   through from the body layer no matter what happens above it. */
+body.in-game{background:#050505 !important}
 .gtop{padding:7px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,.12);flex-shrink:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;position:relative}
 .bk{background:none;border:none;color:var(--txd);font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:color .2s;padding:0}
 .bk:hover{color:var(--gold)}
