@@ -453,8 +453,10 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
       <!-- Preview + Editor -->
       <div class="panel" id="panel-seat-editor">
         <div class="card" style="padding:0;overflow:hidden">
-          <!-- Game view area — looks exactly like the player view -->
-          <div id="se-game-area" style="position:relative;width:100%;overflow:hidden;background:#080a10">
+          <!-- Game view area. Width scales with --gs (from the scale slider) so
+               the entire preview + model grows with the slider without ever
+               overflowing the card. --gs default 1 = fitted to card width. -->
+          <div id="se-game-area" style="position:relative;width:calc(100% * var(--gs, 1) / 2);max-width:100%;margin:0 auto;overflow:hidden;background:#080a10">
             <!-- Background image layer (populated when BG asset is loaded) -->
             <div id="se-bg-layer" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;opacity:0.8;pointer-events:none"></div>
             <!-- 3D table model-viewer -->
@@ -1789,11 +1791,11 @@ function updateGLBScale(v) {
   _glbScale = Math.max(0.5, Math.min(2, parseFloat(v) || 1));
   const valEl = document.getElementById('glb-scale-val');
   if (valEl) valEl.textContent = _glbScale.toFixed(2) + 'x';
-  // Seat editor: CSS transform on the model-viewer directly — the wooden table
-  // visibly shrinks/grows with the slider, matches what players will see.
-  const seMv = document.querySelector('#se-glb-inner model-viewer');
-  if (seMv) { seMv.style.transform = `scale(${_glbScale})`; seMv.style.transformOrigin = '50% 50%'; }
-  // Table Assets preview card
+  // Seat editor: scale the preview container width via --gs so the model +
+  // seats grow together and never overflow the card. Matches the player CSS.
+  const gameArea = document.getElementById('se-game-area');
+  if (gameArea) gameArea.style.setProperty('--gs', String(_glbScale));
+  // Table Assets thumbnail preview stays a static card, so transform is fine.
   const prevMv = document.querySelector('#glb-preview-inner model-viewer');
   if (prevMv) { prevMv.style.transform = `scale(${_glbScale})`; prevMv.style.transformOrigin = '50% 50%'; }
   if (window._glbTableDims) autoCalcSeats(true);
