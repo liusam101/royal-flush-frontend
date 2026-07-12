@@ -15819,7 +15819,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
-    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;`;
+    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;transform-origin:50% 50%;transform:scale(${_rfGlbScale||1});`;
     tableWrap.insertBefore(mv, tableWrap.firstChild);
     const _show = () => { mv.style.opacity = '1'; _applyCommScale(_rfGlbScale); };
     mv.addEventListener('load', () => requestAnimationFrame(_show), { once: true });
@@ -15844,14 +15844,10 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             }
           }
           if(a.type==='glbScale'&&a.dataUrl){
-            // Clamp: scale >1 makes the 3D model overflow .table-wrap and clips
-            // its ends. If admin pushed a stale value, cap it here so the
-            // player view always fits.
-            _rfGlbScale=Math.min(1, parseFloat(a.dataUrl)||1);
-            if(a.cameraRadius){ _mvCameraRadius=a.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
+            _rfGlbScale=Math.max(0.5, Math.min(2, parseFloat(a.dataUrl)||1));
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
-            if(_hmv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+            if(_hmv){ _hmv.style.transform = `scale(${_rfGlbScale})`; _hmv.style.transformOrigin = '50% 50%'; }
             _applyCommScale(_rfGlbScale);
           }
           if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
@@ -15928,12 +15924,10 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         _applySeatUpdate();
       }
       if(data.type==='glbScale'&&data.dataUrl){
-        // Same clamp as the HTTP snapshot path — scale >1 crops the model.
-        _rfGlbScale = Math.min(1, parseFloat(data.dataUrl) || 1);
-        if(data.cameraRadius){ _mvCameraRadius=data.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
+        _rfGlbScale = Math.max(0.5, Math.min(2, parseFloat(data.dataUrl) || 1));
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
-        if(_mv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+        if(_mv){ _mv.style.transform = `scale(${_rfGlbScale})`; _mv.style.transformOrigin = '50% 50%'; }
         _applyCommScale(_rfGlbScale);
       }
       if(data.type==='lighting'&&data.dataUrl){
