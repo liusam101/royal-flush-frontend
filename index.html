@@ -15842,7 +15842,10 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             }
           }
           if(a.type==='glbScale'&&a.dataUrl){
-            _rfGlbScale=parseFloat(a.dataUrl)||1;
+            // Clamp: scale >1 makes the 3D model overflow .table-wrap and clips
+            // its ends. If admin pushed a stale value, cap it here so the
+            // player view always fits.
+            _rfGlbScale=Math.min(1, parseFloat(a.dataUrl)||1);
             if(a.cameraRadius){ _mvCameraRadius=a.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
@@ -15923,7 +15926,8 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         _applySeatUpdate();
       }
       if(data.type==='glbScale'&&data.dataUrl){
-        _rfGlbScale = parseFloat(data.dataUrl) || 1;
+        // Same clamp as the HTTP snapshot path — scale >1 crops the model.
+        _rfGlbScale = Math.min(1, parseFloat(data.dataUrl) || 1);
         if(data.cameraRadius){ _mvCameraRadius=data.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
