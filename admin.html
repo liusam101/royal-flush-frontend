@@ -614,6 +614,10 @@ function initSocket(key) {
       renderActiveAssets();
     }
 
+    // After server-side pushed assets are restored, also restore any staged
+    // drops from IndexedDB so admin doesn't have to re-drop after a refresh.
+    restoreStagedAssets().catch(e => console.warn('[Assets] Staging restore failed:', e.message));
+
     refresh();
     log('Admin snapshot received','info');
   });
@@ -1224,6 +1228,103 @@ async function showGLBPreview(dataUrl){
 // ── Asset drop-in ─────────────────────────────────────────────────
 const _pendingAssets = {};
 
+// ── IndexedDB persistence for dropped-but-not-yet-pushed assets ──
+// GLB models can be 5–50MB, well over localStorage's ~5MB cap. IndexedDB
+// handles the large blobs cleanly and survives across refresh.
+const _IDB_NAME = 'rf_admin_assets_v1';
+const _IDB_STORE = 'staging';
+
+function _idbOpen() {
+  return new Promise((resolve, reject) => {
+    try {
+      const r = indexedDB.open(_IDB_NAME, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(_IDB_STORE, { keyPath: 'type' });
+      r.onsuccess = () => resolve(r.result);
+      r.onerror   = () => reject(r.error);
+    } catch(e) { reject(e); }
+  });
+}
+
+async function _idbSaveAsset(asset) {
+  try {
+    const db = await _idbOpen();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(_IDB_STORE, 'readwrite');
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+      tx.objectStore(_IDB_STORE).put({
+        type: asset.type, name: asset.name, size: asset.size, dataUrl: asset.dataUrl,
+        stagedAt: new Date().toISOString(),
+      });
+    });
+    db.close();
+  } catch(e) { console.warn('[Assets] IDB save failed:', e.message); }
+}
+
+async function _idbLoadAllAssets() {
+  try {
+    const db = await _idbOpen();
+    const rows = await new Promise((res, rej) => {
+      const tx = db.transaction(_IDB_STORE, 'readonly');
+      const req = tx.objectStore(_IDB_STORE).getAll();
+      req.onsuccess = () => res(req.result || []);
+      req.onerror = () => rej(req.error);
+    });
+    db.close();
+    return rows;
+  } catch(e) { console.warn('[Assets] IDB load failed:', e.message); return []; }
+}
+
+async function _idbDeleteAsset(type) {
+  try {
+    const db = await _idbOpen();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(_IDB_STORE, 'readwrite');
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+      tx.objectStore(_IDB_STORE).delete(type);
+    });
+    db.close();
+  } catch(e) { /* best-effort */ }
+}
+
+// Restore staged assets on load — call this after the DOM is ready. If an
+// asset is already active on the server (from the admin snapshot), the
+// staged copy is kept only if it's newer (different filename or larger),
+// otherwise we drop it to avoid stale pending state.
+async function restoreStagedAssets() {
+  const rows = await _idbLoadAllAssets();
+  const _fmtSz = b => b >= 1048576 ? (b/1048576).toFixed(1)+'MB' : b >= 1024 ? Math.round(b/1024)+'KB' : b+'B';
+  for (const row of rows) {
+    const active = _pendingAssets[row.type]; // already populated by adminSnapshot if pushed
+    if (active && active.name === row.name && active.size === row.size) {
+      // Already pushed and matches — no need to restore staging.
+      await _idbDeleteAsset(row.type);
+      continue;
+    }
+    _pendingAssets[row.type] = { type: row.type, dataUrl: row.dataUrl, name: row.name, size: row.size };
+    const statusEl = document.getElementById(row.type + '-status');
+    const btnEl    = document.getElementById(row.type + '-push-btn');
+    if (statusEl) {
+      statusEl.textContent = `⏸ Staged: ${row.name} — ${_fmtSz(row.size)} — click Push to broadcast`;
+      statusEl.style.color = 'var(--gold)';
+    }
+    if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; }
+    if (row.type === 'bg') {
+      const dropEl = document.getElementById('bg-drop');
+      if (dropEl) {
+        dropEl.style.backgroundImage = `url(${row.dataUrl})`;
+        dropEl.style.backgroundSize = 'cover';
+        dropEl.style.backgroundPosition = 'center';
+        dropEl.style.opacity = '0.7';
+      }
+      const bgLayer = document.getElementById('se-bg-layer');
+      if (bgLayer) bgLayer.style.backgroundImage = `url(${row.dataUrl})`;
+    }
+    if (row.type === 'glb' && typeof showGLBPreview === 'function') {
+      try { showGLBPreview(row.dataUrl); } catch(_) {}
+    }
+  }
+}
+
 function handleAssetDrop(e, type) {
   e.preventDefault();
   const dropEl = document.getElementById(type+'-drop');
@@ -1256,6 +1357,8 @@ function handleAssetFile(file, type) {
   const reader = new FileReader();
   reader.onload = e => {
     _pendingAssets[type] = { type, dataUrl: e.target.result, name: file.name, size: file.size };
+    // Persist the staged drop so a refresh doesn't lose it. Non-blocking.
+    _idbSaveAsset(_pendingAssets[type]);
     statusEl.textContent = `✓ ${file.name} — ${_fmtSz(file.size)} ready`;
     statusEl.style.color = 'var(--green)';
     btnEl.disabled = false;
@@ -1298,6 +1401,9 @@ function pushAsset(type) {
     log(`Asset push: ${type} "${asset.name}" → ${d.tables} clients`, 'success');
     btnEl.textContent = type === 'glb' ? '▶ PUSH TO ALL PLAYERS' : '▶ PUSH BACKGROUND';
     btnEl.disabled = false;
+    // Push succeeded — the server now owns the canonical copy, so drop the
+    // staged IDB entry to prevent stale restoration on the next refresh.
+    _idbDeleteAsset(type);
     renderActiveAssets();
   });
   setTimeout(() => {
