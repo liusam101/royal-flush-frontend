@@ -596,9 +596,7 @@ body.royal-mode nav{
 .pill b{color:var(--tx)}
 .garena{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%);overflow:visible;padding:0;position:relative;clip-path:none;perspective:1500px;z-index:1}
 .garena::after{display:none}
-/* Base size upped so the table is prominently sized on modern displays.
-   Height cap prevents it from overshooting the viewport on shorter windows. */
-.table-wrap{position:relative;width:92vw;max-width:1800px;aspect-ratio:1000/700;max-height:calc(100vh - 140px);overflow:visible;margin-top:0;transform:translateY(-55px);}
+.table-wrap{position:relative;width:84vw;max-width:1200px;aspect-ratio:1000/700;overflow:visible;margin-top:0;transform:translateY(-55px);}
 .table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:perspective(1500px) rotateX(35deg);transform-origin:50% 60%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
@@ -15740,7 +15738,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
   function _getPreHost(){
     if(_preRenderHost) return _preRenderHost;
     _preRenderHost = document.createElement('div');
-    _preRenderHost.style.cssText = 'position:fixed;left:-200%;top:0;width:92vw;max-width:1800px;aspect-ratio:1000/700;pointer-events:none;';
+    _preRenderHost.style.cssText = 'position:fixed;left:-200%;top:0;width:84vw;max-width:1200px;aspect-ratio:1000/700;pointer-events:none;';
     document.body.appendChild(_preRenderHost);
     return _preRenderHost;
   }
@@ -15819,7 +15817,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
     mv.setAttribute('interaction-prompt', 'none');
-    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;transform-origin:50% 50%;transform:scale(${_rfGlbScale||1});`;
+    mv.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;--poster-color:transparent;z-index:2;pointer-events:none;opacity:0;transition:opacity 0.4s;`;
     tableWrap.insertBefore(mv, tableWrap.firstChild);
     const _show = () => { mv.style.opacity = '1'; _applyCommScale(_rfGlbScale); };
     mv.addEventListener('load', () => requestAnimationFrame(_show), { once: true });
@@ -15844,10 +15842,11 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             }
           }
           if(a.type==='glbScale'&&a.dataUrl){
-            _rfGlbScale=Math.max(0.5, Math.min(2, parseFloat(a.dataUrl)||1));
+            _rfGlbScale=parseFloat(a.dataUrl)||1;
+            if(a.cameraRadius){ _mvCameraRadius=a.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
-            if(_hmv){ _hmv.style.transform = `scale(${_rfGlbScale})`; _hmv.style.transformOrigin = '50% 50%'; }
+            if(_hmv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
             _applyCommScale(_rfGlbScale);
           }
           if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
@@ -15924,10 +15923,11 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         _applySeatUpdate();
       }
       if(data.type==='glbScale'&&data.dataUrl){
-        _rfGlbScale = Math.max(0.5, Math.min(2, parseFloat(data.dataUrl) || 1));
+        _rfGlbScale = parseFloat(data.dataUrl) || 1;
+        if(data.cameraRadius){ _mvCameraRadius=data.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
-        if(_mv){ _mv.style.transform = `scale(${_rfGlbScale})`; _mv.style.transformOrigin = '50% 50%'; }
+        if(_mv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
         _applyCommScale(_rfGlbScale);
       }
       if(data.type==='lighting'&&data.dataUrl){
