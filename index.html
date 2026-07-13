@@ -40,7 +40,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
 .btn-sm{padding:6px 14px;font-size:9px}
 .view{display:none}.view.active{display:block}
-#vg.active{display:flex}
+#vg.active{display:grid}
 #vl.active{display:flex}
 html[data-init-view='lobby'] #vl{display:flex}
 html[data-init-view='home'] #v-home{display:block}
@@ -10063,7 +10063,11 @@ function showView(id){
     document.querySelectorAll('.view').forEach(v=>{ v.classList.remove('active'); v.style.display='none'; });
     const el=document.getElementById(id);
     if(!el) return;
-    el.style.display='block'; el.classList.add('active');
+    // Clear the inline display so CSS controls the layout mode. Setting
+    // 'block' inline was overriding #vg's `display: grid` from CSS the entire
+    // time, which is why the Grid/Flex fixes we tried previously never took
+    // effect on the actual rendered layout.
+    el.style.display=''; el.classList.add('active');
     window.scrollTo(0,0);
     // Show mode toggle only in lobby
     document.body.classList.toggle('in-lobby', id==='vl');
