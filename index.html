@@ -15743,20 +15743,22 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
 
   function applyBackground(dataUrl){
     if(!dataUrl||!dataUrl.startsWith('data:image')) return;
-    // Apply to BOTH #vg AND .garena. The default .garena has a dark radial
-    // gradient background that would otherwise cover #vg's felt everywhere it
-    // paints — putting the felt on both means whichever one is doing the
-    // painting, the felt is what shows. .garena never quite reached the
-    // viewport bottom in some layouts, so #vg is the fallback for that gap.
-    const bg = `url(${dataUrl})`;
-    for (const id of ['vg','garena']) {
-      const el = document.getElementById(id);
-      if (!el) continue;
-      el.style.backgroundImage = bg;
-      el.style.backgroundSize = '100% 100%';
-      el.style.backgroundPosition = 'center';
-      el.style.backgroundRepeat = 'no-repeat';
-      el.style.backgroundColor = '#050505';
+    // Paint the felt on #vg (guaranteed 100vh, always reaches viewport bottom).
+    // Then clear .garena's default dark radial gradient so #vg's felt shows
+    // through everywhere. .gtop stays opaque at the top, so the felt is only
+    // visible in the arena area below it — exactly the intended look.
+    const vg = document.getElementById('vg');
+    if (vg) {
+      vg.style.backgroundImage = `url(${dataUrl})`;
+      vg.style.backgroundSize = '100% 100%';
+      vg.style.backgroundPosition = 'center';
+      vg.style.backgroundRepeat = 'no-repeat';
+      vg.style.backgroundColor = '#050505';
+    }
+    const g = document.getElementById('garena');
+    if (g) {
+      g.style.background = 'transparent';
+      g.style.backgroundImage = '';
     }
   }
 
