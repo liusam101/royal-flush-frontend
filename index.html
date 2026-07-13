@@ -591,20 +591,10 @@ body.royal-mode nav{
 
 /* ── GAME ── */
 /* Belt-and-braces:
-   - dvh instead of vh handles browsers where 100vh over-reports on scrollbar edges
-   - html + body forced dark in-game so any pixel that isn't covered by #vg's
-     background falls back to dark, not the gold-mode body blue gradient
-   - #vg::after paints a dark rectangle across the very bottom rows regardless
-     of what any child element is doing, killing any leaked strip. */
-#vg{padding-top:0;height:100dvh;display:flex;flex-direction:column;overflow:clip;box-sizing:border-box;background:#050505;position:relative}
-/* Nuclear option: an opaque overlay pinned to the bottom of #vg that paints
-   dark regardless of what's rendering behind. Sits above .garena (z-index 1)
-   and below the wooden table (which lives inside .table-wrap → .garena but
-   is centered so its bottom is above this overlay). */
-/* z-index 0 keeps it BELOW .garena (z-index 1) so it's invisible when garena
-   paints fully — only fills gaps where garena doesn't reach the bottom edge. */
-#vg::after{content:'';position:absolute;left:0;right:0;bottom:0;height:120px;background:#050505;pointer-events:none;z-index:0}
-body.in-game, html:has(body.in-game){background:#050505 !important}
+   Reverted defensive layers — the real cause of the strip was a pushed
+   background image (via admin bg asset) with a black bar baked into its
+   bottom, not any CSS/body/vg layer. */
+#vg{padding-top:0;height:100vh;display:flex;flex-direction:column;overflow:clip;box-sizing:border-box}
 .gtop{padding:7px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,.12);flex-shrink:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;position:relative}
 .bk{background:none;border:none;color:var(--txd);font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:color .2s;padding:0}
 .bk:hover{color:var(--gold)}
