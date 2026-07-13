@@ -594,7 +594,13 @@ body.royal-mode nav{
    Reverted defensive layers — the real cause of the strip was a pushed
    background image (via admin bg asset) with a black bar baked into its
    bottom, not any CSS/body/vg layer. */
-#vg{padding-top:0;height:100vh;display:flex;flex-direction:column;overflow:clip;box-sizing:border-box}
+/* CSS Grid instead of Flexbox: `auto 1fr` gives .gtop its content-height and
+   .garena the entire remaining space, deterministically. Flexbox's `flex: 1`
+   was letting .garena compute a wrong height because .table-wrap's aspect-ratio
+   sizing (which references 100vh) contaminated the flex parent's min-content
+   calculation. Grid's 1fr is defined as "all leftover space" and doesn't
+   consult children's intrinsic size, so it's rock-solid. */
+#vg{padding-top:0;height:100vh;display:grid;grid-template-rows:auto 1fr;overflow:clip;box-sizing:border-box}
 .gtop{padding:7px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,.12);flex-shrink:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;position:relative}
 .bk{background:none;border:none;color:var(--txd);font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:color .2s;padding:0}
 .bk:hover{color:var(--gold)}
@@ -15743,22 +15749,25 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
 
   function applyBackground(dataUrl){
     if(!dataUrl||!dataUrl.startsWith('data:image')) return;
-    // Paint the felt on #vg (guaranteed 100vh, always reaches viewport bottom).
-    // Then clear .garena's default dark radial gradient so #vg's felt shows
-    // through everywhere. .gtop stays opaque at the top, so the felt is only
-    // visible in the arena area below it — exactly the intended look.
-    const vg = document.getElementById('vg');
-    if (vg) {
-      vg.style.backgroundImage = `url(${dataUrl})`;
-      vg.style.backgroundSize = '100% 100%';
-      vg.style.backgroundPosition = 'center';
-      vg.style.backgroundRepeat = 'no-repeat';
-      vg.style.backgroundColor = '#050505';
-    }
+    // Apply the admin-pushed background image to .garena — after the Grid
+    // switch on #vg, .garena reliably fills from below .gtop to the viewport
+    // bottom. `cover` preserves the image's aspect ratio so it never distorts,
+    // and #vg's dark backdrop shows in the (now zero-height) gap.
     const g = document.getElementById('garena');
     if (g) {
-      g.style.background = 'transparent';
-      g.style.backgroundImage = '';
+      g.style.backgroundImage = `url(${dataUrl})`;
+      g.style.backgroundSize = 'cover';
+      g.style.backgroundPosition = 'center';
+      g.style.backgroundRepeat = 'no-repeat';
+      g.style.backgroundColor = '#050505';
+    }
+    // Clear any leftover #vg background from previous versions.
+    const vg = document.getElementById('vg');
+    if (vg) {
+      vg.style.backgroundImage = '';
+      vg.style.backgroundSize = '';
+      vg.style.backgroundPosition = '';
+      vg.style.backgroundRepeat = '';
     }
   }
 
