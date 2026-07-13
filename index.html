@@ -607,7 +607,12 @@ body.royal-mode nav{
    against 573 (not 700) lets the aspect-box grow until the *visible*
    table fills the viewport height — the box overflow beyond garena is
    the empty perspective margin and is invisibly clipped by #vg. */
-.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;}
+/* -10% translate compensates for .table-svg's transform-origin: 50% 60% —
+   the rotation pivot sits 10% of box-height below box center, so with the
+   box flex-centered in .garena the visible tilted table optically drops by
+   the same offset. Shifting the wrap up 10% puts the pivot at garena
+   center → visible content centers around garena center. */
+.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;translate:0 -10%;}
 .table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:perspective(1500px) rotateX(35deg);transform-origin:50% 60%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
