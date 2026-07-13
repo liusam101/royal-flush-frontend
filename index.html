@@ -15743,19 +15743,21 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
 
   function applyBackground(dataUrl){
     if(!dataUrl||!dataUrl.startsWith('data:image')) return;
+    // Apply to #vg (guaranteed 100vh) instead of .garena — for reasons I
+    // couldn't fully pin down, .garena wasn't reaching the viewport bottom,
+    // so the image (sized to .garena's rect) left a dark strip below it.
+    // #vg reaches the bottom by definition, so the image always fills.
+    const vg=document.getElementById('vg');
+    if(!vg) return;
+    vg.style.backgroundImage=`url(${dataUrl})`;
+    vg.style.backgroundSize='100% 100%';
+    vg.style.backgroundPosition='center';
+    vg.style.backgroundRepeat='no-repeat';
+    vg.style.backgroundColor='#050505';
+    // Clear any leftover garena background from previous versions so we don't
+    // double-paint.
     const g=document.getElementById('garena');
-    if(!g) return;
-    g.style.backgroundImage=`url(${dataUrl})`;
-    // 100% 100% stretches the image to fill both dimensions exactly — unlike
-    // `cover` (which preserves aspect and can leave a gap on some viewport /
-    // image-aspect combinations), this guarantees no strip at the edges.
-    g.style.backgroundSize='100% 100%';
-    g.style.backgroundPosition='center';
-    g.style.backgroundRepeat='no-repeat';
-    // Fallback color in case the image ever fails to load fully — matches the
-    // arena's darkest tone so any residual gap blends in instead of showing
-    // as body's blue-navy gold-mode gradient.
-    g.style.backgroundColor='#050505';
+    if(g){ g.style.backgroundImage=''; g.style.backgroundSize=''; g.style.backgroundPosition=''; g.style.backgroundRepeat=''; }
   }
 
   // Off-screen host with real dimensions so model-viewer can pre-render while in lobby
