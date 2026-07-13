@@ -12487,14 +12487,9 @@ async function claimFreeRoyal(){
 }
 
 function getDailyClaimStatus(){
-  const COOLDOWN = 24 * 60 * 60 * 1000;
-  const lastClaim = parseInt(localStorage.getItem('rf_last_royal_claim')||'0');
-  const elapsed = Date.now() - lastClaim;
-  if(elapsed >= COOLDOWN) return {available:true, label:'Claim Now', sub:'Free daily Barrel Chip'};
-  const remaining = COOLDOWN - elapsed;
-  const h = Math.floor(remaining/3600000);
-  const m = Math.floor((remaining%3600000)/60000);
-  return {available:false, label:`${h}h ${m}m`, sub:'Until next claim'};
+  // TEMP: force available so the button renders as Claim Now regardless of
+  // the localStorage cooldown. REVERT after the one-time top-up.
+  return {available:true, label:'Claim Now', sub:'Free daily Barrel Chip'};
 }
 
 function openMailIn(){
