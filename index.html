@@ -613,7 +613,7 @@ body.royal-mode nav{
    This makes the container automatically the largest size that fits both
    dimensions, so it's naturally vertically centered by the flex parent
    without needing any translateY offset. */
-.table-wrap{position:relative;width:84vw;max-width:1200px;aspect-ratio:1000/700;overflow:visible;margin-top:0;transform:translateY(-55px);}
+.table-wrap{position:relative;width:min(96vw, 1800px, calc((100vh - 80px) * 1000 / 700));aspect-ratio:1000/700;overflow:visible;margin:0 auto;}
 .table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:perspective(1500px) rotateX(35deg);transform-origin:50% 60%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
@@ -15762,7 +15762,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
   function _getPreHost(){
     if(_preRenderHost) return _preRenderHost;
     _preRenderHost = document.createElement('div');
-    _preRenderHost.style.cssText = 'position:fixed;left:-200%;top:0;width:84vw;max-width:1200px;aspect-ratio:1000/700;pointer-events:none;';
+    _preRenderHost.style.cssText = 'position:fixed;left:-200%;top:0;width:96vw;max-width:1800px;aspect-ratio:1000/700;pointer-events:none;';
     document.body.appendChild(_preRenderHost);
     return _preRenderHost;
   }
