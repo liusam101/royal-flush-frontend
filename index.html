@@ -12469,15 +12469,8 @@ function addRCMonthlyUsed(n){
 }
 
 async function claimFreeRoyal(){
-  const now=Date.now(), COOLDOWN=24*60*60*1000;
-  const elapsed=now-parseInt(localStorage.getItem('rf_last_royal_claim')||'0');
-  if(elapsed<COOLDOWN){
-    const h=Math.floor((COOLDOWN-elapsed)/3600000), m=Math.floor(((COOLDOWN-elapsed)%3600000)/60000);
-    showRGConfirm('Already claimed today. Next claim in '+h+'h '+m+'m.'); return;
-  }
-  if(_balRoyal>=RC_BALANCE_CAP){
-    showRGConfirm('Balance is $'+_balRoyal.toFixed(2)+' RC. Free claims are only available when your balance is below $'+RC_BALANCE_CAP+'. Play some hands first!'); return;
-  }
+  // TEMP: cooldown + balance-cap checks disabled for one-time top-up. REVERT.
+  const now=Date.now();
   // Persist to DB first — only commit UI and cooldown on success
   const _rcTok = localStorage.getItem('rf_token');
   if (_rcTok) {
