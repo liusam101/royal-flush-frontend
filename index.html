@@ -601,7 +601,9 @@ body.royal-mode nav{
    dark regardless of what's rendering behind. Sits above .garena (z-index 1)
    and below the wooden table (which lives inside .table-wrap → .garena but
    is centered so its bottom is above this overlay). */
-#vg::after{content:'';position:absolute;left:0;right:0;bottom:0;height:120px;background:#050505;pointer-events:none;z-index:5}
+/* z-index 0 keeps it BELOW .garena (z-index 1) so it's invisible when garena
+   paints fully — only fills gaps where garena doesn't reach the bottom edge. */
+#vg::after{content:'';position:absolute;left:0;right:0;bottom:0;height:120px;background:#050505;pointer-events:none;z-index:0}
 body.in-game, html:has(body.in-game){background:#050505 !important}
 .gtop{padding:7px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,.12);flex-shrink:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;position:relative}
 .bk{background:none;border:none;color:var(--txd);font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:color .2s;padding:0}
