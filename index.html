@@ -15743,21 +15743,21 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
 
   function applyBackground(dataUrl){
     if(!dataUrl||!dataUrl.startsWith('data:image')) return;
-    // Apply to #vg (guaranteed 100vh) instead of .garena — for reasons I
-    // couldn't fully pin down, .garena wasn't reaching the viewport bottom,
-    // so the image (sized to .garena's rect) left a dark strip below it.
-    // #vg reaches the bottom by definition, so the image always fills.
-    const vg=document.getElementById('vg');
-    if(!vg) return;
-    vg.style.backgroundImage=`url(${dataUrl})`;
-    vg.style.backgroundSize='100% 100%';
-    vg.style.backgroundPosition='center';
-    vg.style.backgroundRepeat='no-repeat';
-    vg.style.backgroundColor='#050505';
-    // Clear any leftover garena background from previous versions so we don't
-    // double-paint.
-    const g=document.getElementById('garena');
-    if(g){ g.style.backgroundImage=''; g.style.backgroundSize=''; g.style.backgroundPosition=''; g.style.backgroundRepeat=''; }
+    // Apply to BOTH #vg AND .garena. The default .garena has a dark radial
+    // gradient background that would otherwise cover #vg's felt everywhere it
+    // paints — putting the felt on both means whichever one is doing the
+    // painting, the felt is what shows. .garena never quite reached the
+    // viewport bottom in some layouts, so #vg is the fallback for that gap.
+    const bg = `url(${dataUrl})`;
+    for (const id of ['vg','garena']) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      el.style.backgroundImage = bg;
+      el.style.backgroundSize = '100% 100%';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundRepeat = 'no-repeat';
+      el.style.backgroundColor = '#050505';
+    }
   }
 
   // Off-screen host with real dimensions so model-viewer can pre-render while in lobby
