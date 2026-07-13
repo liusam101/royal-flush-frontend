@@ -12469,8 +12469,15 @@ function addRCMonthlyUsed(n){
 }
 
 async function claimFreeRoyal(){
-  // TEMP: cooldown + balance-cap checks disabled for one-time top-up. REVERT.
-  const now=Date.now();
+  const now=Date.now(), COOLDOWN=24*60*60*1000;
+  const elapsed=now-parseInt(localStorage.getItem('rf_last_royal_claim')||'0');
+  if(elapsed<COOLDOWN){
+    const h=Math.floor((COOLDOWN-elapsed)/3600000), m=Math.floor(((COOLDOWN-elapsed)%3600000)/60000);
+    showRGConfirm('Already claimed today. Next claim in '+h+'h '+m+'m.'); return;
+  }
+  if(_balRoyal>=RC_BALANCE_CAP){
+    showRGConfirm('Balance is $'+_balRoyal.toFixed(2)+' RC. Free claims are only available when your balance is below $'+RC_BALANCE_CAP+'. Play some hands first!'); return;
+  }
   // Persist to DB first — only commit UI and cooldown on success
   const _rcTok = localStorage.getItem('rf_token');
   if (_rcTok) {
@@ -12487,9 +12494,14 @@ async function claimFreeRoyal(){
 }
 
 function getDailyClaimStatus(){
-  // TEMP: force available so the button renders as Claim Now regardless of
-  // the localStorage cooldown. REVERT after the one-time top-up.
-  return {available:true, label:'Claim Now', sub:'Free daily Barrel Chip'};
+  const COOLDOWN = 24 * 60 * 60 * 1000;
+  const lastClaim = parseInt(localStorage.getItem('rf_last_royal_claim')||'0');
+  const elapsed = Date.now() - lastClaim;
+  if(elapsed >= COOLDOWN) return {available:true, label:'Claim Now', sub:'Free daily Barrel Chip'};
+  const remaining = COOLDOWN - elapsed;
+  const h = Math.floor(remaining/3600000);
+  const m = Math.floor((remaining%3600000)/60000);
+  return {available:false, label:`${h}h ${m}m`, sub:'Until next claim'};
 }
 
 function openMailIn(){
