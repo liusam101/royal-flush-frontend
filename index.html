@@ -594,13 +594,14 @@ body.royal-mode nav{
    Reverted defensive layers — the real cause of the strip was a pushed
    background image (via admin bg asset) with a black bar baked into its
    bottom, not any CSS/body/vg layer. */
-/* CSS Grid instead of Flexbox: `auto 1fr` gives .gtop its content-height and
-   .garena the entire remaining space, deterministically. Flexbox's `flex: 1`
-   was letting .garena compute a wrong height because .table-wrap's aspect-ratio
-   sizing (which references 100vh) contaminated the flex parent's min-content
-   calculation. Grid's 1fr is defined as "all leftover space" and doesn't
-   consult children's intrinsic size, so it's rock-solid. */
-#vg{padding-top:0;height:100vh;display:grid;grid-template-rows:auto 1fr;overflow:clip;box-sizing:border-box}
+/* CSS Grid: `auto minmax(0, 1fr)` gives .gtop its content-height and .garena
+   exactly the leftover space. The `minmax(0, 1fr)` is critical — without the
+   explicit 0 minimum, Grid's 1fr implicitly means minmax(auto, 1fr), which
+   causes the row to shrink to .table-wrap's aspect-ratio-derived intrinsic
+   height instead of filling. That was the source of the strip: .garena was
+   sizing to .table-wrap (~70px in a 150 viewport) instead of the 100px 1fr
+   allocation, leaving a 30px gap at the bottom. */
+#vg{padding-top:0;height:100vh;display:grid;grid-template-rows:auto minmax(0, 1fr);overflow:clip;box-sizing:border-box}
 .gtop{padding:7px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,.12);flex-shrink:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;position:relative}
 .bk{background:none;border:none;color:var(--txd);font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:color .2s;padding:0}
 .bk:hover{color:var(--gold)}
