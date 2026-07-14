@@ -602,7 +602,12 @@ body.royal-mode nav{
 .pill{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 9px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);color:var(--txd)}
 .pill b{color:var(--tx)}
 .garena{min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%);overflow:visible;padding:0;position:relative;clip-path:none;perspective:1500px;z-index:1}
-.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;}
+/* Host box for <model-viewer>. Model-viewer's internal Three.js renderer
+   sizes its canvas to this element and derives camera.aspect from it every
+   frame — so this box must always match the intended aspect ratio or the
+   render will look stretched. `flex-shrink:0` prevents .garena's flex
+   layout from squishing it under overflow. */
+.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;flex-shrink:0;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
 .pot-lbl{display:none}
@@ -15681,6 +15686,11 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     const mv = document.createElement('model-viewer');
     mv.setAttribute('src', blobUrl);
     mv.setAttribute('camera-orbit', `0deg ${phi}deg auto`);
+    // 27deg vertical FOV ≈ Blender's 50mm lens on a 36×24mm sensor. Locking
+    // this (instead of model-viewer's default `auto`) makes browser framing
+    // match how the GLB was authored, so the table's proportions are the
+    // same regardless of container aspect ratio.
+    mv.setAttribute('field-of-view', '27deg');
     mv.setAttribute('shadow-intensity', _rfLighting.shadowIntensity);
     mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
@@ -15741,6 +15751,11 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.id = 't3-mv';
     mv.setAttribute('src', _mvBlobUrl);
     mv.setAttribute('camera-orbit', orbitStr);
+    // 27deg = Blender 50mm lens (36×24mm sensor). Explicit FOV keeps the
+    // table's proportions consistent across container aspect ratios; without
+    // it, model-viewer auto-fits with a wider FOV that reads as horizontal
+    // stretch vs the Blender render.
+    mv.setAttribute('field-of-view', '27deg');
     mv.setAttribute('shadow-intensity', _rfLighting.shadowIntensity);
     mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
