@@ -607,13 +607,12 @@ body.royal-mode nav{
    against 573 (not 700) lets the aspect-box grow until the *visible*
    table fills the viewport height — the box overflow beyond garena is
    the empty perspective margin and is invisibly clipped by #vg. */
-/* Camera-tilt model: perspective lives on .garena (the "camera"), the flat
-   table is rotated through that parent perspective with rotateX. Because
-   the tilt is symmetric around the box center (origin 50% 50%), no
-   translate compensation is needed. Width uses 700*cos(50°)≈450 as the
-   visible-height factor. */
-.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 450));aspect-ratio:1000/700;overflow:visible;margin:0 auto;}
-.table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:rotateX(50deg);transform-origin:50% 50%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
+/* -7% translate compensates for .table-svg's transform-origin: 50% 60% —
+   pivot sits below box center; combined with perspective foreshortening
+   the visible content drops by ~7% of box height when the box is flex-
+   centered in .garena. */
+.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;translate:0 -7%;}
+.table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:perspective(1500px) rotateX(35deg);transform-origin:50% 60%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
 .pot-lbl{display:none}
@@ -15767,7 +15766,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     const blobUrl = _pendingBlobUrl;
     if(!blobUrl) return;
     try { await _loadMV(); } catch(e){ return; }
-    const phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 55;
+    const phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 15;
     const host = _getPreHost();
     const mv = document.createElement('model-viewer');
     mv.setAttribute('src', blobUrl);
@@ -15799,7 +15798,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     destroyT3();
     tableWrap.style.position = 'relative';
 
-    const phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 55;
+    const phi = _seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 15;
     const orbitStr = _mvCameraRadius ? `0deg ${phi}deg ${_mvCameraRadius}m` : `0deg ${phi}deg auto`;
 
     // Fast path: move pre-rendered model-viewer from off-screen host — instant appearance
@@ -15865,7 +15864,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             if(a.cameraRadius){ _mvCameraRadius=a.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
-            if(_hmv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+            if(_hmv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):15; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
             _applyCommScale(_rfGlbScale);
           }
           if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
@@ -15946,7 +15945,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         if(data.cameraRadius){ _mvCameraRadius=data.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
-        if(_mv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):55; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+        if(_mv){ const _phi=_seatedTilt!==null?Math.max(5,90-_seatedTilt):15; const _r=_mvCameraRadius?`${_mvCameraRadius}m`:'auto'; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
         _applyCommScale(_rfGlbScale);
       }
       if(data.type==='lighting'&&data.dataUrl){
