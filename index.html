@@ -602,12 +602,16 @@ body.royal-mode nav{
 .pill{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 9px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);color:var(--txd)}
 .pill b{color:var(--tx)}
 .garena{min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%);overflow:visible;padding:0;position:relative;clip-path:none;perspective:1500px;z-index:1}
-/* Host box for <model-viewer>. Model-viewer's internal Three.js renderer
-   sizes its canvas to this element and derives camera.aspect from it every
-   frame — so this box must always match the intended aspect ratio or the
-   render will look stretched. `flex-shrink:0` prevents .garena's flex
-   layout from squishing it under overflow. */
-.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;flex-shrink:0;}
+/* Host box for <model-viewer>. Its internal Three.js renderer sizes the
+   canvas to this element and derives camera.aspect from it every frame,
+   so the box must (a) match the intended aspect ratio, and (b) fit
+   entirely inside .garena. If the box overflows vertically the visible
+   portion is a cropped middle-band of the render — reads as horizontal
+   stretch even though the aspect is correct. `max-height` caps against
+   the viewport (minus ~40px for the top bar) and the aspect-ratio
+   shrinks the width to match. Mirrors admin's #se-table-area geometry
+   so both render identically. */
+.table-wrap{position:relative;width:min(96vw, 1800px);aspect-ratio:1000/700;max-height:calc(100vh - 40px);overflow:visible;margin:0 auto;flex-shrink:0;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
 .pot-lbl{display:none}
