@@ -15766,7 +15766,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     const blobUrl = _pendingBlobUrl;
     if(!blobUrl) return;
     try { await _loadMV(); } catch(e){ return; }
-    const phi = 40 /* admin _seatedTilt override disabled */;
+    const phi = (_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40);
     const host = _getPreHost();
     const mv = document.createElement('model-viewer');
     mv.setAttribute('src', blobUrl);
@@ -15798,7 +15798,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     destroyT3();
     tableWrap.style.position = 'relative';
 
-    const phi = 40 /* admin _seatedTilt override disabled */;
+    const phi = (_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40);
     const orbitStr = `0deg ${phi}deg auto`; // admin _mvCameraRadius override disabled
 
     // Fast path: move pre-rendered model-viewer from off-screen host — instant appearance
@@ -15864,7 +15864,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             if(a.cameraRadius){ _mvCameraRadius=a.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
-            if(_hmv){ const _phi=40 /* admin _seatedTilt override disabled */; const _r='auto' /* admin _mvCameraRadius override disabled */; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+            if(_hmv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r='auto' /* admin _mvCameraRadius override disabled */; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
             _applyCommScale(_rfGlbScale);
           }
           if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
@@ -15945,7 +15945,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         if(data.cameraRadius){ _mvCameraRadius=data.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
-        if(_mv){ const _phi=40 /* admin _seatedTilt override disabled */; const _r='auto' /* admin _mvCameraRadius override disabled */; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+        if(_mv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r='auto' /* admin _mvCameraRadius override disabled */; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
         _applyCommScale(_rfGlbScale);
       }
       if(data.type==='lighting'&&data.dataUrl){
@@ -15992,8 +15992,13 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     }
     // Push tilt to the 3D model too — Push Tilt in admin was updating only
     // seat positions, leaving the wooden table sitting at its old angle.
-    // admin _seatedTilt push-to-model disabled — camera is locked at phi=15
-    // if(_seatedTilt !== null){ ... }
+    if(_seatedTilt !== null){
+      const _mv = document.getElementById('t3-mv');
+      if(_mv){
+        const _phi = Math.max(5, 90 - _seatedTilt);
+        _mv.setAttribute('camera-orbit', `0deg ${_phi}deg auto`);
+      }
+    }
   }
 
   function _saveSeatData(raw){
