@@ -15799,7 +15799,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     tableWrap.style.position = 'relative';
 
     const phi = (_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40);
-    const orbitStr = `0deg ${phi}deg auto`; // admin _mvCameraRadius override disabled
+    const orbitStr = _mvCameraRadius ? `0deg ${phi}deg ${_mvCameraRadius}m` : `0deg ${phi}deg auto`;
 
     // Fast path: move pre-rendered model-viewer from off-screen host — instant appearance
     if(_preRenderMv && _preRenderMv.isConnected){
@@ -15864,7 +15864,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             if(a.cameraRadius){ _mvCameraRadius=a.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
-            if(_hmv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r='auto' /* admin _mvCameraRadius override disabled */; _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+            if(_hmv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r=(_mvCameraRadius ? `${_mvCameraRadius}m` : 'auto'); _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
             _applyCommScale(_rfGlbScale);
           }
           if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
@@ -15945,7 +15945,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         if(data.cameraRadius){ _mvCameraRadius=data.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
-        if(_mv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r='auto' /* admin _mvCameraRadius override disabled */; _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+        if(_mv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r=(_mvCameraRadius ? `${_mvCameraRadius}m` : 'auto'); _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
         _applyCommScale(_rfGlbScale);
       }
       if(data.type==='lighting'&&data.dataUrl){
@@ -15996,7 +15996,8 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
       const _mv = document.getElementById('t3-mv');
       if(_mv){
         const _phi = Math.max(5, 90 - _seatedTilt);
-        _mv.setAttribute('camera-orbit', `0deg ${_phi}deg auto`);
+        const _r   = _mvCameraRadius ? `${_mvCameraRadius}m` : 'auto';
+        _mv.setAttribute('camera-orbit', `0deg ${_phi}deg ${_r}`);
       }
     }
   }
