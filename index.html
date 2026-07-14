@@ -602,17 +602,7 @@ body.royal-mode nav{
 .pill{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 9px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);color:var(--txd)}
 .pill b{color:var(--tx)}
 .garena{min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,#1a1a1a 0%,#0a0a0a 55%,#050505 100%);overflow:visible;padding:0;position:relative;clip-path:none;perspective:1500px;z-index:1}
-/* Width formula: table-svg has perspective(1500px) rotateX(35deg) so its
-   visible height is ≈ 700 × cos(35°) ≈ 573 tall per 1000 wide. Sizing
-   against 573 (not 700) lets the aspect-box grow until the *visible*
-   table fills the viewport height — the box overflow beyond garena is
-   the empty perspective margin and is invisibly clipped by #vg. */
-/* -7% translate compensates for .table-svg's transform-origin: 50% 60% —
-   pivot sits below box center; combined with perspective foreshortening
-   the visible content drops by ~7% of box height when the box is flex-
-   centered in .garena. */
-.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;translate:0 -7%;}
-.table-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;overflow:visible;transform:perspective(1500px) rotateX(35deg);transform-origin:50% 60%;filter:drop-shadow(0 50px 70px rgba(0,0,0,0.8));pointer-events:none;}
+.table-wrap{position:relative;width:min(96vw, 1800px, calc(100vh * 1000 / 573));aspect-ratio:1000/700;overflow:visible;margin:0 auto;}
 .comm{position:absolute;top:56%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;z-index:10}
 .comm-cards{display:flex;gap:clamp(4px,1vw,10px);perspective:800px}
 .pot-lbl{display:none}
@@ -1202,11 +1192,6 @@ body.royal-mode nav{
     margin: 0 auto !important;
     transform: translateY(-4vw) !important;
   }
-  /* Reduce table tilt so seats sit closer to edges and are easier to read */
-  .table-svg {
-    transform: perspective(900px) rotateX(22deg) !important;
-  }
-
   /* Seats: larger taps, brighter text */
   .seat .av { width: 44px !important; height: 44px !important; font-size: 11px !important; }
   .sname { max-width: 64px !important; font-size: 9px !important; font-weight: 600; }
@@ -1363,10 +1348,6 @@ body.royal-mode nav{
     aspect-ratio: 1000/700 !important;
     transform: translateY(-8px) !important;
     margin: 0 auto !important;
-  }
-
-  .table-svg {
-    transform: perspective(1000px) rotateX(25deg) !important;
   }
 
   .seat .av { width: 36px !important; height: 36px !important; font-size: 9px !important; }
@@ -8134,8 +8115,7 @@ function getPotPos(){
 }
 
 // Place or update a bet chip stack on the felt for a seat
-let _rimCache=null;
-function _invalidateRimCache(){ _rimCache=null; }
+function _invalidateRimCache(){}  // no-op kept for callers; rim cache was removed with the legacy SVG fallback
 
 // Custom seat positions from admin calibrator
 const _SEAT_POS_KEY = 'rf_admin_seat_positions';
@@ -8187,79 +8167,9 @@ function _rimPos(idx, n, wrap){
     return customAll[idx];
   }
 
-  // ── Fallback: original SVG felt-path method ───────────────────────
-
-  const wr=wrap.getBoundingClientRect();
-  const svg=document.getElementById('ptable');
-  const felt=document.getElementById('felt-path');
-  if(!svg||!felt) return {px:0,py:0,cx:0,cy:0,scaleFactor:1,zIdx:500};
-
-  const vb=svg.viewBox.baseVal;
-  const scX=wr.width/vb.width, scY=wr.height/vb.height;
-
-  if(!_rimCache){
-    const totalLen=felt.getTotalLength();
-    const SAMPLES=1440;
-    const pts=[];
-    for(let k=0;k<=SAMPLES;k++){
-      const p=felt.getPointAtLength((k/SAMPLES)*totalLen);
-      pts.push({arc:(k/SAMPLES)*totalLen, x:p.x, y:p.y});
-    }
-    const cx=vb.width/2;
-    let maxY=-Infinity;
-    for(let k=0;k<pts.length;k++) if(pts[k].y>maxY) maxY=pts[k].y;
-    let botIdx=0, minD=Infinity;
-    for(let k=0;k<pts.length;k++){
-      if(pts[k].y>=maxY-0.5){
-        const d=Math.abs(pts[k].x-cx);
-        if(d<minD){minD=d;botIdx=k;}
-      }
-    }
-    _rimCache={pts, totalLen, botArc:pts[botIdx].arc};
-  }
-
-  const {pts, totalLen, botArc}=_rimCache;
-
-  const youIdx=typeof SEATS!=='undefined'?SEATS.findIndex(s=>s.you):0;
-  const adjustedIdx=((idx-youIdx)+n)%n;
-  const targetArc=((adjustedIdx/n)*totalLen+botArc)%totalLen;
-
-  let pt=pts[0];
-  for(let k=1;k<pts.length;k++){
-    if(pts[k].arc>=targetArc){
-      const a=pts[k-1],b=pts[k],f=(targetArc-a.arc)/(b.arc-a.arc);
-      pt={x:a.x+f*(b.x-a.x),y:a.y+f*(b.y-a.y)};
-      break;
-    }
-  }
-
-  // Push seat outward from table center by 52px
-  const RIM_PUSH = 28;
-  const cx0 = vb.width*0.5, cy0 = vb.height*0.5;
-  const dxC = pt.x - cx0, dyC = pt.y - cy0;
-  const distC = Math.sqrt(dxC*dxC + dyC*dyC) || 1;
-  pt = { x: pt.x + (dxC/distC)*RIM_PUSH, y: pt.y + (dyC/distC)*RIM_PUSH };
-
-  // Project through CSS: perspective(1500px) rotateX(35deg) transform-origin(50%,60%)
-  const tiltRad=35*Math.PI/180;
-  const cosT=Math.cos(tiltRad), sinT=Math.sin(tiltRad);
-  const oxVB=vb.width*0.5, oyVB=vb.height*0.6;
-  // Perspective distance in viewBox units (keeps projection viewport-independent)
-  const dVB=1500/scY;
-  const dy=pt.y-oyVB;
-  const dz=-dy*sinT;
-  const scale=dVB/(dVB+dz);
-  const projVX=oxVB+(pt.x-oxVB)*scale;
-  const projVY=oyVB+dy*cosT*scale;
-
-  return {
-    px: projVX*scX,
-    py: projVY*scY,
-    cx: oxVB*scX,
-    cy: oyVB*scY,
-    scaleFactor: Math.max(0.75,Math.min(1.0,scale)),
-    zIdx: Math.round(1000+projVY)
-  };
+  // No admin-calibrated positions and no legacy SVG rim — seat placement
+  // needs at least one of these, so return an off-screen zero.
+  return {px:0,py:0,cx:0,cy:0,scaleFactor:1,zIdx:500};
 }
 
 
