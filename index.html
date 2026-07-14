@@ -15681,16 +15681,11 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     const blobUrl = _pendingBlobUrl;
     if(!blobUrl) return;
     try { await _loadMV(); } catch(e){ return; }
-    const phi = (_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40);
+    const phi = (_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 50);
     const host = _getPreHost();
     const mv = document.createElement('model-viewer');
     mv.setAttribute('src', blobUrl);
     mv.setAttribute('camera-orbit', `0deg ${phi}deg auto`);
-    // 27deg vertical FOV ≈ Blender's 50mm lens on a 36×24mm sensor. Locking
-    // this (instead of model-viewer's default `auto`) makes browser framing
-    // match how the GLB was authored, so the table's proportions are the
-    // same regardless of container aspect ratio.
-    mv.setAttribute('field-of-view', '27deg');
     mv.setAttribute('shadow-intensity', _rfLighting.shadowIntensity);
     mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
@@ -15718,7 +15713,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     destroyT3();
     tableWrap.style.position = 'relative';
 
-    const phi = (_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40);
+    const phi = (_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 50);
     const orbitStr = _mvCameraRadius ? `0deg ${phi}deg ${_mvCameraRadius}m` : `0deg ${phi}deg auto`;
 
     // Fast path: move pre-rendered model-viewer from off-screen host — instant appearance
@@ -15751,11 +15746,6 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
     mv.id = 't3-mv';
     mv.setAttribute('src', _mvBlobUrl);
     mv.setAttribute('camera-orbit', orbitStr);
-    // 27deg = Blender 50mm lens (36×24mm sensor). Explicit FOV keeps the
-    // table's proportions consistent across container aspect ratios; without
-    // it, model-viewer auto-fits with a wider FOV that reads as horizontal
-    // stretch vs the Blender render.
-    mv.setAttribute('field-of-view', '27deg');
     mv.setAttribute('shadow-intensity', _rfLighting.shadowIntensity);
     mv.setAttribute('exposure', _rfLighting.exposure);
     mv.setAttribute('disable-zoom', '');
@@ -15789,7 +15779,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
             if(a.cameraRadius){ _mvCameraRadius=a.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
             try{localStorage.setItem('rf_glb_scale',String(_rfGlbScale));}catch(_){}
             const _hmv=document.getElementById('t3-mv');
-            if(_hmv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r=(_mvCameraRadius ? `${_mvCameraRadius}m` : 'auto'); _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+            if(_hmv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 50); const _r=(_mvCameraRadius ? `${_mvCameraRadius}m` : 'auto'); _hmv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
             _applyCommScale(_rfGlbScale);
           }
           if(a.type==='lighting'&&a.dataUrl){ try{ _rfLighting={..._rfLighting,...JSON.parse(a.dataUrl)}; localStorage.setItem('rf_lighting',a.dataUrl); const _lmv=document.getElementById('t3-mv'); if(_lmv) _applyLighting(_lmv); }catch(_){} }
@@ -15870,7 +15860,7 @@ console.log('[Barrel Poker] Socket.io client ready —', BACKEND_URL);
         if(data.cameraRadius){ _mvCameraRadius=data.cameraRadius; try{localStorage.setItem('rf_glb_camera_radius',String(_mvCameraRadius));}catch(_){} }
         try{ localStorage.setItem('rf_glb_scale', String(_rfGlbScale)); }catch(_){}
         const _mv = document.getElementById('t3-mv');
-        if(_mv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 40); const _r=(_mvCameraRadius ? `${_mvCameraRadius}m` : 'auto'); _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
+        if(_mv){ const _phi=(_seatedTilt !== null ? Math.max(5, 90 - _seatedTilt) : 50); const _r=(_mvCameraRadius ? `${_mvCameraRadius}m` : 'auto'); _mv.setAttribute('camera-orbit',`0deg ${_phi}deg ${_r}`); }
         _applyCommScale(_rfGlbScale);
       }
       if(data.type==='lighting'&&data.dataUrl){
