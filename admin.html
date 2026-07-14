@@ -500,11 +500,11 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
               <span id="glb-scale-val" style="font-family:var(--mono);font-size:12px;color:var(--cyan);min-width:38px;text-align:right">1.00x</span>
               <button class="btn btn-sm" onclick="document.getElementById('glb-scale').value=1;updateGLBScale(1)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:140px">
-              <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">TILT</span>
-              <input type="range" id="se-angle" min="10" max="90" value="55" step="1" oninput="updateSeAngle(this.value)" style="flex:1;accent-color:var(--gold);cursor:pointer">
-              <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:30px;text-align:right">55&#176;</span>
-              <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=55;updateSeAngle(55)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:140px" title="Camera pitch from horizontal. 90° = looking straight down; 10° = near side view. The 3D table stays flat — only the camera moves.">
+              <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">CAM ANGLE</span>
+              <input type="range" id="se-angle" min="10" max="90" value="40" step="1" oninput="updateSeAngle(this.value)" style="flex:1;accent-color:var(--gold);cursor:pointer">
+              <span id="se-angle-val" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:30px;text-align:right">40&#176;</span>
+              <button class="btn btn-sm" onclick="document.getElementById('se-angle').value=40;updateSeAngle(40)" style="border-color:var(--border);color:var(--txd);font-size:10px">&#8635;</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:140px">
               <span style="font-family:var(--mono);font-size:10px;color:var(--txd);white-space:nowrap">EXPOSURE</span>
@@ -522,7 +522,7 @@ main{padding:24px;overflow-y:auto;background:var(--bg);}
               <button class="btn btn-sm btn-cyan" onclick="autoCalcSeats()">&#10227; Auto Seats</button>
               <button class="btn btn-sm" onclick="resetSeats()" style="border-color:var(--border);color:var(--txd)">&#8635; Reset</button>
               <button class="btn btn-cyan btn-sm" id="scale-push-btn" onclick="pushGLBScale()">&#9654; Push Scale</button>
-              <button class="btn btn-gold btn-sm" onclick="pushTilt()">&#9654; Push Tilt</button>
+              <button class="btn btn-gold btn-sm" onclick="pushTilt()">&#9654; Push Camera</button>
               <button class="btn btn-sm" style="border-color:#f0c040;color:#f0c040" onclick="pushLighting()">&#9654; Push Lighting</button>
               <button class="btn btn-green btn-sm" onclick="pushSeats()">&#9654; Push Seats</button>
             </div>
@@ -1422,7 +1422,7 @@ function pushAsset(type) {
 // ── Seat Editor ───────────────────────────────────────────────────
 const SE_W=700, SE_H=490; // matches player table-wrap aspect-ratio (1000:700)
 let _seSeats=[], _seDragging=null, _seCanvas=null, _seCtx=null;
-let _seTableRx=0.38, _seTableRy=0.30, _seLayoutAngle=55;
+let _seTableRx=0.38, _seTableRy=0.30, _seLayoutAngle=40;
 
 // Convert screen coords to logical (un-tilted) Y
 function _seScreenToLogical(clientX, clientY){
@@ -1451,7 +1451,7 @@ function seatEditorInit(){
   } catch(_){}
 
   const angleEl=document.getElementById('se-angle');
-  if(angleEl){ _seLayoutAngle=parseInt(angleEl.value)||55; document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°'; }
+  if(angleEl){ _seLayoutAngle=parseInt(angleEl.value)||40; document.getElementById('se-angle-val').textContent=_seLayoutAngle+'°'; }
 
   // Apply background image if available
   const bgLayer=document.getElementById('se-bg-layer');
@@ -1683,7 +1683,7 @@ const _SE_SAFE_BOTTOM_PX =  40;
 // the current tilt. Prevents seats from being clipped by the mock top bar or
 // preview bottom when scale is turned up.
 function _seSafeRyCap(){
-  const tilt = Math.max(0.05, Math.sin((_seLayoutAngle||55) * Math.PI / 180));
+  const tilt = Math.max(0.05, Math.sin((_seLayoutAngle||40) * Math.PI / 180));
   const area = document.getElementById('se-game-area');
   const H = area?.clientHeight || SE_H;
   const mcy = (window._seModelCenter?.cy ?? 0.5);
@@ -1754,9 +1754,9 @@ function pushTilt(){
   data.pushedAt=new Date().toISOString();
   localStorage.setItem('rf_admin_seat_positions',JSON.stringify(data));
   if(socket){
-    socket.emit('adminPushAsset',{secret:adminKey,type:'seats',name:`tilt-${_seLayoutAngle}deg`,pushedAt:data.pushedAt,dataUrl:JSON.stringify(data)});
-    toast(`Tilt ${_seLayoutAngle}° pushed to all players`,'success');
-    log(`Tilt ${_seLayoutAngle}° pushed`,'success');
+    socket.emit('adminPushAsset',{secret:adminKey,type:'seats',name:`camera-${_seLayoutAngle}deg`,pushedAt:data.pushedAt,dataUrl:JSON.stringify(data)});
+    toast(`Camera ${_seLayoutAngle}° pushed to all players`,'success');
+    log(`Camera ${_seLayoutAngle}° pushed`,'success');
   } else { toast('Not connected — saved locally only','warn'); }
 }
 
